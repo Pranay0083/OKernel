@@ -55,7 +55,7 @@ export const AdminLogin = () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/admin`
+                redirectTo: `${window.location.origin}/admin/dashboard`
             }
         });
         if (error) addLog(`ERROR: ${error.message}`);
