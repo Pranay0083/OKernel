@@ -10,7 +10,7 @@ interface SystemConfig {
 
 export const useSystemConfig = () => {
     const [config, setConfig] = useState<SystemConfig>({
-        version: 'v0.4.0', // Fallback
+        version: 'v0.4.1', // Fallback
         status: 'ONLINE',
         motd: ''
     });
