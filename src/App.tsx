@@ -1,0 +1,44 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { Home } from './pages/Home';
+import { Visualizer } from './apps/cpu_scheduler/Page';
+import { About } from './pages/About';
+import { Architecture } from './pages/Architecture';
+import { Console } from './pages/Console';
+
+import { Roadmap } from './pages/Roadmap';
+import { Changelog } from './pages/Changelog';
+import { Documentation } from './pages/Documentation';
+import { OSConcepts } from './pages/OSConcepts';
+import { AlgoWiki } from './pages/AlgoWiki';
+import { ReportBug, RequestFeature, Contributing } from './pages/CommunityPages';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} /> {/* Landing Page */}
+      <Route path="/dev/scheduler" element={<Visualizer />} />
+      <Route path="/dev/about" element={<About />} />
+      <Route path="/dev/architecture" element={<Architecture />} />
+      <Route path="/dev/console" element={<Console />} />
+      <Route path="/dev/roadmap" element={<Roadmap />} />
+      <Route path="/dev/changelog" element={<Changelog />} />
+
+      {/* Content Pages */}
+      <Route path="/dev/docs" element={<Documentation />} />
+      <Route path="/dev/os-concepts" element={<OSConcepts />} />
+      <Route path="/dev/algo-wiki" element={<AlgoWiki />} />
+
+      {/* Community Pages */}
+      <Route path="/dev/bug-report" element={<ReportBug />} />
+      <Route path="/dev/feature-request" element={<RequestFeature />} />
+      <Route path="/dev/contributing" element={<Contributing />} />
+
+      {/* Fallback for old Links */}
+      <Route path="/visualizer" element={<Visualizer />} />
+      <Route path="/console" element={<Console />} />
+    </Routes>
+  );
+}
+
+export default App;
