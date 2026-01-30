@@ -10,7 +10,16 @@
 
 ### SysCore Terminal
 - **Interactive Shell**: A robust command-line interface with history, auto-completion (Tab), and colored output.
-- **SysCore Engine**: A modular kernel architecture (`src/syscore`) separating logic from UI.
+## 🛠️ Maintainer's Guide
+Looking for how to update the version number or manage the admin console?
+-> **[Read the Maintainer's Guide](./MAINTAINERS_GUIDE.md)**
+
+## 🚀 Key Features
+
+*   **Cycle-Accurate Simulation**: Visualizes CPU bursts, I/O waits, and Context Switching overheads tick-by-tick.
+*   **SysCore Engine**: A separated, pure-logic scheduler engine that drives the UI.
+*   **Dynamic Configuration**: Versioning and system status are managed via Database.
+*   **Admin Terminal**: A dedicated "God Mode" console for system management.
 - **Command Dispatcher**: Support for complex sub-commands (e.g., `syscore.cpu.info`, `syscore.algos.rr`).
 - **Self-Documenting**: Built-in help and API discovery via the `syscore` command.
 

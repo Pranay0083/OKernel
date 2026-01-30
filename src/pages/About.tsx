@@ -3,8 +3,11 @@ import { Layout } from '../components/layout/Layout';
 import { Card } from '../components/ui/Card';
 import { Terminal, Github, Heart } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const About = () => {
+    const { config } = useSystemConfig();
+
     return (
         <Layout>
             <div className="container mx-auto px-4 pt-32 pb-24 max-w-4xl">
@@ -48,8 +51,18 @@ export const About = () => {
                                 <TeamMember name="Community" role="Open Source" github="@contributors" />
                             </div>
                         </section>
+                        <div className="p-6 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                            <h3 className="text-white font-bold mb-2">Open Source</h3>
+                            <p className="text-zinc-400 text-sm mb-4">
+                                This project is MIT Licensed. Contributions to the scheduling engine or UI are welcome.
+                            </p>
+                            <div className="bg-black p-3 rounded flex items-center justify-between font-mono text-xs text-zinc-500">
+                                <span>git clone https://github.com/Vaiditya2207/cpu-scheduler-visualizer.git</span>
+                            </div>
+                        </div>
                     </div>
 
+                    {/* Right Column: Code Stats */}
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-white border-b border-zinc-800 pb-2">
@@ -74,30 +87,49 @@ export const About = () => {
                             </div>
                         </section>
 
-                        <Card className="p-6 bg-zinc-900/50 border-input border-zinc-800">
-                            <h3 className="font-bold flex items-center gap-2 mb-4">
-                                <Github size={16} /> Open Source
-                            </h3>
-                            <p className="text-sm text-zinc-500 mb-6 font-mono">
-                                This project is MIT Licensed. Contributions to the scheduling engine or UI are welcome.
-                            </p>
-                            <div className="space-y-2">
-                                <Button variant="outline" className="w-full justify-start font-mono text-xs h-10">
-                                    git clone https://github.com/cpu-viz.git
-                                </Button>
-                                <Button className="w-full font-mono text-xs h-10">
-                                    <Heart size={14} className="mr-2 text-red-500" /> Sponsor
-                                </Button>
+                        <div className="p-6 bg-black rounded-lg border border-zinc-800 font-mono text-xs">
+                            <div className="flex items-center gap-2 mb-4 border-b border-zinc-800 pb-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span className="ml-auto text-zinc-500">user@dev:~$ cloc .</span>
                             </div>
-                        </Card>
-
-                        <div className="p-4 rounded border border-zinc-800 bg-black font-mono text-xs text-zinc-500">
-                            <span className="text-green-500">user@dev:~$</span> cloc .<br />
-                            ------------------------------------------------<br />
-                            Language&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;files&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blank&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;comment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code<br />
-                            ------------------------------------------------<br />
-                            TypeScript&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;124&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;45&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1402<br />
-                            ------------------------------------------------
+                            <div className="space-y-2 text-zinc-300">
+                                <div className="flex justify-between">
+                                    <span>------------------------------------------------</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-white">
+                                    <span>Language</span>
+                                    <span>files</span>
+                                    <span>code</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>------------------------------------------------</span>
+                                </div>
+                                <div className="flex justify-between text-blue-400">
+                                    <span>TypeScript</span>
+                                    <span>24</span>
+                                    <span>2,840</span>
+                                </div>
+                                <div className="flex justify-between text-yellow-400">
+                                    <span>React/TSX</span>
+                                    <span>18</span>
+                                    <span>1,902</span>
+                                </div>
+                                <div className="flex justify-between text-green-400">
+                                    <span>SQL</span>
+                                    <span>5</span>
+                                    <span>450</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>------------------------------------------------</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-green-500">
+                                    <span>{config.version}</span>
+                                    <span>Total</span>
+                                    <span>5,192</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

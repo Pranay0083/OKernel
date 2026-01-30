@@ -27,7 +27,7 @@ export const Footer = () => {
                             <li><a href="/dev/console" className="hover:text-primary transition-colors">Console</a></li>
                             <li><a href="/dev/scheduler" className="hover:text-primary transition-colors">CPU Visualizer</a></li>
                             <li><a href="/dev/roadmap" className="hover:text-primary transition-colors">Roadmap</a></li>
-                            <li><a href="/dev/changelog" className="hover:text-primary transition-colors">Changelog <span className="text-[10px] text-green-500 ml-1">v0.3.0</span></a></li>
+                            <li><a href="/dev/changelog" className="hover:text-primary transition-colors">Changelog</a></li>
                         </ul>
                     </div>
 

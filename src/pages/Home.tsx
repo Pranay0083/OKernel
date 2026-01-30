@@ -1,10 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Zap, Layers, Clock, Terminal, ChevronRight, CheckCircle2, Circle, ArrowRight, Cpu, Lock } from 'lucide-react';
 
+import { useSystemConfig } from '../hooks/useSystemConfig';
+
 export const Home = () => {
+    const { config } = useSystemConfig();
+    const [feedback, setFeedback] = useState('');
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [testimonials, setTestimonials] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        const fetchTestimonials = async () => {
+            const { data } = await supabase
+                .from('featured_reviews')
+                .select('message, name, role')
+                .order('rank', { ascending: true }) // Order by Rank
+                .order('created_at', { ascending: false }) // Fallback
+                .limit(10);
+
+            if (data && data.length > 0) {
+                setTestimonials(data);
+            }
+        };
+        fetchTestimonials();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!feedback.trim()) return;
+
+        setStatus('loading');
+        try {
+            const { error } = await supabase
+                .from('user_feedback')
+                .insert([{
+                    message: feedback,
+                    name: name || null, // Send null if empty
+                    email: email || null,
+                    version: 'v0.3.0',
+                    user_agent: navigator.userAgent
+                }]);
+
+            if (error) throw error;
+            setStatus('success');
+            setFeedback('');
+            setName('');
+            setEmail('');
+            setTimeout(() => setStatus('idle'), 3000);
+        } catch (err) {
+            console.error(err);
+            setStatus('error');
+            setTimeout(() => setStatus('idle'), 3000);
+        }
+    };
+
     return (
         <Layout>
             {/* Hero Section */}
@@ -17,7 +72,7 @@ export const Home = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
-                            V0.2.0 SYSCORE ENGINE ACTIVE
+                            V{config.version.replace('v', '')} SYSCORE ENGINE {config.status}
                         </div>
 
                         <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight">
@@ -110,7 +165,7 @@ export const Home = () => {
                             <div className="w-16 h-16 mx-auto bg-green-500/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-colors">
                                 <Terminal size={32} className="text-green-500" />
                             </div>
-                            <div className="font-mono text-xl font-bold">SysCore Engine v0.2.0</div>
+                            <div className="font-mono text-xl font-bold">SysCore Engine {config.version}</div>
                             <div className="font-mono text-xs text-zinc-500">Cycle-Accurate Scheduler</div>
                         </div>
 
@@ -200,26 +255,41 @@ export const Home = () => {
                 </div>
             </section>
 
-            {/* Impact / Testimonials */}
+            {/* Impact / Testimonials (Dynamic Carousel) */}
             <section className="py-24 border-t border-zinc-800 bg-zinc-900/20">
                 <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <Testimonial
-                            quote="Finally, a tool that actually shows what happens during a Context Switch. Saved my OS final."
-                            author="Alex Chen"
-                            role="CS Student, MIT"
-                        />
-                        <Testimonial
-                            quote="I use kernelOne to demonstrate scheduling anomalies to my juniors. The visual clarity is unmatched."
-                            author="Sarah Miller"
-                            role="Senior Systems Engineer"
-                        />
-                        <Testimonial
-                            quote="The 'Hardware' accurate mode is brilliant. It forced me to understand PCB overhead."
-                            author="Davide Russo"
-                            role="Embedded Developer"
-                        />
+                    <div className="mb-12 text-center">
+                        <h2 className="text-2xl font-bold mb-2">User Feedback</h2>
+                        <div className="text-xs font-mono text-zinc-500">/var/log/public_opinions</div>
                     </div>
+
+                    {testimonials.length === 0 ? (
+                        /* Default Static Mockups */
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <Testimonial quote="Finally, a tool that actually shows Context Switches. Saved my OS final." author="Alex Chen" role="CS Student" />
+                            <Testimonial quote="I use kernelOne to demonstrate scheduling anomalies. Visual clarity is unmatched." author="Sarah M." role="Systems Engineer" />
+                            <Testimonial quote="The 'Hardware' accurate mode is brilliant. Forced me to understand PCB overhead." author="Davide R." role="Embedded Dev" />
+                        </div>
+                    ) : (
+                        /* Dynamic Rendering logic */
+                        testimonials.length <= 3 ? (
+                            /* 1-3 Items: Centered Grid */
+                            <div className={`grid grid-cols-1 md:grid-cols-${testimonials.length} gap-8 max-w-${testimonials.length === 1 ? '2xl' : '6xl'} mx-auto`}>
+                                {testimonials.map((t, i) => (
+                                    <Testimonial key={i} quote={t.message} author={t.name} role={t.role || 'Verified User'} />
+                                ))}
+                            </div>
+                        ) : (
+                            /* 4+ Items: Scrolling Carousel */
+                            <div className="overflow-x-auto pb-8 flex gap-6 snap-x snap-mandatory">
+                                {testimonials.map((t, i) => (
+                                    <div key={i} className="min-w-[300px] md:min-w-[400px] snap-center">
+                                        <Testimonial quote={t.message} author={t.name} role={t.role || 'Verified User'} />
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    )}
                 </div>
             </section>
 
@@ -273,13 +343,52 @@ export const Home = () => {
                         Input stream required. Reporting bugs improves system stability.
                     </p>
 
-                    <form className="max-w-md mx-auto space-y-4" onSubmit={(e) => e.preventDefault()}>
-                        <div className="flex gap-4">
-                            <span className="py-3 text-green-500 font-mono text-lg">&gt;</span>
-                            <input type="text" placeholder="echo 'Your feedback here...'" className="w-full bg-transparent border-b border-zinc-700 text-white placeholder-zinc-600 focus:outline-none focus:border-green-500 transition-colors font-mono py-2" />
+                    <form className="max-w-md mx-auto space-y-4" onSubmit={handleSubmit}>
+                        <div className="space-y-3">
+                            <div className="flex gap-4">
+                                <span className="py-3 text-green-500 font-mono text-lg">&gt;</span>
+                                <div className="space-y-3 w-full">
+                                    <input
+                                        type="text"
+                                        value={feedback}
+                                        onChange={(e) => setFeedback(e.target.value)}
+                                        placeholder="echo 'Your feedback here...'"
+                                        className="w-full bg-transparent border-b border-zinc-700 text-white placeholder-zinc-600 focus:outline-none focus:border-green-500 transition-colors font-mono py-2"
+                                        disabled={status === 'loading'}
+                                    />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="--name (Optional)"
+                                            className="w-full bg-transparent border-b border-zinc-800 text-sm text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-zinc-600 transition-colors font-mono py-1"
+                                            disabled={status === 'loading'}
+                                        />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="--email (Optional)"
+                                            className="w-full bg-transparent border-b border-zinc-800 text-sm text-zinc-300 placeholder-zinc-700 focus:outline-none focus:border-zinc-600 transition-colors font-mono py-1"
+                                            disabled={status === 'loading'}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <Button size="sm" className="w-full rounded bg-zinc-800 text-white hover:bg-zinc-700 font-mono h-10 border border-zinc-700">
-                            Execute Send()
+                        <Button
+                            disabled={status === 'loading'}
+                            size="sm"
+                            className={`w-full rounded font-mono h-10 border transition-all ${status === 'success' ? 'bg-green-500/20 border-green-500 text-green-500 hover:bg-green-500/30' :
+                                status === 'error' ? 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30' :
+                                    'bg-zinc-800 text-white hover:bg-zinc-700 border-zinc-700'
+                                }`}
+                        >
+                            {status === 'loading' ? 'Sending...' :
+                                status === 'success' ? 'Feedback Sent [OK]' :
+                                    status === 'error' ? 'Error (Check Console)' :
+                                        'Execute Send()'}
                         </Button>
                     </form>
                 </div>
