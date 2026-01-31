@@ -6,7 +6,6 @@ import { About } from './pages/About';
 import { Architecture } from './pages/Architecture';
 import { Console } from './pages/Console';
 import { AdminLogin } from './pages/admin/Login';
-// import { AdminDashboard } from './pages/admin/Dashboard'; // Deprecated
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { Overview } from './pages/admin/Overview';
 import { Inbox } from './pages/admin/Inbox';
