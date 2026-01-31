@@ -211,26 +211,28 @@ export const Home = () => {
                         </div>
                     </Link>
 
-                    {/* MMU Unit */}
-                    <div className="group relative bg-zinc-950 border border-zinc-800 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col opacity-75 hover:opacity-100">
+                    {/* Shell Maker Unit */}
+                    <Link to="/dev/shell" className="group relative bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
-                            <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6">
-                                <Layers size={24} className="text-zinc-400 group-hover:text-blue-500 transition-colors" />
+                            <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-shadow">
+                                <Terminal size={24} className="text-zinc-400 group-hover:text-blue-500 transition-colors" />
                             </div>
-                            <h3 className="text-xl font-bold font-mono text-white mb-2">/dev/mem</h3>
+                            <h3 className="text-xl font-bold font-mono text-white mb-2">/dev/shell</h3>
                             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-                                Virtual memory management unit (MMU). Visualizes paging, TLB lookups, and segmentation faults.
+                                Interactive C-Shell Kernel. Write custom shell logic in C and execute it in a simulated environment.
                             </p>
                             <div className="flex flex-wrap gap-2 mb-4">
-                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Paging</div>
-                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">LRU Cache</div>
+                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Monaco Editor</div>
+                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Live Kernel</div>
                             </div>
                         </div>
                         <div className="p-4 border-t border-zinc-900 bg-zinc-900/30 flex justify-between items-center">
-                            <span className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest">● In Development</span>
+                            <span className="text-[10px] font-mono text-blue-500 uppercase tracking-widest">● v1.0 New</span>
+                            <ArrowRight size={14} className="text-zinc-600 group-hover:text-white transition-colors" />
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Deadlock Unit */}
                     <div className="group relative bg-zinc-950 border border-zinc-800 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col opacity-75 hover:opacity-100">

@@ -16,6 +16,7 @@ import { SystemConfig } from './pages/admin/SystemConfig';
 
 import { Roadmap } from './pages/Roadmap';
 import { Changelog } from './pages/Changelog';
+import { ShellMakerPage } from './apps/shell_maker/Page';
 import { Documentation } from './pages/Documentation';
 import { OSConcepts } from './pages/OSConcepts';
 import { AlgoWiki } from './pages/AlgoWiki';
@@ -68,6 +69,7 @@ function App() {
       </Route>
 
       <Route path="/dev/roadmap" element={<Roadmap />} />
+      <Route path="/dev/shell" element={<ShellMakerPage />} />
       <Route path="/dev/changelog" element={<Changelog />} />
 
       {/* Content Pages */}

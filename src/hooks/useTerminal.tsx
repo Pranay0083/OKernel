@@ -7,7 +7,7 @@ export interface TerminalOutput {
     timestamp?: number;
 }
 
-const COMMANDS = ['help', 'applications', 'init cpu_scheduler', 'about', 'curr', 'clear', 'exit'];
+const COMMANDS = ['help', 'applications', 'init cpu_scheduler', 'init shell', 'about', 'curr', 'clear', 'exit'];
 
 // Force HMR update
 import { execute } from '../syscore/terminal';
@@ -72,7 +72,7 @@ export const useTerminal = () => {
                                 <ul className="list-disc list-inside pl-2">
                                     <li><strong className="text-primary">help</strong>: Show this help message</li>
                                     <li><strong className="text-primary">applications</strong>: List installed modules</li>
-                                    <li><strong className="text-primary">init &lt;app_name&gt;</strong>: Launch an application</li>
+                                    <li><strong className="text-primary">init &lt;app_name&gt;</strong>: Launch an application (e.g. init shell)</li>
                                     <li><strong className="text-primary">about</strong>: System information</li>
                                     <li><strong className="text-primary">curr</strong>: Current roadmap status</li>
                                     <li><strong className="text-primary">syscore.ver</strong>: Engine version</li>
@@ -87,9 +87,15 @@ export const useTerminal = () => {
                         renderedContent = (
                             <div className="space-y-1">
                                 <p className="text-zinc-400">INSTALLED MODULES:</p>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-green-400 font-bold">cpu_scheduler</span>
-                                    <span className="text-zinc-600 text-xs">// Process Scheduling Visualizer</span>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-green-400 font-bold">cpu_scheduler</span>
+                                        <span className="text-zinc-600 text-xs">// Process Scheduling Visualizer</span>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-green-400 font-bold">shell_maker</span>
+                                        <span className="text-zinc-600 text-xs">// SysCore 2.0 C-Shell Kernel</span>
+                                    </div>
                                 </div>
                             </div>
                         );
