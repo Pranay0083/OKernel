@@ -52,6 +52,7 @@ export const AdminLogin = () => {
 
     const handleGoogleLogin = async () => {
         addLog('initiating_oauth_handshake...');
+        localStorage.setItem('syscore_auth_intent', 'true');
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {

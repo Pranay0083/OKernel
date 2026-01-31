@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Visualizer } from './apps/cpu_scheduler/Page';
 import { About } from './pages/About';
@@ -12,6 +12,7 @@ import { Inbox } from './pages/admin/Inbox';
 import { FeaturedManager } from './pages/admin/FeaturedManager';
 import { DatabaseExplorer } from './pages/admin/DatabaseExplorer';
 import { SQLEditor } from './pages/admin/SQLEditor';
+import { SystemConfig } from './pages/admin/SystemConfig';
 
 import { Roadmap } from './pages/Roadmap';
 import { Changelog } from './pages/Changelog';
@@ -20,7 +21,33 @@ import { OSConcepts } from './pages/OSConcepts';
 import { AlgoWiki } from './pages/AlgoWiki';
 import { ReportBug, RequestFeature, Contributing } from './pages/CommunityPages';
 
+import { supabase } from './lib/supabase';
+
 function App() {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Rescue Admin: If signed in, check if this was an intentional admin login
+      if (event === 'SIGNED_IN' && session?.user?.email) {
+        const intent = localStorage.getItem('syscore_auth_intent');
+
+        if (intent === 'true') {
+          // Clear intent so they can browse normally later
+          localStorage.removeItem('syscore_auth_intent');
+
+          const { data } = await supabase.from('admin_whitelist').select('email').eq('email', session.user.email).single();
+          if (data) {
+            console.log('Admin Login verified, redirecting to dashboard...');
+            navigate('/admin/dashboard');
+          }
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   return (
     <Routes>
       <Route path="/" element={<Home />} /> {/* Landing Page */}
@@ -35,6 +62,7 @@ function App() {
         <Route path="/admin/dashboard" element={<Overview />} />
         <Route path="/admin/inbox" element={<Inbox />} />
         <Route path="/admin/featured" element={<FeaturedManager />} />
+        <Route path="/admin/config" element={<SystemConfig />} />
         <Route path="/admin/database" element={<DatabaseExplorer />} />
         <Route path="/admin/sql" element={<SQLEditor />} />
       </Route>

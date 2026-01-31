@@ -71,7 +71,12 @@ export const About = () => {
                             <div className="font-mono text-xs space-y-4 border-l border-zinc-800 pl-4">
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                                    <div className="text-white font-bold mb-1">v0.4.1 - Observability</div>
+                                    <div className="text-white font-bold mb-1">v0.4.2 - Admin & UI</div>
+                                    <p className="text-zinc-500">System Config Manager, Smart Login Redirects, and Mobile UI Fixes.</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                                    <div className="text-zinc-400 font-bold mb-1">v0.4.1 - Observability</div>
                                     <p className="text-zinc-500">New Relic integration for RUM. Syntax fixes for tracking scripts.</p>
                                 </div>
                                 <div className="relative">
