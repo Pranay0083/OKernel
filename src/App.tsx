@@ -25,6 +25,8 @@ import { Privacy } from './pages/legal/Privacy';
 import { Terms } from './pages/legal/Terms';
 
 import { supabase } from './lib/supabase';
+import { SponsorManager } from './pages/admin/SponsorManager';
+import { Sponsor } from './pages/Sponsor';
 
 function App() {
   const navigate = useNavigate();
@@ -68,6 +70,7 @@ function App() {
         <Route path="/admin/config" element={<SystemConfig />} />
         <Route path="/admin/database" element={<DatabaseExplorer />} />
         <Route path="/admin/sql" element={<SQLEditor />} />
+        <Route path="/admin/sponsor" element={<SponsorManager />} />
       </Route>
 
       <Route path="/dev/roadmap" element={<Roadmap />} />
@@ -87,6 +90,7 @@ function App() {
       {/* Legal Pages */}
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/sponsor" element={<Sponsor />} />
 
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />

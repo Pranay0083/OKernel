@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { Zap, Layers, Clock, Terminal, ChevronRight, CheckCircle2, Circle, ArrowRight, Cpu, Lock } from 'lucide-react';
+import { Zap, Layers, Clock, Terminal, ChevronRight, CheckCircle2, Circle, ArrowRight, Cpu, Lock, Coffee, Heart } from 'lucide-react';
 
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
@@ -600,10 +600,10 @@ int main() {
                         </div>
                     </div>
                 </div>
-            </section >
+            </section>
 
             {/* Feedback & Community */}
-            < section className="py-24 container mx-auto px-4" >
+            <section className="py-24 container mx-auto px-4">
                 <div className="rounded-xl border border-dashed border-zinc-800 p-8 md:p-16 text-center max-w-4xl mx-auto relative overflow-hidden bg-zinc-900/50">
                     <h2 className="text-2xl font-bold mb-4 font-mono">kernel_panic(FEEDBACK_NEEDED)</h2>
                     <p className="text-zinc-400 max-w-xl mx-auto mb-10 text-sm font-mono">
@@ -659,7 +659,38 @@ int main() {
                         </Button>
                     </form>
                 </div>
-            </section >
+            </section>
+
+            {/* Sponsor / Goals Link Section */}
+            <section className="py-24 border-t border-zinc-800 bg-zinc-950 relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-[200%] bg-green-500/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+                <div className="container mx-auto px-4 text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900/50 border border-zinc-800 text-green-400 text-xs font-mono rounded-full mb-8 backdrop-blur-sm">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        /usr/bin/support
+                    </div>
+
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                        Support the <span className="text-green-500">Project</span>.
+                    </h2>
+                    <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed mb-10">
+                        Check out our roadmap and funding goals. Help us keep the servers running.
+                    </p>
+
+                    <div className="flex justify-center">
+                        <Link
+                            to="/sponsor"
+                            className="group relative inline-flex items-center justify-center"
+                        >
+                            <div className="absolute -inset-1 bg-green-500 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
+                            <Button size="lg" className="relative h-14 px-8 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700 rounded-xl flex items-center gap-3">
+                                <Heart className="text-red-500 fill-red-500 animate-pulse" size={20} />
+                                View Funding Goals
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </section>
 
         </Layout >
     );
