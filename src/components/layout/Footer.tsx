@@ -48,6 +48,9 @@ export const Footer = () => {
                             <li><a href="/dev/bug-report" className="hover:text-primary transition-colors">Report a Bug</a></li>
                             <li><a href="/dev/feature-request" className="hover:text-primary transition-colors">Request Feature</a></li>
                             <li><a href="/dev/contributing" className="hover:text-primary transition-colors">Contributing</a></li>
+                            <li className="pt-4 border-t border-white/10 mt-4"></li>
+                            <li><a href="/privacy" className="hover:text-white transition-colors text-xs">Privacy Policy</a></li>
+                            <li><a href="/terms" className="hover:text-white transition-colors text-xs">Terms & Conditions</a></li>
                         </ul>
                     </div>
                 </div>

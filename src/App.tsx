@@ -21,6 +21,8 @@ import { Documentation } from './pages/Documentation';
 import { OSConcepts } from './pages/OSConcepts';
 import { AlgoWiki } from './pages/AlgoWiki';
 import { ReportBug, RequestFeature, Contributing } from './pages/CommunityPages';
+import { Privacy } from './pages/legal/Privacy';
+import { Terms } from './pages/legal/Terms';
 
 import { supabase } from './lib/supabase';
 
@@ -81,6 +83,10 @@ function App() {
       <Route path="/dev/bug-report" element={<ReportBug />} />
       <Route path="/dev/feature-request" element={<RequestFeature />} />
       <Route path="/dev/contributing" element={<Contributing />} />
+
+      {/* Legal Pages */}
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
 
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />

@@ -67,7 +67,7 @@ export const Home = () => {
                 <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
 
                     <div className="space-y-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md animate-in">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
@@ -75,19 +75,21 @@ export const Home = () => {
                             V{config.version.replace('v', '')} SYSCORE ENGINE 2 {config.status}
                         </div>
 
-                        <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight">
-                            O<span className="text-primary glow-text">Kernel</span>
-                        </h1>
-                        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
-                            The definitive interactive platform for mastering Operating System concepts.
+                        <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight animate-in delay-100">
+                            Execute <span className="text-primary glow-text">Theory.</span>
                             <br />
-                            <span className="text-zinc-400">Powered by <strong>SysCore Engine 2</strong>. Compile C in the browser.</span>
+                            <span className="text-white">Visualize RAM.</span>
+                        </h1>
+                        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed animate-in delay-200">
+                            Stop staring at Gantt charts.
+                            <br />
+                            <span className="text-zinc-400">Boot a <strong>real Virtual Machine</strong> in your browser. Write C, manage Memory, and watch the Kernel panic safely.</span>
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 items-start pt-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-start pt-4 animate-in delay-300">
                             <Link to="/dev/shell">
-                                <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] transition-all">
-                                    <Terminal className="mr-2" /> Launch Shell
+                                <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-green-500 hover:bg-green-400 text-black font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all">
+                                    <Terminal className="mr-2" /> Launch Shell Maker
                                 </Button>
                             </Link>
                             <Link to="/dev/scheduler">
@@ -98,23 +100,26 @@ export const Home = () => {
                         </div>
                     </div>
 
-                    <div className="relative hidden lg:block">
+                    <div className="relative hidden lg:block animate-in delay-500">
                         {/* Terminal Window Mockup */}
-                        <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl shadow-2xl overflow-hidden font-mono text-xs transform rotate-1 hover:rotate-0 transition-transform duration-500">
+                        <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl shadow-2xl overflow-hidden font-mono text-xs transform rotate-1 hover:rotate-0 transition-transform duration-500 group">
                             <div className="bg-zinc-900/50 px-4 py-3 flex items-center gap-2 border-b border-zinc-800/50">
-                                <div className="ml-auto text-zinc-600 font-bold">root@okernel:~/syscore#</div>
+                                <div className="ml-auto text-zinc-600 font-bold">root@syscore-v2:~/kernel#</div>
                             </div>
                             <div className="p-8 space-y-4 text-zinc-400 text-sm">
-                                <p><span className="text-green-500">➜</span> <span className="text-blue-400">~/syscore</span> ./boot_vm.sh</p>
+                                <p><span className="text-green-500">➜</span> <span className="text-blue-400">~/kernel</span> ./init_syscore.o</p>
                                 <div className="space-y-1 pl-4 border-l-2 border-zinc-800">
-                                    <p className="text-zinc-500">[KERNEL] Initializing SysCore Engine 2...</p>
-                                    <p className="text-zinc-500">[MEMORY] Allocating 1024KB Physical RAM... <span className="text-green-500">OK</span></p>
-                                    <p className="text-zinc-500">[VIRTUAL] Paging Mechanism... <span className="text-green-500">ACTIVE</span></p>
-                                    <p className="text-zinc-500">[SHELL] Mounting /dev/tty0... <span className="text-green-500">OK</span></p>
+                                    <p className="text-zinc-500 typing-effect">[BOOT] Virtual Memory Manager... <span className="text-green-500">ACTIVE</span></p>
+                                    <p className="text-zinc-500 typing-effect delay-200">[BOOT] Allocating 256MB Heap... <span className="text-green-500">OK</span></p>
+                                    <p className="text-zinc-500 typing-effect delay-500">[BOOT] Loading Process Scheduler... <span className="text-green-500">READY</span></p>
                                 </div>
-                                <p className="text-white">
-                                    <span className="text-blue-500">[READY]</span> OKernel Shell v0.0.0 Online.
-                                </p>
+                                <div className="p-4 bg-zinc-900 rounded border border-zinc-800 font-mono text-xs text-zinc-300 mt-4 group-hover:scale-[1.02] transition-transform">
+                                    <span className="text-purple-400">int</span> main() {'{'}<br />
+                                    &nbsp;&nbsp;<span className="text-yellow-400">printf</span>(<span className="text-green-300">"Hello Kernel!\n"</span>);<br />
+                                    &nbsp;&nbsp;<span className="text-blue-400">void</span>* ptr = <span className="text-yellow-400">malloc</span>(1024);<br />
+                                    &nbsp;&nbsp;<span className="text-zinc-500">// Real pointer arithmetic supported</span><br />
+                                    {'}'}
+                                </div>
                                 <p><span className="text-green-500">➜</span> <span className="text-blue-400">~</span> <span className="animate-pulse block w-2 h-4 bg-green-500"></span></p>
                             </div>
                         </div>
@@ -125,47 +130,312 @@ export const Home = () => {
                 </div>
             </section>
 
-            {/* The Mission / Story Section */}
-            <section className="py-24 border-b border-white/5 bg-zinc-900/10">
-                <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-6">
-                        <h2 className="text-3xl font-bold tracking-tight">From Textbooks to <span className="text-green-500">Live Traces</span></h2>
-                        <div className="space-y-4 text-zinc-400 text-lg leading-relaxed">
-                            <p>
-                                We've all been there. Staring at static Gantt charts in an Operating Systems textbook, trying to visualize how specific CPU bursts actually interleave.
-                            </p>
-                            <p>
-                                <strong className="text-white">OKernel</strong> was born from that frustration. We wanted to build a bridge between abstract theory and silicon reality.
-                            </p>
-                            <p>
-                                By simulating the <span className="text-white font-mono">Process Control Block</span> down to the cycle, we turn "learning" into "debugging".
-                            </p>
+            {/* Story Section: Static vs Dynamic */}
+            <section className="py-32 border-b border-white/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:50px_50px]"></div>
+
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-3xl mx-auto mb-20 relative z-10">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-full mb-6 backdrop-blur-sm">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            THE PARADIGM SHIFT
                         </div>
-                        <div className="pt-4 flex items-center gap-8">
-                            <div>
-                                <div className="text-3xl font-bold text-white mb-1">10k+</div>
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider">Cycles Simulated</div>
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                            Operating Systems is <span className="text-red-500 line-through decoration-2 decoration-white/20">Theory</span>.
+                            <br />
+                            <span className="text-white">Operating Systems is <span className="text-green-500">Live</span>.</span>
+                        </h2>
+                        <p className="text-zinc-400 text-lg leading-relaxed">
+                            For decades, we learned Concurrency from static diagrams and Scheduling from Excel sheets.
+                            OKernel changes the game by running a <strong className="text-white">cycle-accurate simulation</strong> of the hardware itself.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                        {/* Old Way */}
+                        <div className="relative group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/50">
+                            <div className="p-8 relative z-10">
+                                <h3 className="text-xl font-bold text-zinc-500 mb-2">The Old Way</h3>
+                                <p className="text-zinc-600 text-sm">Static Gantt Charts. Zero interactivity. Memorization over understanding.</p>
                             </div>
-                            <div>
-                                <div className="text-3xl font-bold text-white mb-1">Open</div>
-                                <div className="text-xs text-zinc-500 uppercase tracking-wider">Source (MIT)</div>
+                            <div className="mt-8 p-6 opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
+                                {/* CSS Gantt Chart Mockup */}
+                                <div className="space-y-3">
+                                    <div className="flex gap-2 items-center">
+                                        <div className="w-12 text-xs text-zinc-600">P1</div>
+                                        <div className="flex-1 h-6 bg-zinc-800 rounded relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1/3 bg-zinc-700"></div>
+                                            <div className="absolute left-2/3 top-0 bottom-0 w-1/4 bg-zinc-700"></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <div className="w-12 text-xs text-zinc-600">P2</div>
+                                        <div className="flex-1 h-6 bg-zinc-800 rounded relative overflow-hidden">
+                                            <div className="absolute left-1/3 top-0 bottom-0 w-1/3 bg-zinc-600"></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <div className="w-12 text-xs text-zinc-600">P3</div>
+                                        <div className="flex-1 h-6 bg-zinc-800 rounded relative overflow-hidden">
+                                            <div className="absolute right-0 top-0 bottom-0 w-1/12 bg-zinc-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 flex justify-between text-[10px] text-zinc-700 font-mono">
+                                    <span>0ms</span>
+                                    <span>5ms</span>
+                                    <span>10ms</span>
+                                    <span>15ms</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* New Way */}
+                        <div className="relative group overflow-hidden rounded-2xl border border-primary/20 bg-zinc-950/80 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                            <div className="p-8 pb-0 relative z-10">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-xl font-bold text-white">The SysCore Way</h3>
+                                    <div className="px-2 py-0.5 rounded bg-green-500/20 text-green-500 text-[10px] font-bold tracking-wider uppercase">Live Render</div>
+                                </div>
+                                <p className="text-zinc-400 text-sm">Real-time Heap inspection. Visualized Stack frames. Hardware Interrupts.</p>
+                            </div>
+
+                            {/* Live Code/Visuals Mockup */}
+                            <div className="mt-8 relative font-mono text-xs p-6 bg-black/50 border-t border-zinc-800/50 min-h-[200px] flex flex-col gap-2">
+                                <div className="flex gap-2 mb-2">
+                                    <div className="flex-1 h-2 bg-zinc-800 rounded animate-pulse"></div>
+                                    <div className="flex-1 h-2 bg-zinc-800 rounded animate-pulse delay-75"></div>
+                                    <div className="flex-1 h-2 bg-zinc-800 rounded animate-pulse delay-150"></div>
+                                </div>
+                                <div className="text-green-500">
+                                    $ ./scheduler --algo=RR --quantum=4
+                                </div>
+                                <div className="text-zinc-500 pl-4 border-l border-zinc-800">
+                                    [CPU] Context Switch (P1 -&gt; P2)<br />
+                                    [MEM] P2 Loaded to 0x4000 (Frame 4)<br />
+                                    [RAM] <span className="text-yellow-500">Writing 4KB Page...</span>
+                                </div>
+                                <div className="mt-auto flex justify-between items-center text-zinc-600">
+                                    <span>CPU0: 45%</span>
+                                    <span>RAM: 12MB/1024MB</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div className="relative h-[300px] rounded-2xl bg-zinc-950 border border-zinc-800 overflow-hidden flex items-center justify-center group">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                </div>
+            </section>
 
-                        <div className="relative z-10 text-center space-y-2">
-                            <div className="w-16 h-16 mx-auto bg-green-500/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-colors">
-                                <Terminal size={32} className="text-green-500" />
+            {/* Feature Spotlight: SysCore Engine 2 */}
+            <section className="py-32 bg-zinc-950 border-b border-zinc-800">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row gap-16 items-center">
+                        <div className="lg:w-1/2 space-y-8">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-900/10 border border-blue-500/20 text-blue-400 text-xs font-mono rounded-full">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                SYSCORE ENGINE 2
                             </div>
-                            <div className="font-mono text-xl font-bold">SysCore Engine {config.version}</div>
-                            <div className="font-mono text-xs text-zinc-500">Cycle-Accurate Scheduler</div>
+                            <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                                See the <span className="text-blue-500">Digital Biology</span> of your Computer.
+                            </h2>
+                            <p className="text-zinc-400 text-lg leading-relaxed">
+                                Most visualizers hide the details. We expose them.
+                                SysCore Engine 2 maps every byte of memory, track every stack frame, and visualize the heap in real-time.
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-6 pt-4">
+                                <div>
+                                    <div className="text-white font-bold mb-1 flex items-center gap-2">
+                                        <Layers className="text-blue-500" size={16} /> 1MB RAM Matrix
+                                    </div>
+                                    <p className="text-xs text-zinc-500">Live heatmap of physical memory pages.</p>
+                                </div>
+                                <div>
+                                    <div className="text-white font-bold mb-1 flex items-center gap-2">
+                                        <Zap className="text-yellow-500" size={16} /> C-Transpiler
+                                    </div>
+                                    <p className="text-xs text-zinc-500">Compiles C code to JS Safe-Sandbox.</p>
+                                </div>
+                                <div>
+                                    <div className="text-white font-bold mb-1 flex items-center gap-2">
+                                        <Clock className="text-red-500" size={16} /> Cycle Accurate
+                                    </div>
+                                    <p className="text-xs text-zinc-500">Step-by-step execution control.</p>
+                                </div>
+                                <div>
+                                    <div className="text-white font-bold mb-1 flex items-center gap-2">
+                                        <Terminal className="text-green-500" size={16} /> Shell Kernel
+                                    </div>
+                                    <p className="text-xs text-zinc-500">Custom <code>int main()</code> entry point.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="lg:w-1/2 relative">
+                            {/* Abstract RAM Visualization */}
+                            <div className="aspect-square bg-zinc-900 rounded-2xl border border-zinc-800 p-4 relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_70%)]"></div>
+                                <div className="grid grid-cols-12 gap-1 h-full w-full opacity-50 group-hover:opacity-80 transition-opacity">
+                                    {Array.from({ length: 144 }).map((_, i) => (
+                                        <div key={i} className={`rounded-[2px] ${Math.random() > 0.9 ? 'bg-blue-500 animate-pulse' : 'bg-zinc-800'}`}></div>
+                                    ))}
+                                </div>
+                                {/* Floating Label */}
+                                <div className="absolute bottom-6 right-6 bg-black/80 backdrop-blur border border-zinc-700 px-4 py-2 rounded-lg text-xs font-mono shadow-xl">
+                                    <div className="text-zinc-500">HEAP_STATUS</div>
+                                    <div className="text-blue-400">0x7FF02A [ALLOCATED]</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Feature Spotlight: Shell Maker */}
+            <section className="py-32 relative">
+                <div className="container mx-auto px-4 text-center max-w-4xl">
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">
+                        The <span className="font-mono bg-zinc-800 px-2 rounded">/dev/null</span> is not enough.
+                        <br /><span className="text-green-500">Build your own Kernel.</span>
+                    </h2>
+                    <p className="text-zinc-400 text-lg mb-12">
+                        Introducing <strong>Shell Maker</strong>. A dedicated environment where you write the OS.
+                        <br />Handle IO, Manage Processes, and avoid Deadlocks.
+                    </p>
+
+                    <div className="relative mx-auto rounded-xl border border-zinc-800 bg-black shadow-2xl overflow-hidden text-left max-w-2xl">
+                        <div className="bg-zinc-900 px-4 py-2 flex items-center gap-2 border-b border-zinc-800">
+                            <div className="flex gap-1.5">
+                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            </div>
+                            <span className="text-xs text-zinc-500 font-mono ml-2">vim kernel.c</span>
+                        </div>
+                        <div className="p-6 font-mono text-sm overflow-x-auto">
+                            <pre className="text-zinc-300">
+                                {`#include <syscore.h>
+
+int main() {
+    print("Initializing Kernel...\\n");
+    
+    // Allocate Stack for Process 1
+    int* p1_stack = stack_alloc(1024);
+    
+    // Fork Process
+    if (fork() == 0) {
+        exec("user_program");
+    }
+}`}
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div className="mt-12">
+                        <Link to="/dev/shell">
+                            <Button className="rounded-full px-8 bg-white text-black hover:bg-zinc-200 font-bold">
+                                Start Coding &rarr;
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Education First Section */}
+            <section className="py-24 bg-zinc-950 border-y border-zinc-800 relative">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.1),transparent_70%)]"></div>
+
+                <div className="container mx-auto px-4 relative z-10">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold tracking-tight mb-4">Don't just run it. <span className="text-green-500">Understand it.</span></h2>
+                        <p className="text-zinc-400 max-w-2xl mx-auto">
+                            OKernel is more than a toy. It's a comprehensive educational suite designed to map directly to University Curriculums.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Link to="/dev/os-concepts" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-green-500/50 transition-colors">
+                            <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-green-500/10">
+                                <Clock className="text-zinc-400 group-hover:text-green-500" size={20} />
+                            </div>
+                            <h3 className="font-bold text-white mb-2">Scheduling</h3>
+                            <p className="text-xs text-zinc-500">FCFS, Round Robin, SJF. Time quantum analysis.</p>
+                        </Link>
+
+                        <Link to="/dev/shell" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-blue-500/50 transition-colors">
+                            <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-blue-500/10">
+                                <Terminal className="text-zinc-400 group-hover:text-blue-500" size={20} />
+                            </div>
+                            <h3 className="font-bold text-white mb-2">System Calls</h3>
+                            <p className="text-xs text-zinc-500">fork(), exec(), wait(). Process lifecycle management.</p>
+                        </Link>
+
+                        <div className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-yellow-500/50 transition-colors opacity-75">
+                            <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-yellow-500/10">
+                                <Lock className="text-zinc-400 group-hover:text-yellow-500" size={20} />
+                            </div>
+                            <h3 className="font-bold text-white mb-2">Concurrency</h3>
+                            <p className="text-xs text-zinc-500">Mutex Visualization. Deadlock detection algorithms.</p>
                         </div>
 
-                        {/* Animated Code Overlay */}
-                        <div className="absolute top-4 left-4 right-4 bottom-4 border border-dashed border-zinc-800 rounded-xl opacity-50"></div>
+                        <Link to="/dev/algo-wiki" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-purple-500/50 transition-colors">
+                            <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-purple-500/10">
+                                <Layers className="text-zinc-400 group-hover:text-purple-500" size={20} />
+                            </div>
+                            <h3 className="font-bold text-white mb-2">Memory</h3>
+                            <p className="text-xs text-zinc-500">Paging, Segmentation, and Virtual Memory translation.</p>
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Interface Showcase Gallery */}
+            <section className="py-24 border-b border-zinc-800 relative overflow-hidden">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-full mb-6">
+                            <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                            SYSTEM INTERFACE
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+                            Production-Grade <span className="text-purple-500">Tooling</span>.
+                        </h2>
+                        <p className="text-zinc-400 max-w-2xl mx-auto">
+                            From a fully-featured IDE to compliant policy frameworks. We built OKernel to look and feel like a real OS.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        {/* Shell Maker Preview */}
+                        <div className="group space-y-4">
+                            <div className="relative rounded-xl border border-zinc-800 bg-zinc-950/50 overflow-hidden aspect-[16/10] shadow-2xl">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                                <img
+                                    src="/assets/shell_preview.png"
+                                    alt="Shell Maker Interface"
+                                    className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                                    <h3 className="text-xl font-bold text-white mb-1">Shell Maker IDE</h3>
+                                    <p className="text-sm text-zinc-400">Full-featured C Editor with Syntax Highlighting and Syscall Autocomplete.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Policy/Terms Preview */}
+                        <div className="group space-y-4">
+                            <div className="relative rounded-xl border border-zinc-800 bg-zinc-950/50 overflow-hidden aspect-[16/10] shadow-2xl">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                                <img
+                                    src="/assets/privacy_preview.png"
+                                    alt="Privacy & Policy Page"
+                                    className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
+                                    <h3 className="text-xl font-bold text-white mb-1">Open Source Compliance</h3>
+                                    <p className="text-sm text-zinc-400">Transparent Terms & Privacy. No hidden tracking. Pure educational value.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -250,10 +520,10 @@ export const Home = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* Impact / Testimonials (Dynamic Carousel) */}
-            <section className="py-24 border-t border-zinc-800 bg-zinc-900/20">
+            < section className="py-24 border-t border-zinc-800 bg-zinc-900/20" >
                 <div className="container mx-auto px-4">
                     <div className="mb-12 text-center">
                         <h2 className="text-2xl font-bold mb-2">User Feedback</h2>
@@ -288,10 +558,10 @@ export const Home = () => {
                         )
                     )}
                 </div>
-            </section>
+            </section >
 
             {/* System Showcase (Screenshots) */}
-            <section className="py-24 bg-zinc-950 relative overflow-hidden">
+            < section className="py-24 bg-zinc-950 relative overflow-hidden" >
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold tracking-tight mb-4">Terminal Uplink</h2>
@@ -330,10 +600,10 @@ export const Home = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* Feedback & Community */}
-            <section className="py-24 container mx-auto px-4">
+            < section className="py-24 container mx-auto px-4" >
                 <div className="rounded-xl border border-dashed border-zinc-800 p-8 md:p-16 text-center max-w-4xl mx-auto relative overflow-hidden bg-zinc-900/50">
                     <h2 className="text-2xl font-bold mb-4 font-mono">kernel_panic(FEEDBACK_NEEDED)</h2>
                     <p className="text-zinc-400 max-w-xl mx-auto mb-10 text-sm font-mono">
@@ -389,9 +659,9 @@ export const Home = () => {
                         </Button>
                     </form>
                 </div>
-            </section>
+            </section >
 
-        </Layout>
+        </Layout >
     );
 };
 

@@ -48,20 +48,88 @@
     background-color: var(--background);
   }
 
-  /* Make the grid pattern subtle */
+  /* Make the grid pattern subtle and moving */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: radial-gradient(circle at center, transparent 0%, #09090b 100%);
+    background: radial-gradient(circle at center, transparent 0%, #09090b 100%),
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 50px 50px, 50px 50px;
+    background-position: center, center top, center top;
     pointer-events: none;
     z-index: -1;
+    animation: panGrid 60s linear infinite;
   }
 }
 
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-400 to-zinc-600;
+  }
+
+  /* Animations */
+  @keyframes panGrid {
+    0% {
+      background-position: center, center top, center top;
+    }
+
+    100% {
+      background-position: center, center 100px, 100px top;
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulseGlow {
+
+    0%,
+    100% {
+      opacity: 0.5;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    }
+
+    50% {
+      opacity: 1;
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+    }
+  }
+
+  .animate-in {
+    animation: fadeInUp 0.8s ease-out forwards;
+    opacity: 0;
+    /* Star hidden */
+  }
+
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_30px_rgba(59, 130, 246, 0.3)] hover:border-blue-500/50 hover:-translate-y-1;
   }
 
   /* Custom Scrollbar for that "IDE" feel */
