@@ -33,10 +33,10 @@ export const About = () => {
                                 "Code is poetry, but OS is logic."
                             </p>
                             <p className="text-zinc-400 leading-relaxed font-mono text-sm">
-                                Standard O.S. textbooks rely on static Gantt charts. This visualizer bridges the gap between
+                                Standard O.S. textbooks rely on static Gantt charts. OKernel v1.0 bridges the gap between
                                 <span className="text-zinc-300"> theory and kernel-level execution</span>.
-                                By simulating CPU pulses, context switching overhead, and queue states in real-time,
-                                we provide a deterministic environment for analyzing scheduler efficiency.
+                                With <strong>SysCore Engine 2</strong>, we now simulate a full C-execution environment,
+                                including Stack/Heap visualization, process scheduling, and mutex locking in real-time.
                             </p>
                         </section>
 
@@ -70,14 +70,14 @@ export const About = () => {
                             </h2>
                             <div className="font-mono text-xs space-y-4 border-l border-zinc-800 pl-4">
                                 <div className="relative">
-                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                                    <div className="text-white font-bold mb-1">v0.4.2 - Admin & UI</div>
-                                    <p className="text-zinc-500">System Config Manager, Smart Login Redirects, and Mobile UI Fixes.</p>
+                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                                    <div className="text-white font-bold mb-1">v1.0.0 - SysCore Engine 2</div>
+                                    <p className="text-zinc-500">Major Release. Virtual Machine, RAM Inspector, and Shell-Maker.</p>
                                 </div>
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                                    <div className="text-zinc-400 font-bold mb-1">v0.4.1 - Observability</div>
-                                    <p className="text-zinc-500">New Relic integration for RUM. Syntax fixes for tracking scripts.</p>
+                                    <div className="text-zinc-400 font-bold mb-1">v0.4.2 - Admin & UI</div>
+                                    <p className="text-zinc-500">System Config Manager, Smart Login Redirects, and Mobile UI Fixes.</p>
                                 </div>
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
@@ -88,11 +88,6 @@ export const About = () => {
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
                                     <div className="text-zinc-400 font-bold mb-1">v0.2.0 - OKernel</div>
                                     <p className="text-zinc-500">Integrated SysCore Engine. Full terminal shell simulation. Standardized UI components.</p>
-                                </div>
-                                <div className="relative">
-                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                                    <div className="text-zinc-400 font-bold mb-1">v0.1.1 - UI Polish</div>
-                                    <p className="text-zinc-500">Dark mode implementation. Added animations and sound effects.</p>
                                 </div>
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
@@ -140,7 +135,7 @@ export const About = () => {
                                     <span>------------------------------------------------</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-green-500">
-                                    <span>{config.version}</span>
+                                    <span>v1.0.0</span>
                                     <span>Total</span>
                                     <span>5,192</span>
                                 </div>

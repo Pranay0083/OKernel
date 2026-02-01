@@ -72,7 +72,7 @@ export const Home = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
-                            V{config.version.replace('v', '')} SYSCORE ENGINE {config.status}
+                            V{config.version.replace('v', '')} SYSCORE ENGINE 2 {config.status}
                         </div>
 
                         <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight">
@@ -81,20 +81,20 @@ export const Home = () => {
                         <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed">
                             The definitive interactive platform for mastering Operating System concepts.
                             <br />
-                            <span className="text-zinc-400">Powered by the <strong>SysCore</strong> engine. Toggle bits, not just slides.</span>
+                            <span className="text-zinc-400">Powered by <strong>SysCore Engine 2</strong>. Compile C in the browser.</span>
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 items-start pt-4">
-                            <Link to="/console">
-                                <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-green-500 hover:bg-green-400 text-black font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all">
-                                    <Terminal className="mr-2" /> Boot SysCore
+                            <Link to="/dev/shell">
+                                <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] transition-all">
+                                    <Terminal className="mr-2" /> Launch Shell
                                 </Button>
                             </Link>
-                            <a href="https://github.com" target="_blank" rel="noreferrer">
+                            <Link to="/dev/scheduler">
                                 <Button size="lg" variant="outline" className="rounded-full px-8 h-16 border-zinc-700 hover:bg-white/5">
-                                    View Source Code
+                                    <Cpu className="mr-2 size-4" /> Boot Scheduler
                                 </Button>
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -102,23 +102,18 @@ export const Home = () => {
                         {/* Terminal Window Mockup */}
                         <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl shadow-2xl overflow-hidden font-mono text-xs transform rotate-1 hover:rotate-0 transition-transform duration-500">
                             <div className="bg-zinc-900/50 px-4 py-3 flex items-center gap-2 border-b border-zinc-800/50">
-                                <div className="flex gap-1.5">
-                                    <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
-                                </div>
-                                <div className="ml-auto text-zinc-600 font-bold">root@okernel:~</div>
+                                <div className="ml-auto text-zinc-600 font-bold">root@okernel:~/syscore#</div>
                             </div>
                             <div className="p-8 space-y-4 text-zinc-400 text-sm">
-                                <p><span className="text-green-500">➜</span> <span className="text-blue-400">~</span> syscore_init --level=verbose</p>
+                                <p><span className="text-green-500">➜</span> <span className="text-blue-400">~/syscore</span> ./boot_vm.sh</p>
                                 <div className="space-y-1 pl-4 border-l-2 border-zinc-800">
-                                    <p className="text-zinc-500">[SYSCORE] Loading modules...</p>
-                                    <p className="text-zinc-500">[SYSCORE] CPU Scheduler... <span className="text-green-500">OK</span></p>
-                                    <p className="text-zinc-500">[SYSCORE] Memory Paging... <span className="text-yellow-500">PENDING</span></p>
-                                    <p className="text-zinc-500">[SYSCORE] IO Subsystem... <span className="text-green-500">OK</span></p>
+                                    <p className="text-zinc-500">[KERNEL] Initializing SysCore Engine 2...</p>
+                                    <p className="text-zinc-500">[MEMORY] Allocating 1024KB Physical RAM... <span className="text-green-500">OK</span></p>
+                                    <p className="text-zinc-500">[VIRTUAL] Paging Mechanism... <span className="text-green-500">ACTIVE</span></p>
+                                    <p className="text-zinc-500">[SHELL] Mounting /dev/tty0... <span className="text-green-500">OK</span></p>
                                 </div>
                                 <p className="text-white">
-                                    <span className="text-blue-500">[SUCCESS]</span> Environment Ready. Welcome, User.
+                                    <span className="text-blue-500">[READY]</span> OKernel Shell v0.0.0 Online.
                                 </p>
                                 <p><span className="text-green-500">➜</span> <span className="text-blue-400">~</span> <span className="animate-pulse block w-2 h-4 bg-green-500"></span></p>
                             </div>

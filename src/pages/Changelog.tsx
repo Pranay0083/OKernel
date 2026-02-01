@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { GitCommit, Tag, Calendar, ArrowRight } from 'lucide-react';
+import { GitCommit, Tag, Calendar, ArrowRight, Cpu } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Changelog = () => {
@@ -17,12 +17,13 @@ export const Changelog = () => {
 
                 <div className="space-y-16">
 
-                    {/* v0.4.2 (Current) */}
+
+                    {/* v1.0.0 (Current) */}
                     <div className="relative pl-8 border-l border-zinc-800">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
                         <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-white">{config.version}</h2>
-                            <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">LATEST</span>
+                            <h2 className="text-2xl font-bold text-white">v1.0.0</h2>
+                            <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">MAJOR RELEASE</span>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
                             <Calendar size={12} /> {new Date().toLocaleDateString()}
@@ -31,38 +32,43 @@ export const Changelog = () => {
                         <div className="space-y-6">
                             <div>
                                 <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                                    <GitCommit size={16} className="text-purple-500" />
-                                    Admin Tools & UI Stability
+                                    <Cpu size={16} className="text-purple-500" />
+                                    The Simulation Update (SysCore Engine 2)
                                 </h3>
                                 <p className="text-zinc-400 text-sm leading-relaxed">
-                                    Major stability improvements for mobile devices and new administrative capabilities for system configuration.
+                                    OKernel v1.0.0 introduces a fundamental shift in how we visualize Operating Systems.
+                                    We have moved from "Static UI" to "Live Emulation".
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
-                                    <h4 className="text-white text-sm font-bold mb-3">System Config Manager</h4>
+                                    <h4 className="text-white text-sm font-bold mb-3">SysCore Engine 2</h4>
                                     <ul className="space-y-2 text-xs text-zinc-400 font-mono">
                                         <li className="flex items-start gap-2">
                                             <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Config UI</strong>: Modify App Version, MOTD, and Status directly from Admin Dashboard.</span>
+                                            <span><strong>Virtual Machine</strong>: Users can now write recursive C code, allocate memory, and crash the kernel safely.</span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                             <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Smart Redirects</strong>: Fixed Admin Login "teleporting" issues using Intent-Based Auth Rescue.</span>
+                                            <span><strong>Physical RAM Inspector</strong>: A live 1MB Heatmap of the system memory. See your variables physically!</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Shell Maker v0.0.0</strong>: Build your own shell with <code>int main()</code> access.</span>
                                         </li>
                                     </ul>
                                 </div>
                                 <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
-                                    <h4 className="text-white text-sm font-bold mb-3">Visualizer Stability</h4>
+                                    <h4 className="text-white text-sm font-bold mb-3">Core Improvements</h4>
                                     <ul className="space-y-2 text-xs text-zinc-400 font-mono">
                                         <li className="flex items-start gap-2">
                                             <span className="text-blue-500">•</span>
-                                            <span><strong>Mobile Layout</strong>: Switched to <code>flex-col</code> stack for reliable mobile rendering.</span>
+                                            <span><strong>Transpiler v2</strong>: Support for <code>sprintf</code>, <code>void functions</code>, and pointer arithmetic.</span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                             <span className="text-blue-500">•</span>
-                                            <span><strong>Grid Locking</strong>: Preserved complex grid layout for Desktop "Cockpit" mode.</span>
+                                            <span><strong>Reliability</strong>: Fixed Regex collisions causing Kernel Panics in formatted IO.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -70,7 +76,7 @@ export const Changelog = () => {
                         </div>
                     </div>
 
-                    {/* v0.4.0 */}
+                    {/* v0.4.2 */}
                     <div className="relative pl-8 border-l border-zinc-800 opacity-75">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <div className="flex items-center gap-4 mb-4">

@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EditorWindow } from './components/EditorWindow';
 import { LiveTerminal } from './components/LiveTerminal';
-import { ShellKernel } from './logic/ShellKernel';
+import { ShellKernel } from '../../syscore/vm/ShellKernel';
 import { ArrowLeft, Maximize2, Terminal } from 'lucide-react';
+import { RamMatrix } from './components/RamMatrix';
 
 const DEFAULT_CODE = `#include <syscore.h>
 
@@ -14,10 +15,40 @@ const DEFAULT_CODE = `#include <syscore.h>
 #define RESET "\\x1b[0m"
 
 // Define your shell logic here
+void heap_storm() {
+    printf("Starting Heap Storm! Watch MEM_DUMP area...\\n");
+    int i = 0;
+    while(i < 500) {
+        char junk[64]; // Allocates 64 bytes on Heap
+        sprintf(junk, "DATA_CHUNK_%d", i); // Writes to memory!
+        printf("Allocated Heap Chunk: ."); // Minimal Log
+        i++;
+    }
+    printf("\\n%sHeap Storm Complete. Memory Fragmented.\\n%s", TEXT_COLOR, RESET);
+}
+
+void stack_abyss(int depth) {
+    int tracker = 9999; // Takes up stack space
+    if (depth > 0) {
+        printf("Stack Depth: %d\\n", depth);
+        stack_abyss(depth - 1);
+    }
+}
+
 void execute_command(char* cmd) {
     if (strcmp(cmd, "help") == 0) {
-        printf("Available commands: %shelp, clear, exit%s\\n", TEXT_COLOR, RESET);
+        printf("Available commands: %shelp, clear, exit, storm, stack%s\\n", TEXT_COLOR, RESET);
     } 
+    else if (strcmp(cmd, "storm") == 0) {
+        heap_storm();
+    }
+    else if (strcmp(cmd, "stack") == 0) {
+        printf("Diving into Stack Abyss...\\n");
+        stack_abyss(50);
+    }
+    else if (strcmp(cmd, "clear") == 0) {
+        clear();
+    }
     else if (strcmp(cmd, "exit") == 0) {
         // Exit handled by main loop check (or we can return status)
         printf("Exiting...\\n");
@@ -33,7 +64,7 @@ void execute_command(char* cmd) {
 // Main System Entry
 int main() {
     printf("%sWelcome to SysCore Shell v2.4\\n%s", TEXT_COLOR, RESET);
-    printf("Type 'help' to start.\\n");
+    printf("Type 'help' to start. Try 'storm' or 'stack' for visuals!\\n");
     
     char cmd[100];
     
@@ -56,6 +87,7 @@ export const ShellMakerPage = () => {
     const [code, setCode] = useState<string | undefined>(DEFAULT_CODE);
     const [logs, setLogs] = useState<string[]>([]);
     const [waitingForInput, setWaitingForInput] = useState(false);
+    const [showRam, setShowRam] = useState(false); // RAM Toggle
 
     // Resizing State
     const [leftWidth, setLeftWidth] = useState(60); // Percentage
@@ -144,9 +176,16 @@ export const ShellMakerPage = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowRam(!showRam)}
+                        className={`px-3 py-1 rounded text-xs font-mono font-bold border transition-all ${showRam ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        MEM_DUMP
+                    </button>
+
                     <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                        <span className="text-[10px] text-blue-400 font-mono uppercase">SysCore Kernel 2.1</span>
+                        <span className="text-[10px] text-blue-400 font-mono uppercase">SysCore Kernel 2.4</span>
                     </div>
                     <button
                         onClick={handleRun}
@@ -174,13 +213,21 @@ export const ShellMakerPage = () => {
                     <div className="h-8 w-0.5 bg-zinc-600 rounded-full"></div>
                 </div>
 
-                {/* Right Pane: Terminal */}
-                <div style={{ width: `${100 - leftWidth}%` }} className="h-full bg-black min-w-[200px] flex flex-col">
-                    <LiveTerminal
-                        logs={logs}
-                        onInput={handleTerminalInput}
-                        waitingForInput={waitingForInput}
-                    />
+                {/* Right Pane: Terminal + Optional RAM */}
+                <div style={{ width: `${100 - leftWidth}%` }} className="h-full bg-black min-w-[200px] flex">
+                    <div className="flex-1 h-full relative">
+                        <LiveTerminal
+                            logs={logs}
+                            onInput={handleTerminalInput}
+                            waitingForInput={waitingForInput}
+                        />
+                    </div>
+                    {/* RAM Visualizer Sidebar */}
+                    {showRam && (
+                        <div className="w-[300px] h-full shrink-0 animate-in slide-in-from-right-10 duration-200">
+                            <RamMatrix memory={kernelRef.current.inspectMemory()} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

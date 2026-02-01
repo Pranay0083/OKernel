@@ -6,11 +6,18 @@ import { CheckCircle2, Circle, Clock, Lock, Database, Cpu, Network } from 'lucid
 export const Roadmap = () => {
     const steps = [
         {
-            title: 'CPU Scheduling',
-            description: 'Core visualization engine for FCFS, SJF, RR, and Priority algorithms.',
+            title: 'CPU Scheduling \u0026 SysCore Engine',
+            description: 'Core visualization engine + SysCore Engine 2 (VM Integration).',
             status: 'completed',
             date: 'Q1 2026',
             icon: <Cpu size={20} />,
+        },
+        {
+            title: 'Memory Virtualization',
+            description: 'Physical RAM Inspection (1MB Heap/Stack Visualization).',
+            status: 'completed',
+            date: 'Q1 2026',
+            icon: <Database size={20} />,
         },
         {
             title: 'Process Synchronization',
@@ -18,13 +25,6 @@ export const Roadmap = () => {
             status: 'in-progress',
             date: 'Q2 2026',
             icon: <Lock size={20} />,
-        },
-        {
-            title: 'Memory Management',
-            description: 'Simulation of Paging, Segmentation, and Virtual Memory translation.',
-            status: 'planned',
-            date: 'Q3 2026',
-            icon: <Database size={20} />,
         },
         {
             title: 'Distributed Systems',
