@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Terminal, Database, Activity, Mail, LogOut, ChevronRight, Cpu, Star, Settings } from 'lucide-react';
+import { Terminal, Database, Activity, Mail, LogOut, ChevronRight, Cpu, Star, Settings, Target } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 import { useSystemConfig } from '../../hooks/useSystemConfig';
@@ -53,6 +53,7 @@ export const AdminLayout = () => {
         { label: 'Inbox Stream', path: '/admin/inbox', icon: Mail },
         { label: 'Featured (Public)', path: '/admin/featured', icon: Star },
         { label: 'System Config', path: '/admin/config', icon: Settings },
+        { label: 'Sponsor Goals', path: '/admin/sponsor', icon: Target },
         { label: 'DB Explorer', path: '/admin/database', icon: Database },
         { label: 'SQL Console', path: '/admin/sql', icon: Terminal },
     ];
