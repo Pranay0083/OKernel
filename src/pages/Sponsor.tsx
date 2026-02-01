@@ -158,9 +158,11 @@ export const Sponsor = () => {
                                         <Coffee size={18} className="fill-black" /> Buy me a Coffee
                                     </Button>
                                 </a>
-                                <Button disabled className="w-full bg-zinc-800 text-zinc-400 h-12 rounded-xl border border-zinc-700 flex items-center justify-center gap-2 cursor-not-allowed">
-                                    <Heart size={18} /> GitHub Sponsors (Soon)
-                                </Button>
+                                <a href="https://github.com/sponsors/Vaiditya2207" target="_blank" rel="noreferrer" className="block">
+                                    <Button className="w-full bg-[#EA4AAA] hover:bg-[#EA4AAA]/90 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2">
+                                        <Heart size={18} className="fill-white" /> GitHub Sponsors
+                                    </Button>
+                                </a>
                             </div>
                         </div>
 
