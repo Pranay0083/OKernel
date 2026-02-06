@@ -57,7 +57,7 @@ export const About = () => {
                                 This project is MIT Licensed. Contributions to the scheduling engine or UI are welcome.
                             </p>
                             <div className="bg-black p-3 rounded flex items-center justify-between font-mono text-xs text-zinc-500">
-                                <span>git clone https://github.com/Vaiditya2207/cpu-scheduler-visualizer.git</span>
+                                <span>git clone https://github.com/Vaiditya2207/OKernel.git</span>
                             </div>
                         </div>
                     </div>
@@ -71,7 +71,12 @@ export const About = () => {
                             <div className="font-mono text-xs space-y-4 border-l border-zinc-800 pl-4">
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                                    <div className="text-white font-bold mb-1">v1.0.0 - SysCore Engine 2</div>
+                                    <div className="text-white font-bold mb-1">v1.0.1 - Test Suite</div>
+                                    <p className="text-zinc-500">Comprehensive syscore unit tests. 140 tests across 16 files.</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                                    <div className="text-zinc-400 font-bold mb-1">v1.0.0 - SysCore Engine 2</div>
                                     <p className="text-zinc-500">Major Release. Virtual Machine, RAM Inspector, and Shell-Maker.</p>
                                 </div>
                                 <div className="relative">
@@ -135,7 +140,7 @@ export const About = () => {
                                     <span>------------------------------------------------</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-green-500">
-                                    <span>v1.0.0</span>
+                                    <span>v1.0.1</span>
                                     <span>Total</span>
                                     <span>5,192</span>
                                 </div>
@@ -143,8 +148,8 @@ export const About = () => {
                         </div>
                     </div>
                 </div>
-            </div>
-        </Layout>
+            </div >
+        </Layout >
     );
 };
 

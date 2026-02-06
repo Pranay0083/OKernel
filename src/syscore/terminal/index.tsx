@@ -72,7 +72,7 @@ const handleSysCoreAPI = (path: string, args: string[]): any => {
 
     // --- VERSION ---
     if (module === 'version' || module === 'ver') {
-        return { type: 'response', content: 'SysCore Engine v0.3.0-stable' };
+        return { type: 'response', content: 'SysCore Engine v1.0.1-stable' };
     }
 
     // --- CPU MODULE ---

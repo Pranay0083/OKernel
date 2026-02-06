@@ -6,7 +6,7 @@ export const about: TerminalCommand = {
     execute: () => {
         return {
             type: 'response',
-            content: "OKernel v0.3.0 - Powered by SysCore Engine. Developed by the OKernel Team."
+            content: "OKernel v1.0.1 - Powered by SysCore Engine. Developed by the OKernel Team."
         };
     }
 };
