@@ -43,7 +43,7 @@ export const Home = () => {
                     message: feedback,
                     name: name || null, // Send null if empty
                     email: email || null,
-                    version: 'v0.3.0',
+                    version: 'v1.0.1',
                     user_agent: navigator.userAgent
                 }]);
 

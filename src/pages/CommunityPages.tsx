@@ -26,7 +26,7 @@ export const ReportBug = () => (
             <Bug size={48} className="mx-auto text-red-500" />
             <p className="text-zinc-300">
                 Found a kernel panic or a glitch in the simulation? <br />
-                Please verify it exists in the latest version (v0.3.0) and report it on our GitHub.
+                Please verify it exists in the latest version (v1.0.1) and report it on our GitHub.
             </p>
             <a href="https://github.com/Vaiditya2207/OKernel/issues/new?template=bug_report.md" target="_blank" rel="noreferrer">
                 <Button className="w-full gap-2">

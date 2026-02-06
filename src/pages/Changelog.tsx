@@ -17,16 +17,62 @@ export const Changelog = () => {
 
                 <div className="space-y-16">
 
-
-                    {/* v1.0.0 (Current) */}
+                    {/* v1.0.1 (Current) */}
                     <div className="relative pl-8 border-l border-zinc-800">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
                         <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-white">v1.0.0</h2>
-                            <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">MAJOR RELEASE</span>
+                            <h2 className="text-2xl font-bold text-white">v1.0.1</h2>
+                            <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 text-xs font-mono border border-blue-500/20">PATCH</span>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
                             <Calendar size={12} /> {new Date().toLocaleDateString()}
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <GitCommit size={16} className="text-blue-500" />
+                                    Test Suite & Quality Assurance
+                                </h3>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    Major testing infrastructure update. Comprehensive unit tests for the syscore module
+                                    enabling safer development and easier contributions.
+                                </p>
+                            </div>
+
+                            <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                <h4 className="text-white text-sm font-bold mb-3">New Test Coverage</h4>
+                                <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>CPU Algorithms</strong>: Unit tests for FCFS, SJF, SRTF, Priority, and Round Robin.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>VM Memory</strong>: Tests for 8/32-bit operations, string handling, and malloc.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>FileSystem</strong>: VFS list/create operations coverage.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-blue-500">•</span>
+                                        <span><strong>140 tests</strong> across 16 test files (up from ~70).</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* v1.0.0 */}
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-75">
+                        <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <h2 className="text-2xl font-bold text-zinc-400">v1.0.0</h2>
+                            <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">MAJOR</span>
+                        </div>
+                        <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
+                            <Calendar size={12} /> February 2026
                         </div>
 
                         <div className="space-y-6">
@@ -80,7 +126,7 @@ export const Changelog = () => {
                     <div className="relative pl-8 border-l border-zinc-800 opacity-75">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-zinc-400">v0.4.0</h2>
+                            <h2 className="text-2xl font-bold text-zinc-400">v1.0.0</h2>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
                             <Calendar size={12} /> {new Date().toLocaleDateString()}
@@ -162,6 +208,6 @@ export const Changelog = () => {
 
                 </div>
             </div>
-        </Layout>
+        </Layout >
     );
 };

@@ -10,7 +10,7 @@ export const syscore: TerminalCommand = {
                 content: (
                     <div className="space-y-2 text-zinc-400 font-mono text-xs">
                         <div>
-                            <strong className="text-green-500">SysCore Engine v0.3.0</strong>
+                            <strong className="text-green-500">SysCore Engine v1.0.1</strong>
                             <p className="text-zinc-500">Unified Kernel Interface</p>
                         </div>
 

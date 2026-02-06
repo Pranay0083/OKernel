@@ -29,7 +29,7 @@ describe('SysCore Terminal Executor', () => {
   it('should handle syscore.version API', () => {
     const result = execute('syscore.version');
     expect(result.type).toBe('response');
-    expect(result.content).toContain('v0.3.0');
+    expect(result.content).toContain('v1.0.1');
   });
 
   it('should handle syscore.cpu.info', () => {

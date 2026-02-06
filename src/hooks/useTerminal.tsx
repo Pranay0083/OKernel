@@ -14,7 +14,7 @@ import { execute } from '../syscore/terminal';
 
 export const useTerminal = () => {
     const [history, setHistory] = useState<TerminalOutput[]>([
-        { type: 'system', content: 'BOOTING SYSCORE ENGINE v0.3.0...', timestamp: Date.now() },
+        { type: 'system', content: 'BOOTING SYSCORE ENGINE v1.0.1...', timestamp: Date.now() },
         { type: 'system', content: 'Type "help" for a list of commands.', timestamp: Date.now() + 100 }
     ]);
     const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -105,7 +105,7 @@ export const useTerminal = () => {
                             <div className="space-y-2">
                                 <div>
                                     <strong className="text-green-400">CURRENT FEATURE:</strong>
-                                    <p className="text-zinc-400">Terminal Interface (Console) & SysCore Scheduler v0.3.0</p>
+                                    <p className="text-zinc-400">Terminal Interface (Console) & SysCore Scheduler v1.0.1</p>
                                 </div>
                                 <div>
                                     <strong className="text-yellow-400">ROADMAP:</strong>
