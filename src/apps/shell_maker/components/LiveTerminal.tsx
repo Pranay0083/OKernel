@@ -13,6 +13,7 @@ interface LiveTerminalProps {
 const parseAnsi = (text: string) => {
     // Split by ANSI escape sequences
     // Logic: \x1b[..m
+    // eslint-disable-next-line no-control-regex
     const parts = text.split(/(\x1b\[[0-9;]*m)/g);
 
     const elements: React.ReactNode[] = [];

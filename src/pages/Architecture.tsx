@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { Cpu, Database, Layout as LayoutIcon, Code, Terminal, Server, ArrowRight, Zap, Shield, GitBranch } from 'lucide-react';
+import { Cpu, Database, Layout as LayoutIcon, Code, Terminal, ArrowRight, Shield, GitBranch } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Architecture = () => {

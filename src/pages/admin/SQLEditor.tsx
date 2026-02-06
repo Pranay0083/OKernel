@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 
 export const SQLEditor = () => {
     const [query, setQuery] = useState('SELECT * FROM user_feedback LIMIT 5;');
-    const [result, setResult] = useState<any[] | null>(null);
+    const [result, setResult] = useState<Record<string, unknown>[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -79,7 +79,7 @@ export const SQLEditor = () => {
                                 <tbody>
                                     {result.map((row, i) => (
                                         <tr key={i}>
-                                            {Object.values(row).map((val: any, j) => (
+                                            {Object.values(row).map((val, j) => (
                                                 <td key={j} className="border border-zinc-800 px-2 py-1 text-zinc-300">
                                                     {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                                 </td>

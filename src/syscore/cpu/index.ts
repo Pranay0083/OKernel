@@ -3,7 +3,6 @@ import { sjf } from './algos/sjf';
 import { fcfs } from './algos/fcfs';
 import { srtf } from './algos/srtf';
 import { priority } from './algos/priority';
-import { Process } from '../../core/types';
 
 export const algos = {
     RR: roundRobin,

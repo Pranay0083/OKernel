@@ -2,19 +2,27 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Cpu } from '../../components/Cpu';
 import { Process } from '../../../../core/types';
+import { ReactNode, CSSProperties } from 'react';
+
+interface MotionDivProps {
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  [key: string]: unknown;
+}
 
 // Mock framer-motion to avoid animation issues in tests
 // This is a common practice when testing components that use complex animations
 // We just render the children directly
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, style, ...props }: any) => (
+    div: ({ children, className, style, ...props }: MotionDivProps) => (
       <div className={className} style={style} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 describe('Cpu Component', () => {
@@ -45,26 +53,26 @@ describe('Cpu Component', () => {
 
     // Check for Process ID (rendered as 1000 + id)
     expect(screen.getByText('1001')).toBeInTheDocument();
-    
+
     // Check for Process Name
     expect(screen.getByText('TestProcess')).toBeInTheDocument();
-    
+
     // Check for Priority
     expect(screen.getByText('P2')).toBeInTheDocument();
-    
+
     // Check for Stats
     // Burst Time
     expect(screen.getByText('10')).toBeInTheDocument();
     // Remaining Time
     expect(screen.getByText('4')).toBeInTheDocument();
-    
+
     // Check for progress percentage text
     // (10 - 4) / 10 = 0.6 => 60%
     expect(screen.getByText('60%')).toBeInTheDocument();
   });
 
   it('renders high priority visual indicator correctly', () => {
-     const highPriProcess: Process = {
+    const highPriProcess: Process = {
       id: 2,
       name: 'HighPri',
       arrivalTime: 0,
@@ -86,8 +94,8 @@ describe('Cpu Component', () => {
     expect(priorityText).toHaveClass('text-red-500');
   });
 
-   it('renders normal priority visual indicator correctly', () => {
-     const normalPriProcess: Process = {
+  it('renders normal priority visual indicator correctly', () => {
+    const normalPriProcess: Process = {
       id: 3,
       name: 'NormalPri',
       arrivalTime: 0,

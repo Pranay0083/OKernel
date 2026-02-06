@@ -31,7 +31,7 @@ function shouldPreempt(current, candidates) {
 
         return candidates[0].id;
     },
-    shouldPreempt: (currentProcess: Process, queue: number[], processes: Process[], quantum: number): boolean => {
+    shouldPreempt: (currentProcess: Process, queue: number[], processes: Process[], _quantum: number): boolean => {
         // SRTF Preemption: Check if anyone in queue is strictly faster than current
         const candidates = queue
             .map(id => processes.find(p => p.id === id))

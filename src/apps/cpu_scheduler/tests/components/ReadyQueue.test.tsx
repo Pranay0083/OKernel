@@ -2,17 +2,25 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ReadyQueue } from '../../components/ReadyQueue';
 import { Process } from '../../../../core/types';
+import { ReactNode, CSSProperties } from 'react';
+
+interface MotionDivProps {
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  [key: string]: unknown;
+}
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, style, ...props }: any) => (
+    div: ({ children, className, style, ...props }: MotionDivProps) => (
       <div className={className} style={style} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 describe('ReadyQueue Component', () => {
@@ -67,7 +75,7 @@ describe('ReadyQueue Component', () => {
     // Check priorities
     expect(screen.getByText('P1')).toBeInTheDocument();
     expect(screen.getByText('P4')).toBeInTheDocument();
-    
+
     // Check Burst Times
     // Note: We use getAllByText because 'BT:' is static text, but the numbers might be what we want to verify.
     // The component renders: <div>BT: <span className="text-zinc-300">{process.burstTime}</span></div>
@@ -85,7 +93,7 @@ describe('ReadyQueue Component', () => {
   });
 
   it('renders nothing for invalid process IDs in queue', () => {
-     const mockProcesses: Process[] = [
+    const mockProcesses: Process[] = [
       {
         id: 1,
         name: 'Proc1',
@@ -100,20 +108,20 @@ describe('ReadyQueue Component', () => {
         waitingTime: 0,
         startTime: null,
       }
-     ];
-     
-     // Queue has ID 99 which doesn't exist in processes array
-     render(<ReadyQueue queue={[99]} processes={mockProcesses} />);
-     
-     // Should assume it renders nothing (or handled gracefully as null)
-     // In this case, if the map returns null, nothing is rendered for that item.
-     // So we shouldn't see any process cards.
-     expect(screen.queryByText('Proc1')).not.toBeInTheDocument();
-     expect(screen.queryByText('P1')).not.toBeInTheDocument();
+    ];
+
+    // Queue has ID 99 which doesn't exist in processes array
+    render(<ReadyQueue queue={[99]} processes={mockProcesses} />);
+
+    // Should assume it renders nothing (or handled gracefully as null)
+    // In this case, if the map returns null, nothing is rendered for that item.
+    // So we shouldn't see any process cards.
+    expect(screen.queryByText('Proc1')).not.toBeInTheDocument();
+    expect(screen.queryByText('P1')).not.toBeInTheDocument();
   });
 
   it('renders priority indicators correctly', () => {
-      const mockProcesses: Process[] = [
+    const mockProcesses: Process[] = [
       {
         id: 1,
         name: 'High',
@@ -128,7 +136,7 @@ describe('ReadyQueue Component', () => {
         waitingTime: 0,
         startTime: null,
       },
-       {
+      {
         id: 2,
         name: 'Med',
         arrivalTime: 0,
@@ -142,7 +150,7 @@ describe('ReadyQueue Component', () => {
         waitingTime: 0,
         startTime: null,
       },
-       {
+      {
         id: 3,
         name: 'Low',
         arrivalTime: 0,

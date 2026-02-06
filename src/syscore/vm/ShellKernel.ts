@@ -58,26 +58,23 @@ export class ShellKernel {
         let jsCode = "";
         try {
             jsCode = Transpiler.compile(code);
-        } catch (e: any) {
-            this.outputBuffer += `[COMPILER ERROR]: ${e.message}\n`;
+        } catch (e: unknown) {
+            this.outputBuffer += `[COMPILER ERROR]: ${e instanceof Error ? e.message : String(e)}\n`;
             this.emitUpdate(onUpdate);
             return;
         }
 
         const __sys = {
             // I/O
-            print: async (...args: any[]) => {
+            print: async (...args: unknown[]) => {
                 let output = "";
                 const format = args[0];
 
                 if (args.length > 1 && typeof format === 'string' && format.includes('%')) {
                     // Intercept %s args - if they are numbers (pointers), read string from RAM
-                    const formattedArgs = args.slice(1).map((arg, i) => {
-                        // Simple heuristic: If the format specifier for this arg is %s, and arg is number, readString
-                        // This is a weak parser (doesn't track index), but for "%s...%s" it works if we assume greedy.
-                        // Better: Pass ALL args to a memory-aware sprintf.
-                        return arg;
-                    });
+                    // Simple heuristic: If the format specifier for this arg is %s, and arg is number, readString
+                    // This is a weak parser (doesn't track index), but for "%s...%s" it works if we assume greedy.
+                    // Better: Pass ALL args to a memory-aware sprintf.
 
                     // We need a custom sprintf that can read memory if it sees %s and a number
                     // For MVP: Let's simple check.
@@ -136,7 +133,7 @@ export class ShellKernel {
                 return str === compareTo ? 0 : 1;
             },
 
-            sprintf: (ptr: number, fmt: string, ...args: any[]) => {
+            sprintf: (ptr: number, fmt: string, ...args: unknown[]) => {
                 const str = sprintf(fmt, ...args);
                 this.mem.writeString(ptr, str);
                 return str.length;
@@ -185,11 +182,12 @@ export class ShellKernel {
             this.outputBuffer += "\n[KERNEL] Process exited with code 0.\n";
             this.emitUpdate(onUpdate);
 
-        } catch (e: any) {
-            if (e.message === "SIGKILL") {
+        } catch (e: unknown) {
+            if (e instanceof Error && e.message === "SIGKILL") {
                 this.outputBuffer += "\n[KERNEL] Terminated by user.\n";
             } else {
-                this.outputBuffer += `\n[KERNEL PANIC]: ${e.message}\n`;
+                const errorMessage = e instanceof Error ? e.message : String(e);
+                this.outputBuffer += `\n[KERNEL PANIC]: ${errorMessage}\n`;
                 // Dump code for debugging
                 this.outputBuffer += `\n--- DEBUG DUMP ---\n${jsCode}\n------------------\n`;
                 console.error(e);

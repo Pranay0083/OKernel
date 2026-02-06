@@ -1,12 +1,10 @@
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { Card } from '../components/ui/Card';
-import { Terminal, Github, Heart } from 'lucide-react';
-import { Button } from '../components/ui/Button';
+import { Terminal } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const About = () => {
-    const { config } = useSystemConfig();
+    const { config: _config } = useSystemConfig();
 
     return (
         <Layout>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout } from '../../components/layout/Layout';
-import { Shield, Lock, Eye, Server } from 'lucide-react';
+import { Shield, Eye, Server } from 'lucide-react';
 
 export const Privacy = () => {
     return (

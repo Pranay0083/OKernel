@@ -1,21 +1,25 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Table, FileText, Folder } from 'lucide-react';
+import { Table, Folder } from 'lucide-react';
 
 export const DatabaseExplorer = () => {
-    const [tables, setTables] = useState(['user_feedback', 'featured_reviews', 'admin_whitelist']);
+    const [_tables, _setTables] = useState(['user_feedback', 'featured_reviews', 'admin_whitelist']);
+    const tables = ['user_feedback', 'featured_reviews', 'admin_whitelist'];
     const [selectedTable, setSelectedTable] = useState('user_feedback');
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<Record<string, unknown>[]>([]);
 
-    useEffect(() => {
-        fetchTableData(selectedTable);
-    }, [selectedTable]);
-
-    const fetchTableData = async (table: string) => {
+    const fetchTableData = useCallback(async (table: string) => {
         const { data } = await supabase.from(table).select('*').limit(50);
         if (data) setData(data);
-    };
+    }, []);
+
+    useEffect(() => {
+        const load = async () => {
+            await fetchTableData(selectedTable);
+        };
+        load();
+    }, [selectedTable, fetchTableData]);
 
     return (
         <div className="flex h-[calc(100vh-100px)] border border-zinc-800 rounded bg-zinc-950">
@@ -63,7 +67,7 @@ export const DatabaseExplorer = () => {
                             <tbody className="divide-y divide-zinc-800">
                                 {data.map((row, i) => (
                                     <tr key={i} className="hover:bg-zinc-900/30">
-                                        {Object.values(row).map((val: any, j) => (
+                                        {Object.values(row).map((val: unknown, j) => (
                                             <td key={j} className="px-4 py-2 border-r border-zinc-800 last:border-r-0 whitespace-nowrap text-zinc-400 truncate max-w-[200px]">
                                                 {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                             </td>

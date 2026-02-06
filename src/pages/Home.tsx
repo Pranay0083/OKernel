@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { Zap, Layers, Clock, Terminal, ChevronRight, CheckCircle2, Circle, ArrowRight, Cpu, Lock, Coffee, Heart } from 'lucide-react';
+import { Zap, Layers, Clock, Terminal, ArrowRight, Cpu, Lock, Heart } from 'lucide-react';
 
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
@@ -13,7 +13,7 @@ export const Home = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [testimonials, setTestimonials] = useState<any[]>([]);
+    const [testimonials, setTestimonials] = useState<{ message: string; name: string; role?: string }[]>([]);
 
     React.useEffect(() => {
         const fetchTestimonials = async () => {

@@ -13,9 +13,9 @@ function selectProcess(queue) {
 }
         `
     },
-    schedule: (queue: number[], processes: Process[]): number | null => {
+    schedule: (queue: number[], _processes: Process[]): number | null => {
         if (queue.length === 0) return null;
         return queue[0];
     },
-    shouldPreempt: (current: Process, queue: number[], processes: Process[], quantum: number): boolean => false
+    shouldPreempt: (_current: Process, _queue: number[], _processes: Process[], _quantum: number): boolean => false
 };

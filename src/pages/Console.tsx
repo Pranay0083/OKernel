@@ -30,22 +30,22 @@ export const Console = () => {
                         {entry.type === 'command' && (
                             <div className="flex items-center gap-2 text-zinc-100">
                                 <span className="text-green-500 font-bold">root@os:~#</span>
-                                <span>{entry.content}</span>
+                                <span>{entry.content as React.ReactNode}</span>
                             </div>
                         )}
                         {entry.type === 'response' && (
                             <div className="text-zinc-300 ml-4 py-1 whitespace-pre-wrap">
-                                {entry.content}
+                                {entry.content as React.ReactNode}
                             </div>
                         )}
                         {entry.type === 'error' && (
                             <div className="text-red-400 ml-4">
-                                {entry.content}
+                                {entry.content as React.ReactNode}
                             </div>
                         )}
                         {entry.type === 'system' && (
                             <div className="text-blue-400 font-bold italic opacity-80 py-1">
-                                [SYSCORE] {entry.content}
+                                [SYSCORE] {entry.content as React.ReactNode}
                             </div>
                         )}
                     </div>

@@ -1,9 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/layout/Layout';
-import { LogOut, Database, Users, ShieldCheck, Trash2, Star, Clock, Mail, MessageSquare } from 'lucide-react';
+import { LogOut, Database, ShieldCheck, Trash2, Star, Clock, Mail } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 interface FeedbackItem {
@@ -23,11 +23,7 @@ export const AdminDashboard = () => {
     const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
     const [stats, setStats] = useState({ total: 0, today: 0 });
 
-    useEffect(() => {
-        verifyAndFetch();
-    }, [navigate]);
-
-    const verifyAndFetch = async () => {
+    const verifyAndFetch = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             navigate('/admin');
@@ -48,13 +44,42 @@ export const AdminDashboard = () => {
         }
 
         setAdminEmail(adminData.email);
-        await fetchInbox();
+        // Fetch inbox inline
+        const { data } = await supabase
+            .from('user_feedback')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            setFeedback(data);
+
+            // Calc Stats
+            const now = new Date();
+            const todayCount = data.filter(item => {
+                const date = new Date(item.created_at);
+                return date.getDate() === now.getDate() &&
+                    date.getMonth() === now.getMonth() &&
+                    date.getFullYear() === now.getFullYear();
+            }).length;
+
+            setStats({
+                total: data.length,
+                today: todayCount
+            });
+        }
         setLoading(false);
-    };
+    }, [navigate]);
+
+    useEffect(() => {
+        const init = async () => {
+            await verifyAndFetch();
+        };
+        init();
+    }, [verifyAndFetch]);
 
     const fetchInbox = async () => {
         // Fetch Private Feedback
-        const { data, error } = await supabase
+        const { data, error: _error } = await supabase
             .from('user_feedback')
             .select('*')
             .order('created_at', { ascending: false });

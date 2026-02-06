@@ -2,7 +2,7 @@ import { SimulationState, Process, AlgorithmType } from './types';
 
 // Core Engine
 export const nextTick = (state: SimulationState): SimulationState => {
-    let {
+    const {
         processes,
         readyQueue,
         currentTime,
@@ -27,7 +27,7 @@ export const nextTick = (state: SimulationState): SimulationState => {
     });
 
     // Add newly ready processes to the queue
-    let nextQueue = [...readyQueue];
+    const nextQueue = [...readyQueue];
     newlyReadyProcesses.forEach(id => {
         if (!nextQueue.includes(id)) {
             nextQueue.push(id);
@@ -225,7 +225,6 @@ export const nextTick = (state: SimulationState): SimulationState => {
 // Helpers
 import { algos } from '../syscore/cpu';
 
-// @ts-ignore
 const selectProcess = (queue: number[], processes: Process[], algoCode: AlgorithmType): number => {
     // SysCore Engine Delegate
     const algorithm = algos[algoCode];

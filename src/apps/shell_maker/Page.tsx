@@ -88,6 +88,7 @@ export const ShellMakerPage = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const [waitingForInput, setWaitingForInput] = useState(false);
     const [showRam, setShowRam] = useState(false); // RAM Toggle
+    const [memoryData, setMemoryData] = useState<Uint8Array>(new Uint8Array()); // Memory data for RAM Matrix
 
     // Resizing State
     const [leftWidth, setLeftWidth] = useState(60); // Percentage
@@ -95,6 +96,16 @@ export const ShellMakerPage = () => {
 
     // We keep kernel persistent ref, but we re-instantiate on "Run"
     const kernelRef = useRef<ShellKernel>(new ShellKernel());
+
+    // Update memory data when showing RAM
+    useEffect(() => {
+        if (showRam && kernelRef.current) {
+            const interval = setInterval(() => {
+                setMemoryData(kernelRef.current.inspectMemory());
+            }, 200);
+            return () => clearInterval(interval);
+        }
+    }, [showRam]);
 
     const handleRun = () => {
         // Kill previous process if running
@@ -225,7 +236,7 @@ export const ShellMakerPage = () => {
                     {/* RAM Visualizer Sidebar */}
                     {showRam && (
                         <div className="w-[300px] h-full shrink-0 animate-in slide-in-from-right-10 duration-200">
-                            <RamMatrix memory={kernelRef.current.inspectMemory()} />
+                            <RamMatrix memory={memoryData} />
                         </div>
                     )}
                 </div>

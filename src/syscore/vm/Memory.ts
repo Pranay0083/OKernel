@@ -98,7 +98,7 @@ export class Memory {
         return ptr;
     }
 
-    free(ptr: number) {
+    free(_ptr: number) {
         // No-op for bump allocator. A real allocator is complex.
         // We rely on 'reset()' mostly.
     }
