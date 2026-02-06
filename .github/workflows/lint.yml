@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm Install # Will fix it with ci , but for now install will work 
 
       - name: Run ESLint
         run: npm run lint
