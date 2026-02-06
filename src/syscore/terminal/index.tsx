@@ -28,7 +28,7 @@ export const execute = (input: string): any => {
     }
 
     // 2. SysCore API (Reflection for syscore.*)
-    if (cmdName.startsWith('syscore.')) {
+    if (cmdName.toLowerCase().startsWith('syscore.')) {
         return handleSysCoreAPI(cmdName, args);
     }
 
