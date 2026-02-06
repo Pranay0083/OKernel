@@ -26,7 +26,7 @@ export const AdminDashboard = () => {
     const verifyAndFetch = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-            navigate('/admin');
+            navigate('/root');
             return;
         }
 
@@ -39,7 +39,7 @@ export const AdminDashboard = () => {
 
         if (!adminData) {
             await supabase.auth.signOut();
-            navigate('/admin');
+            navigate('/root');
             return;
         }
 
@@ -105,7 +105,7 @@ export const AdminDashboard = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        navigate('/admin');
+        navigate('/root');
     };
 
     const handleDelete = async (id: string) => {

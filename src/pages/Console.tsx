@@ -1,7 +1,15 @@
 import React, { useRef, useEffect } from 'react';
 import { useTerminal } from '../hooks/useTerminal';
 
+// const KERNEL_LOGS = [
+//     "> BOOT_LOADER_INIT...",
+//     "> VERIFYING_KERNEL_SIGNATURE... VALID",
+//     "> LOADING_SHELL_KERNEL_PID_1...",
+//     "> MOUNTING_ROOT_FS... OK"
+// ];
+
 export const Console = () => {
+
     const { history, input, setInput, handleKeyDown, bottomRef } = useTerminal();
     const inputRef = useRef<HTMLInputElement>(null);
 

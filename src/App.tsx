@@ -27,6 +27,9 @@ import { Terms } from './pages/legal/Terms';
 import { supabase } from './lib/supabase';
 import { SponsorManager } from './pages/admin/SponsorManager';
 import { Sponsor } from './pages/Sponsor';
+import { NotFound } from './pages/NotFound';
+import { Maintenance } from './pages/Maintenance';
+import { useSystemConfig } from './hooks/useSystemConfig';
 
 function App() {
   const navigate = useNavigate();
@@ -44,7 +47,7 @@ function App() {
           const { data } = await supabase.from('admin_whitelist').select('email').eq('email', session.user.email).single();
           if (data) {
             console.log('Admin Login verified, redirecting to dashboard...');
-            navigate('/admin/dashboard');
+            navigate('/root/dashboard');
           }
         }
       }
@@ -53,8 +56,20 @@ function App() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const { config, loading } = useSystemConfig();
+
+  if (!loading && config.status !== 'ONLINE') {
+    // Allow admin access or show maintenance
+    // For now, simple global maintenance, but maybe we want to allow /admin?
+    // Let's check path.
+    if (!location.pathname.startsWith('/root')) {
+      return <Maintenance message={config.motd} status={config.status} />;
+    }
+  }
+
   return (
     <Routes>
+
       <Route path="/" element={<Home />} /> {/* Landing Page */}
       <Route path="/dev/scheduler" element={<Visualizer />} />
       <Route path="/dev/about" element={<About />} />
@@ -62,15 +77,15 @@ function App() {
       <Route path="/dev/console" element={<Console />} />
 
       {/* Admin Area */}
-      <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/root" element={<AdminLogin />} />
       <Route element={<AdminLayout />}>
-        <Route path="/admin/dashboard" element={<Overview />} />
-        <Route path="/admin/inbox" element={<Inbox />} />
-        <Route path="/admin/featured" element={<FeaturedManager />} />
-        <Route path="/admin/config" element={<SystemConfig />} />
-        <Route path="/admin/database" element={<DatabaseExplorer />} />
-        <Route path="/admin/sql" element={<SQLEditor />} />
-        <Route path="/admin/sponsor" element={<SponsorManager />} />
+        <Route path="/root/dashboard" element={<Overview />} />
+        <Route path="/root/inbox" element={<Inbox />} />
+        <Route path="/root/featured" element={<FeaturedManager />} />
+        <Route path="/root/config" element={<SystemConfig />} />
+        <Route path="/root/database" element={<DatabaseExplorer />} />
+        <Route path="/root/sql" element={<SQLEditor />} />
+        <Route path="/root/sponsor" element={<SponsorManager />} />
       </Route>
 
       <Route path="/dev/roadmap" element={<Roadmap />} />
@@ -95,6 +110,7 @@ function App() {
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />
       <Route path="/console" element={<Console />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

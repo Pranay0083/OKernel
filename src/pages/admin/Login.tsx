@@ -28,7 +28,7 @@ export const AdminLogin = () => {
         if (data) {
             addLog('ACCESS_GRANTED. redirecting_dashboard...');
             setStatus('authenticated');
-            setTimeout(() => navigate('/admin/dashboard'), 1000);
+            setTimeout(() => navigate('/root/dashboard'), 1000);
         } else {
             addLog('ACCESS_DENIED. identity_not_whitelisted.');
             setStatus('denied');
@@ -56,7 +56,7 @@ export const AdminLogin = () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/admin/dashboard`
+                redirectTo: `${window.location.origin}/root/dashboard`
             }
         });
         if (error) addLog(`ERROR: ${error.message}`);

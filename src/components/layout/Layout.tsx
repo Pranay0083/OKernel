@@ -4,12 +4,13 @@ import { Footer } from './Footer';
 
 interface LayoutProps {
     children: React.ReactNode;
+    showFooter?: boolean;
 }
 
 import { useSystemConfig } from '../../hooks/useSystemConfig';
 import { useLocation } from 'react-router-dom';
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, showFooter = true }) => {
     const { config } = useSystemConfig();
     const _location = useLocation();
 
@@ -20,7 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {children}
             </main>
             <span className="text-xs text-zinc-500 font-mono mt-1 invisible md:visible">{config.version}</span>
-            <Footer />
+            {showFooter && <Footer />}
         </div>
     );
 };

@@ -27,14 +27,14 @@ export const AdminLayout = () => {
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                navigate('/admin');
+                navigate('/root');
                 return;
             }
             // Double check whitelist
             const { data } = await supabase.from('admin_whitelist').select('email').eq('email', session.user.email).single();
             if (!data) {
                 await supabase.auth.signOut();
-                navigate('/admin');
+                navigate('/root');
             } else {
                 setEmail(data.email);
                 setLoading(false);
@@ -47,19 +47,19 @@ export const AdminLayout = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        navigate('/admin');
+        navigate('/root');
     };
 
     if (loading) return <div className="bg-black h-screen w-screen flex items-center justify-center text-green-500 font-mono">_initializing_core...</div>;
 
     const navItems = [
-        { label: 'Overview', path: '/admin/dashboard', icon: Activity },
-        { label: 'Inbox Stream', path: '/admin/inbox', icon: Mail },
-        { label: 'Featured (Public)', path: '/admin/featured', icon: Star },
-        { label: 'System Config', path: '/admin/config', icon: Settings },
-        { label: 'Sponsor Goals', path: '/admin/sponsor', icon: Target },
-        { label: 'DB Explorer', path: '/admin/database', icon: Database },
-        { label: 'SQL Console', path: '/admin/sql', icon: Terminal },
+        { label: 'Overview', path: '/root/dashboard', icon: Activity },
+        { label: 'Inbox Stream', path: '/root/inbox', icon: Mail },
+        { label: 'Featured (Public)', path: '/root/featured', icon: Star },
+        { label: 'System Config', path: '/root/config', icon: Settings },
+        { label: 'Sponsor Goals', path: '/root/sponsor', icon: Target },
+        { label: 'DB Explorer', path: '/root/database', icon: Database },
+        { label: 'SQL Console', path: '/root/sql', icon: Terminal },
     ];
 
     return (

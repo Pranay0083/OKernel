@@ -72,6 +72,19 @@ vi.mock('../../../components/layout/Layout', () => ({
   Layout: ({ children }: MockLayoutProps) => <div>{children}</div>
 }));
 
+// Mock Loader to skip boot delay
+vi.mock('../../../components/ui/Loader', async () => {
+  const React = await import('react');
+  return {
+    Loader: ({ onComplete }: { onComplete: () => void }) => {
+      React.useEffect(() => {
+        onComplete();
+      }, [onComplete]);
+      return null;
+    }
+  };
+});
+
 // Mock useScheduler hook
 vi.mock('../../../hooks/useScheduler');
 const mockUseScheduler = vi.mocked(useScheduler);
