@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TerminalOutput } from '../syscore/terminal/types';
 
-export interface TerminalOutput {
-    type: 'command' | 'response' | 'error' | 'system';
-    content: string | React.ReactNode;
-    timestamp?: number;
+// Type guard for SystemAction
+interface SystemAction {
+    action: string;
+    path?: string;
+    message?: string;
 }
+
+interface ComponentData {
+    component: string;
+    data?: { description: string; mathematics: string; code: string };
+}
+
+const isSystemAction = (content: unknown): content is SystemAction => {
+    return typeof content === 'object' && content !== null && 'action' in content;
+};
+
+const isComponentData = (content: unknown): content is ComponentData => {
+    return typeof content === 'object' && content !== null && 'component' in content;
+};
 
 const COMMANDS = ['help', 'applications', 'init cpu_scheduler', 'init shell', 'about', 'curr', 'clear', 'exit'];
 
@@ -51,18 +66,19 @@ export const useTerminal = () => {
 
         if (result) {
             // Check for navigation actions
-            if (result.type === 'system' && result.content && typeof result.content === 'object' && result.content.action === 'navigate') {
-                newHistory.push({ type: 'system', content: result.content.message });
+            if (result.type === 'system' && isSystemAction(result.content) && result.content.action === 'navigate') {
+                const navPath = result.content.path || '/';
+                newHistory.push({ type: 'system', content: result.content.message || 'Navigating...' });
                 setHistory(newHistory);
-                setTimeout(() => navigate(result.content.path), 800);
+                setTimeout(() => navigate(navPath), 800);
                 setInput('');
                 return;
             }
 
             // Check for Component Responses
-            if (result.content && typeof result.content === 'object' && result.content.component) {
+            if (isComponentData(result.content)) {
                 const compData = result.content;
-                let renderedContent = null;
+                let renderedContent: React.ReactNode = null;
 
                 // Mapper
                 switch (compData.component) {
@@ -130,24 +146,26 @@ export const useTerminal = () => {
                         break;
                     case 'AlgoInfo': {
                         const info = compData.data;
-                        renderedContent = (
-                            <div className="space-y-2 p-2 border border-zinc-700 bg-zinc-900/50 rounded text-xs font-mono">
-                                <div><strong className="text-green-400">DESCRIPTION:</strong> <span className="text-zinc-300">{info.description}</span></div>
-                                <div><strong className="text-blue-400">MATH:</strong> <pre className="text-zinc-400 mt-1 whitespace-pre-wrap">{info.mathematics}</pre></div>
-                                <div><strong className="text-yellow-400">CODE:</strong>
-                                    <pre className="bg-black p-2 mt-1 text-zinc-500 overflow-x-auto">{info.code}</pre>
+                        if (info) {
+                            renderedContent = (
+                                <div className="space-y-2 p-2 border border-zinc-700 bg-zinc-900/50 rounded text-xs font-mono">
+                                    <div><strong className="text-green-400">DESCRIPTION:</strong> <span className="text-zinc-300">{info.description}</span></div>
+                                    <div><strong className="text-blue-400">MATH:</strong> <pre className="text-zinc-400 mt-1 whitespace-pre-wrap">{info.mathematics}</pre></div>
+                                    <div><strong className="text-yellow-400">CODE:</strong>
+                                        <pre className="bg-black p-2 mt-1 text-zinc-500 overflow-x-auto">{info.code}</pre>
+                                    </div>
                                 </div>
-                            </div>
-                        );
+                            );
+                        }
                         break;
                     }
                     default:
                         renderedContent = JSON.stringify(result.content);
                 }
 
-                newHistory.push({ ...result, content: renderedContent });
+                newHistory.push({ type: result.type as TerminalOutput['type'], content: renderedContent });
             } else {
-                newHistory.push(result);
+                newHistory.push({ type: result.type as TerminalOutput['type'], content: result.content as React.ReactNode });
             }
         }
 
