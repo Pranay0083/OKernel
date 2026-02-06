@@ -1,7 +1,7 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Trash2, User, Quote, GripVertical } from 'lucide-react';
+import { Trash2, GripVertical } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import {
     DndContext,
@@ -21,8 +21,17 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+interface FeaturedReview {
+    id: string;
+    name: string;
+    message: string;
+    role?: string;
+    rank?: number;
+    created_at: string;
+}
+
 // --- Sortable Item Component ---
-function SortableItem({ id, item, isSelected, onClick }: { id: string, item: any, isSelected: boolean, onClick: () => void }) {
+function SortableItem({ id, item, isSelected, onClick }: { id: string, item: FeaturedReview, isSelected: boolean, onClick: () => void }) {
     const {
         attributes,
         listeners,
@@ -67,7 +76,7 @@ function SortableItem({ id, item, isSelected, onClick }: { id: string, item: any
 }
 
 export const FeaturedManager = () => {
-    const [reviews, setReviews] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<FeaturedReview[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
@@ -84,17 +93,11 @@ export const FeaturedManager = () => {
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
-    useEffect(() => { fetchReviews(); }, []);
-
-    useEffect(() => {
-        if (commandMode.active && inputRef.current) inputRef.current.focus();
-    }, [commandMode.active]);
-
-    const addLog = (msg: string) => {
+    const addLog = useCallback((msg: string) => {
         setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
-    };
+    }, []);
 
-    const fetchReviews = async () => {
+    const fetchReviews = useCallback(async () => {
         const { data } = await supabase
             .from('featured_reviews')
             .select('*')
@@ -103,10 +106,21 @@ export const FeaturedManager = () => {
 
         if (data) {
             setReviews(data);
-            if (data.length > 0 && !selectedId) setSelectedId(data[0].id);
+            setSelectedId(prev => prev || (data.length > 0 ? data[0].id : null));
         }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const init = async () => {
+            await fetchReviews();
+        };
+        init();
+    }, [fetchReviews]);
+
+    useEffect(() => {
+        if (commandMode.active && inputRef.current) inputRef.current.focus();
+    }, [commandMode.active]);
 
     // --- Drag End Logic ---
     const handleDragEnd = async (event: DragEndEvent) => {
@@ -125,7 +139,7 @@ export const FeaturedManager = () => {
         }
     };
 
-    const syncOrderToDB = async (items: any[]) => {
+    const syncOrderToDB = async (items: FeaturedReview[]) => {
         addLog('SYNCING_ORDER...');
         // Updates rank for ALL items. 
         // Note: For large lists this is inefficient. For a "Featured" list of <50 items, it's instant.

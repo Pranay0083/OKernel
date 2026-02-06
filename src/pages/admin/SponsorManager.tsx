@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
-import { Plus, Edit2, Trash2, MessageSquare, Target, User, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, DollarSign } from 'lucide-react';
 
 interface SponsorGoal {
     id: string;
@@ -35,16 +35,35 @@ export const SponsorManager = () => {
     const [isEditingReview, setIsEditingReview] = useState(false);
     const [currentReview, setCurrentReview] = useState<Partial<SponsorReview>>({});
 
-    useEffect(() => {
-        if (activeTab === 'goals') fetchGoals();
-        else fetchReviews();
-    }, [activeTab]);
-
     // --- GOALS LOGIC ---
-    const fetchGoals = async () => {
+    const fetchGoals = useCallback(async () => {
         const { data } = await supabase.from('sponsor_goals').select('*').order('rank', { ascending: true });
         if (data) setGoals(data);
-    };
+    }, []);
+
+    // --- REVIEWS LOGIC ---
+    const fetchReviews = useCallback(async () => {
+        const { data } = await supabase.from('sponsor_reviews').select('*').order('created_at', { ascending: false });
+        if (data) setReviews(data);
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadData = async () => {
+            if (activeTab === 'goals') {
+                const { data } = await supabase.from('sponsor_goals').select('*').order('rank', { ascending: true });
+                if (isMounted && data) setGoals(data);
+            } else {
+                const { data } = await supabase.from('sponsor_reviews').select('*').order('created_at', { ascending: false });
+                if (isMounted && data) setReviews(data);
+            }
+        };
+
+        loadData();
+
+        return () => { isMounted = false; };
+    }, [activeTab]);
 
     const handleSaveGoal = async () => {
         if (!currentGoal.title || !currentGoal.target_amount) return;
@@ -64,11 +83,7 @@ export const SponsorManager = () => {
         }
     };
 
-    // --- REVIEWS LOGIC ---
-    const fetchReviews = async () => {
-        const { data } = await supabase.from('sponsor_reviews').select('*').order('created_at', { ascending: false });
-        if (data) setReviews(data);
-    };
+
 
     const handleSaveReview = async () => {
         if (!currentReview.name) return;

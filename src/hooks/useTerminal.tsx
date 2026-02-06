@@ -13,10 +13,11 @@ const COMMANDS = ['help', 'applications', 'init cpu_scheduler', 'init shell', 'a
 import { execute } from '../syscore/terminal';
 
 export const useTerminal = () => {
-    const [history, setHistory] = useState<TerminalOutput[]>([
+    const getInitialHistory = (): TerminalOutput[] => [
         { type: 'system', content: 'BOOTING SYSCORE ENGINE v1.0.1...', timestamp: Date.now() },
         { type: 'system', content: 'Type "help" for a list of commands.', timestamp: Date.now() + 100 }
-    ]);
+    ];
+    const [history, setHistory] = useState<TerminalOutput[]>(getInitialHistory);
     const [commandHistory, setCommandHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [input, setInput] = useState('');
@@ -127,7 +128,7 @@ export const useTerminal = () => {
                             </div>
                         );
                         break;
-                    case 'AlgoInfo':
+                    case 'AlgoInfo': {
                         const info = compData.data;
                         renderedContent = (
                             <div className="space-y-2 p-2 border border-zinc-700 bg-zinc-900/50 rounded text-xs font-mono">
@@ -139,6 +140,7 @@ export const useTerminal = () => {
                             </div>
                         );
                         break;
+                    }
                     default:
                         renderedContent = JSON.stringify(result.content);
                 }

@@ -18,12 +18,12 @@ export const useSystemConfig = () => {
 
     useEffect(() => {
         const fetchConfig = async () => {
-            const { data, error } = await supabase
+            const { data, error: _error } = await supabase
                 .from('app_config')
                 .select('*');
 
             if (data) {
-                const configMap: any = {};
+                const configMap: Record<string, string> = {};
                 data.forEach(item => {
                     configMap[item.key] = item.value;
                 });

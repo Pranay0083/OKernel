@@ -69,9 +69,9 @@ export const SystemConfig = () => {
             // Re-fetch to confirm consistency
             await fetchConfig();
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Save error:', err);
-            setMessage({ type: 'error', text: err.message || 'Failed to save configuration.' });
+            setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save configuration.' });
         } finally {
             setSaving(false);
         }

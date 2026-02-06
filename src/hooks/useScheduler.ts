@@ -20,7 +20,7 @@ export const useScheduler = () => {
     const [state, setState] = useState<SimulationState>(initialState);
 
     useEffect(() => {
-        let interval: any;
+        let interval: ReturnType<typeof setInterval> | undefined;
         if (state.isPlaying) {
             interval = setInterval(() => {
                 setState(prev => {

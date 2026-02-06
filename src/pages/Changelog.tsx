@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { GitCommit, Tag, Calendar, ArrowRight, Cpu } from 'lucide-react';
+import { GitCommit, Calendar, ArrowRight, Cpu } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Changelog = () => {
-    const { config } = useSystemConfig();
+    const { config: _config } = useSystemConfig();
 
     return (
         <Layout>

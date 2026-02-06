@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, StopCircle } from 'lucide-react';
 import { Process } from '../../../core/types';
-import { Button } from '../../../components/ui/Button';
 
 interface ProcessListProps {
     processes: Process[];

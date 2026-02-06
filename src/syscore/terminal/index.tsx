@@ -5,7 +5,7 @@ import { syscore } from './commands/syscore_cli';
 // import { curr } from './commands/curr'; // To be implemented if needed
 // import { exit } from './commands/exit'; // To be implemented
 
-import { TerminalCommand } from './types';
+import { TerminalCommand, SystemAction } from './types';
 import { algos } from '../cpu'; // For syscore.cpu access
 
 const commands: Record<string, TerminalCommand> = {
@@ -16,7 +16,7 @@ const commands: Record<string, TerminalCommand> = {
 };
 
 // Main Execution Engine
-export const execute = (input: string): any => {
+export const execute = (input: string): { type: string; content: React.ReactNode | string | { component: string; data?: unknown } | SystemAction } | null => {
     const trimmed = input.trim();
     if (!trimmed) return null;
 
@@ -63,7 +63,7 @@ export const execute = (input: string): any => {
     return { type: 'error', content: `Command not found: ${cmdName}` };
 };
 
-const handleSysCoreAPI = (path: string, args: string[]): any => {
+const handleSysCoreAPI = (path: string, args: string[]): { type: string; content: React.ReactNode | string | { component: string; data?: unknown } | SystemAction } => {
     // path examples: 'syscore.cpu', 'syscore.cpu.info', 'syscore.algos.rr'
     const parts = path.toLowerCase().split('.');
 

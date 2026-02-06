@@ -39,5 +39,5 @@ function selectProcess(queue, processes) {
 
         return candidates[0].id;
     },
-    shouldPreempt: (current: Process, queue: number[], processes: Process[], quantum: number): boolean => false // SJF is typically non-preemptive unless it's SRTF
+    shouldPreempt: (_current: Process, _queue: number[], _processes: Process[], _quantum: number): boolean => false // SJF is typically non-preemptive unless it's SRTF
 };

@@ -1,9 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Terminal, Database, Activity, Mail, LogOut, ChevronRight, Cpu, Star, Settings, Target } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
 
 import { useSystemConfig } from '../../hooks/useSystemConfig';
 
@@ -12,12 +10,18 @@ export const AdminLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [loading, setLoading] = useState(true);
-    const [email, setEmail] = useState('');
+    const [_email, setEmail] = useState('');
     const [time, setTime] = useState(new Date());
+    const [uptime, setUptime] = useState(0);
+    // Use a constant for display memory - stable across renders
+    const memUsage = 45;
 
     useEffect(() => {
-        // Clock
-        const timer = setInterval(() => setTime(new Date()), 1000);
+        // Clock + Uptime
+        const timer = setInterval(() => {
+            setTime(new Date());
+            setUptime(prev => prev + 1);
+        }, 1000);
 
         // Auth Check
         const checkAuth = async () => {
@@ -71,7 +75,7 @@ export const AdminLayout = () => {
                     </div>
                 </div>
                 <div className="text-xs text-zinc-500">
-                    UPTIME: {Math.floor(performance.now() / 1000)}s | MEM: {Math.floor(Math.random() * 40) + 20}% | {time.toLocaleTimeString()}
+                    UPTIME: {uptime}s | MEM: {memUsage}% | {time.toLocaleTimeString()}
                 </div>
             </header>
 

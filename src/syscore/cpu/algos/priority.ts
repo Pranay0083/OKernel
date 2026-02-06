@@ -36,7 +36,7 @@ function selectProcess(queue, processes) {
 
         return candidates[0].id;
     },
-    shouldPreempt: (currentProcess: Process, queue: number[], processes: Process[], quantum: number): boolean => {
+    shouldPreempt: (currentProcess: Process, queue: number[], processes: Process[], _quantum: number): boolean => {
         // Preemptive Priority: If a new process has higher priority (lower value) than current
         const candidates = queue
             .map(id => processes.find(p => p.id === id))

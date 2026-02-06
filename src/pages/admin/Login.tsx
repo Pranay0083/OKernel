@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, ShieldAlert, Lock, Cpu } from 'lucide-react';
+import { Terminal, ShieldAlert, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export const AdminLogin = () => {
@@ -10,30 +10,16 @@ export const AdminLogin = () => {
     const [status, setStatus] = useState<'idle' | 'checking' | 'authenticated' | 'denied'>('checking');
     const [logs, setLogs] = useState<string[]>(['> initializing_security_protocol...']);
 
-    // Check if user is already logged in
-    useEffect(() => {
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                verifyAdminAccess(session.user.email);
-            } else {
-                setStatus('idle');
-                addLog('session_not_found. waiting_for_auth...');
-            }
-        };
-        checkSession();
+    const addLog = useCallback((msg: string) => {
+        setLogs(prev => [...prev, `> ${msg}`]);
     }, []);
 
-    const addLog = (msg: string) => {
-        setLogs(prev => [...prev, `> ${msg}`]);
-    };
-
-    const verifyAdminAccess = async (email: string | undefined) => {
+    const verifyAdminAccess = useCallback(async (email: string | undefined) => {
         if (!email) return;
         addLog(`verifying_identity: ${email}`);
 
         // Security Check: Query the whitelist for THIS email only
-        const { data, error } = await supabase
+        const { data, error: _error } = await supabase
             .from('admin_whitelist')
             .select('email')
             .eq('email', email)
@@ -48,7 +34,21 @@ export const AdminLogin = () => {
             setStatus('denied');
             await supabase.auth.signOut();
         }
-    };
+    }, [addLog, navigate]);
+
+    // Check if user is already logged in
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                verifyAdminAccess(session.user.email);
+            } else {
+                setStatus('idle');
+                addLog('session_not_found. waiting_for_auth...');
+            }
+        };
+        checkSession();
+    }, [addLog, verifyAdminAccess]);
 
     const handleGoogleLogin = async () => {
         addLog('initiating_oauth_handshake...');

@@ -1,21 +1,46 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Visualizer } from '../Page';
 import { useScheduler } from '../../../hooks/useScheduler';
-import { Process, SimulationState } from '../../../core/types';
+import { SimulationState } from '../../../core/types';
+import { ReactNode } from 'react';
+
+interface MockRunningProcess {
+  name: string;
+}
+
+interface MockQueue {
+  length: number;
+}
+
+interface MockProcessList {
+  processes: unknown[];
+  addProcess: (proc: { name: string; arrivalTime: number; burstTime: number; priority: number }) => void;
+  onClear: () => void;
+}
+
+interface MockControls {
+  state: { currentTime: number; isPlaying: boolean };
+  setState: (fn: (s: { isPlaying: boolean }) => { isPlaying: boolean }) => void;
+  onReset: () => void;
+}
+
+interface MockLayoutProps {
+  children: ReactNode;
+}
 
 // Mock child components to isolate integration test to Visualizer + useScheduler interaction
 // This avoids testing implementation details of child components again
 vi.mock('../components/Cpu', () => ({
-  Cpu: ({ runningProcess }: any) => <div data-testid="cpu-mock">CPU: {runningProcess ? runningProcess.name : 'IDLE'}</div>
+  Cpu: ({ runningProcess }: { runningProcess: MockRunningProcess | null }) => <div data-testid="cpu-mock">CPU: {runningProcess ? runningProcess.name : 'IDLE'}</div>
 }));
 
 vi.mock('../components/ReadyQueue', () => ({
-  ReadyQueue: ({ queue }: any) => <div data-testid="ready-queue-mock">Queue Length: {queue.length}</div>
+  ReadyQueue: ({ queue }: { queue: MockQueue }) => <div data-testid="ready-queue-mock">Queue Length: {queue.length}</div>
 }));
 
 vi.mock('../components/ProcessList', () => ({
-  ProcessList: ({ processes, addProcess, onClear }: any) => (
+  ProcessList: ({ processes, addProcess, onClear }: MockProcessList) => (
     <div data-testid="process-list-mock">
       Process Count: {processes.length}
       <button onClick={() => addProcess({ name: 'NewProc', arrivalTime: 0, burstTime: 5, priority: 1 })}>
@@ -27,10 +52,10 @@ vi.mock('../components/ProcessList', () => ({
 }));
 
 vi.mock('../components/Controls', () => ({
-  Controls: ({ state, setState, onReset }: any) => (
+  Controls: ({ state, setState, onReset }: MockControls) => (
     <div data-testid="controls-mock">
       Time: {state.currentTime}
-      <button onClick={() => setState((s: any) => ({ ...s, isPlaying: !s.isPlaying }))}>
+      <button onClick={() => setState((s) => ({ ...s, isPlaying: !s.isPlaying }))}>
         {state.isPlaying ? 'Pause' : 'Play'}
       </button>
       <button onClick={onReset}>Reset</button>
@@ -40,15 +65,16 @@ vi.mock('../components/Controls', () => ({
 
 // Mock framer-motion's LayoutGroup and Layout
 vi.mock('framer-motion', () => ({
-  LayoutGroup: ({ children }: any) => <div>{children}</div>
+  LayoutGroup: ({ children }: MockLayoutProps) => <div>{children}</div>
 }));
 
 vi.mock('../../../components/layout/Layout', () => ({
-  Layout: ({ children }: any) => <div>{children}</div>
+  Layout: ({ children }: MockLayoutProps) => <div>{children}</div>
 }));
 
 // Mock useScheduler hook
 vi.mock('../../../hooks/useScheduler');
+const mockUseScheduler = vi.mocked(useScheduler);
 
 describe('Visualizer Integration', () => {
   const mockState: SimulationState = {
@@ -72,7 +98,7 @@ describe('Visualizer Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useScheduler as any).mockReturnValue({
+    mockUseScheduler.mockReturnValue({
       state: mockState,
       setState: mockSetState,
       addProcess: mockAddProcess,
@@ -92,95 +118,95 @@ describe('Visualizer Integration', () => {
   });
 
   it('displays calculated averages correctly', () => {
-      // Mock state with completed processes
-      const completedState: SimulationState = {
-          ...mockState,
-          processes: [
-              {
-                  id: 1, name: 'P1', state: 'COMPLETED',
-                  turnaroundTime: 10, waitingTime: 5,
-                  arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0
-              },
-              {
-                  id: 2, name: 'P2', state: 'COMPLETED',
-                  turnaroundTime: 20, waitingTime: 10,
-                   arrivalTime: 0, burstTime: 10, priority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10
-              }
-          ]
-      };
+    // Mock state with completed processes
+    const completedState: SimulationState = {
+      ...mockState,
+      processes: [
+        {
+          id: 1, name: 'P1', state: 'COMPLETED',
+          turnaroundTime: 10, waitingTime: 5,
+          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0
+        },
+        {
+          id: 2, name: 'P2', state: 'COMPLETED',
+          turnaroundTime: 20, waitingTime: 10,
+          arrivalTime: 0, burstTime: 10, priority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10
+        }
+      ]
+    };
 
-      (useScheduler as any).mockReturnValue({
-          state: completedState,
-          setState: mockSetState,
-          addProcess: mockAddProcess,
-          reset: mockReset,
-          clear: mockClear,
-      });
+    mockUseScheduler.mockReturnValue({
+      state: completedState,
+      setState: mockSetState,
+      addProcess: mockAddProcess,
+      reset: mockReset,
+      clear: mockClear,
+    });
 
-      render(<Visualizer />);
+    render(<Visualizer />);
 
-      // Avg TAT = (10 + 20) / 2 = 15.00
-      expect(screen.getByText('15.00')).toBeInTheDocument();
-      // Avg WT = (5 + 10) / 2 = 7.50
-      expect(screen.getByText('7.50')).toBeInTheDocument();
+    // Avg TAT = (10 + 20) / 2 = 15.00
+    expect(screen.getByText('15.00')).toBeInTheDocument();
+    // Avg WT = (5 + 10) / 2 = 7.50
+    expect(screen.getByText('7.50')).toBeInTheDocument();
   });
 
   it('passes running process to Cpu component', () => {
-      const runningState: SimulationState = {
-          ...mockState,
-          runningProcessId: 1,
-          processes: [
-              {
-                  id: 1, name: 'RunningProc', state: 'RUNNING',
-                  turnaroundTime: 0, waitingTime: 0,
-                  arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0
-              }
-          ]
-      };
+    const runningState: SimulationState = {
+      ...mockState,
+      runningProcessId: 1,
+      processes: [
+        {
+          id: 1, name: 'RunningProc', state: 'RUNNING',
+          turnaroundTime: 0, waitingTime: 0,
+          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0
+        }
+      ]
+    };
 
-      (useScheduler as any).mockReturnValue({
-          state: runningState,
-          setState: mockSetState,
-          addProcess: mockAddProcess,
-          reset: mockReset,
-          clear: mockClear,
-      });
+    mockUseScheduler.mockReturnValue({
+      state: runningState,
+      setState: mockSetState,
+      addProcess: mockAddProcess,
+      reset: mockReset,
+      clear: mockClear,
+    });
 
-      render(<Visualizer />);
-      expect(screen.getByText('CPU: RunningProc')).toBeInTheDocument();
+    render(<Visualizer />);
+    expect(screen.getByText('CPU: RunningProc')).toBeInTheDocument();
   });
 
   it('passes correct queue length to ReadyQueue component', () => {
-      const queueState: SimulationState = {
-          ...mockState,
-          readyQueue: [1, 2, 3]
-      };
+    const queueState: SimulationState = {
+      ...mockState,
+      readyQueue: [1, 2, 3]
+    };
 
-       (useScheduler as any).mockReturnValue({
-          state: queueState,
-          setState: mockSetState,
-          addProcess: mockAddProcess,
-          reset: mockReset,
-          clear: mockClear,
-      });
+    mockUseScheduler.mockReturnValue({
+      state: queueState,
+      setState: mockSetState,
+      addProcess: mockAddProcess,
+      reset: mockReset,
+      clear: mockClear,
+    });
 
-      render(<Visualizer />);
-      expect(screen.getByText('Queue Length: 3')).toBeInTheDocument();
+    render(<Visualizer />);
+    expect(screen.getByText('Queue Length: 3')).toBeInTheDocument();
   });
 
   it('wires up action buttons from sub-components', () => {
-       render(<Visualizer />);
+    render(<Visualizer />);
 
-       // Test Add Process
-       fireEvent.click(screen.getByText('Add Process'));
-       expect(mockAddProcess).toHaveBeenCalled();
+    // Test Add Process
+    fireEvent.click(screen.getByText('Add Process'));
+    expect(mockAddProcess).toHaveBeenCalled();
 
-       // Test Clear
-       fireEvent.click(screen.getByText('Clear'));
-       expect(mockClear).toHaveBeenCalled();
+    // Test Clear
+    fireEvent.click(screen.getByText('Clear'));
+    expect(mockClear).toHaveBeenCalled();
 
-       // Test Reset
-       fireEvent.click(screen.getByText('Reset'));
-       expect(mockReset).toHaveBeenCalled();
+    // Test Reset
+    fireEvent.click(screen.getByText('Reset'));
+    expect(mockReset).toHaveBeenCalled();
   });
 });

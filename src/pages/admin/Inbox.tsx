@@ -1,12 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Star, Trash2, Mail, User, Clock, Monitor } from 'lucide-react';
+import { Star, Trash2, Mail, Clock, Monitor } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { TerminalModal } from '../../components/ui/TerminalModal';
 
+interface FeedbackThread {
+    id: string;
+    name?: string;
+    email?: string;
+    message: string;
+    user_agent?: string;
+    created_at: string;
+}
+
 export const Inbox = () => {
     const [loading, setLoading] = useState(true);
-    const [threads, setThreads] = useState<any[]>([]);
+    const [threads, setThreads] = useState<FeedbackThread[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     // Modal State
@@ -18,21 +27,37 @@ export const Inbox = () => {
         onConfirm?: () => void;
     }>({ isOpen: false, title: '', message: '', type: 'info' });
 
-    useEffect(() => {
-        fetchInbox();
-    }, []);
-
-    const fetchInbox = async () => {
+    const _fetchInbox = useCallback(async () => {
         const { data } = await supabase
             .from('user_feedback')
             .select('*')
             .order('created_at', { ascending: false });
         if (data) {
             setThreads(data);
-            if (data.length > 0 && !selectedId) setSelectedId(data[0].id);
+            if (data.length > 0) setSelectedId(prev => prev || data[0].id);
         }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadData = async () => {
+            const { data } = await supabase
+                .from('user_feedback')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (isMounted && data) {
+                setThreads(data);
+                if (data.length > 0) setSelectedId(prev => prev || data[0].id);
+            }
+            if (isMounted) setLoading(false);
+        };
+
+        loadData();
+
+        return () => { isMounted = false; };
+    }, []);
 
     const confirmDelete = (id: string) => {
         setModal({
@@ -50,7 +75,7 @@ export const Inbox = () => {
         if (selectedId === id) setSelectedId(null);
     };
 
-    const handleFeature = async (item: any) => {
+    const handleFeature = async (item: FeedbackThread) => {
         await supabase.from('featured_reviews').insert([{
             message: item.message,
             name: item.name || 'Anonymous',

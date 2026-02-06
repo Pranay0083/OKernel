@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { Coffee, Heart, Terminal, Cpu, Code2, MessageSquare, Star, User } from 'lucide-react';
+import { Coffee, Heart, Terminal, Star, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 

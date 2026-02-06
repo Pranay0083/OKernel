@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, FastForward, Rewind, ChevronDown } from 'lucide-react';
+import { RotateCcw, ChevronDown } from 'lucide-react';
 import { AlgorithmType, SimulationState } from '../../../core/types';
 
 interface Props {

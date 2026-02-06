@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Activity, Server, Database, Clock } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 
 export const Overview = () => {
     const [logs, setLogs] = useState<string[]>([]);
