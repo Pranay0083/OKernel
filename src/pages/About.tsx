@@ -44,7 +44,7 @@ export const About = () => {
                             </h2>
                             <div className="space-y-4">
                                 <TeamMember name="Vaiditya Tanwar" role="Project Lead & Design" github="@vaiditya2501" />
-                                <TeamMember name="Yashi Gupta" role="Core Logic & Algo" github="@yashi-gupta" />
+                                <TeamMember name="Yashi Gupta" role="Core Logic & Algo" github="@yashiigupta" />
                                 <TeamMember name="Antigravity" role="UI Implementation" github="@antigravity" />
                                 <TeamMember name="Community" role="Open Source" github="@contributors" />
                             </div>
@@ -107,41 +107,32 @@ export const About = () => {
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                 <span className="ml-auto text-zinc-500">user@dev:~$ cloc .</span>
                             </div>
-                            <div className="space-y-2 text-zinc-300">
-                                <div className="flex justify-between">
-                                    <span>------------------------------------------------</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-white">
-                                    <span>Language</span>
-                                    <span>files</span>
-                                    <span>code</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>------------------------------------------------</span>
-                                </div>
-                                <div className="flex justify-between text-blue-400">
-                                    <span>TypeScript</span>
-                                    <span>24</span>
-                                    <span>2,840</span>
-                                </div>
-                                <div className="flex justify-between text-yellow-400">
-                                    <span>React/TSX</span>
-                                    <span>18</span>
-                                    <span>1,902</span>
-                                </div>
-                                <div className="flex justify-between text-green-400">
-                                    <span>SQL</span>
-                                    <span>5</span>
-                                    <span>450</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>------------------------------------------------</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-green-500">
-                                    <span>v1.0.1</span>
-                                    <span>Total</span>
-                                    <span>5,192</span>
-                                </div>
+                            <div className="grid grid-cols-[1fr_auto_auto] gap-x-8 gap-y-2 text-zinc-300">
+                                <div className="col-span-3 text-zinc-600">------------------------------------------------</div>
+
+                                <span className="font-bold text-white">Language</span>
+                                <span className="font-bold text-white text-right">files</span>
+                                <span className="font-bold text-white text-right">code</span>
+
+                                <div className="col-span-3 text-zinc-600">------------------------------------------------</div>
+
+                                <span className="text-blue-400">TypeScript</span>
+                                <span className="text-blue-400 text-right">32</span>
+                                <span className="text-blue-400 text-right">2,840</span>
+
+                                <span className="text-yellow-400">React/TSX</span>
+                                <span className="text-yellow-400 text-right">49</span>
+                                <span className="text-yellow-400 text-right">3,500</span>
+
+                                <span className="text-green-400">SQL</span>
+                                <span className="text-green-400 text-right">08</span>
+                                <span className="text-green-400 text-right">650</span>
+
+                                <div className="col-span-3 text-zinc-600">------------------------------------------------</div>
+
+                                <span className="font-bold text-green-500">v1.0.1</span>
+                                <span className="font-bold text-green-500 text-right">Total</span>
+                                <span className="font-bold text-green-500 text-right">6,990</span>
                             </div>
                         </div>
                     </div>

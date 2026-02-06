@@ -63,19 +63,25 @@ export const Home = () => {
     return (
         <Layout>
             {/* Hero Section */}
-            <section className="relative pt-32 pb-24 border-b border-border bg-black/40 overflow-hidden">
+            <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 border-b border-border bg-black/40 overflow-hidden">
                 <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
 
                     <div className="space-y-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md animate-in">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                            </span>
-                            V{config.version.replace('v', '')} SYSCORE ENGINE 2 {config.status}
+                        <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md animate-in">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                </span>
+                                V{config.version.replace('v', '')} SYSCORE ENGINE 2 {config.status}
+                            </div>
+                            <Link to="/sponsor" className="inline-flex items-center gap-2 px-3 py-1 bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-mono rounded-md hover:bg-pink-500/20 transition-colors animate-in">
+                                <Heart size={10} className="fill-current" />
+                                <span>SPONSOR</span>
+                            </Link>
                         </div>
 
-                        <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight animate-in delay-100">
+                        <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold tracking-tight mb-8 leading-tight animate-in delay-100">
                             Execute <span className="text-primary glow-text">Theory.</span>
                             <br />
                             <span className="text-white">Visualize RAM.</span>
@@ -131,7 +137,7 @@ export const Home = () => {
             </section>
 
             {/* Story Section: Static vs Dynamic */}
-            <section className="py-32 border-b border-white/5 relative overflow-hidden">
+            <section className="py-16 md:py-32 border-b border-white/5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:50px_50px]"></div>
 
                 <div className="container mx-auto px-4">
@@ -227,7 +233,7 @@ export const Home = () => {
             </section>
 
             {/* Feature Spotlight: SysCore Engine 2 */}
-            <section className="py-32 bg-zinc-950 border-b border-zinc-800">
+            <section className="py-16 md:py-32 bg-zinc-950 border-b border-zinc-800">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col lg:flex-row gap-16 items-center">
                         <div className="lg:w-1/2 space-y-8">
@@ -291,7 +297,7 @@ export const Home = () => {
             </section>
 
             {/* Feature Spotlight: Shell Maker */}
-            <section className="py-32 relative">
+            <section className="py-16 md:py-32 relative">
                 <div className="container mx-auto px-4 text-center max-w-4xl">
                     <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">
                         The <span className="font-mono bg-zinc-800 px-2 rounded">/dev/null</span> is not enough.
@@ -441,7 +447,7 @@ int main() {
             </section>
 
             {/* System Hardware Grid (Modules) - Redesigned for NON-AI Vibe */}
-            <section className="py-32 container mx-auto px-4">
+            <section className="py-16 md:py-32 container mx-auto px-4">
                 <div className="text-center max-w-2xl mx-auto mb-20">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-full mb-6">
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -683,7 +689,7 @@ int main() {
                             className="group relative inline-flex items-center justify-center"
                         >
                             <div className="absolute -inset-1 bg-green-500 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
-                            <Button size="lg" className="relative h-14 px-8 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700 rounded-xl flex items-center gap-3">
+                            <Button size="lg" className="relative h-14 px-8 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 !text-white border border-zinc-700 rounded-xl flex items-center gap-3">
                                 <Heart className="text-red-500 fill-red-500 animate-pulse" size={20} />
                                 View Funding Goals
                             </Button>

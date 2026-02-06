@@ -1,10 +1,12 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EditorWindow } from './components/EditorWindow';
 import { LiveTerminal } from './components/LiveTerminal';
 import { ShellKernel } from '../../syscore/vm/ShellKernel';
-import { ArrowLeft, Maximize2, Terminal } from 'lucide-react';
+import { ArrowLeft, Maximize2, Terminal} from 'lucide-react';
 import { RamMatrix } from './components/RamMatrix';
+import { Loader } from '../../components/ui/Loader';
 
 const DEFAULT_CODE = `#include <syscore.h>
 
@@ -18,7 +20,7 @@ const DEFAULT_CODE = `#include <syscore.h>
 void heap_storm() {
     printf("Starting Heap Storm! Watch MEM_DUMP area...\\n");
     int i = 0;
-    while(i < 500) {
+    while (i < 500) {
         char junk[64]; // Allocates 64 bytes on Heap
         sprintf(junk, "DATA_CHUNK_%d", i); // Writes to memory!
         printf("Allocated Heap Chunk: ."); // Minimal Log
@@ -35,10 +37,10 @@ void stack_abyss(int depth) {
     }
 }
 
-void execute_command(char* cmd) {
+void execute_command(char * cmd) {
     if (strcmp(cmd, "help") == 0) {
         printf("Available commands: %shelp, clear, exit, storm, stack%s\\n", TEXT_COLOR, RESET);
-    } 
+    }
     else if (strcmp(cmd, "storm") == 0) {
         heap_storm();
     }
@@ -67,23 +69,32 @@ int main() {
     printf("Type 'help' to start. Try 'storm' or 'stack' for visuals!\\n");
     
     char cmd[100];
-    
-    while(1) {
+
+    while (1) {
         printf("%ssyscore> %s", PROMPT_COLOR, RESET);
         get_input(cmd);
-        
+
         if (strcmp(cmd, "exit") == 0) {
             break;
         }
-        
+
         execute_command(cmd);
     }
-    
+
     return 0;
-}`;
+} `;
+
+const BOOT_LOGS = [
+    "> DETECTING_COMPILER_TOOLCHAIN...",
+    "> LOADING_GCC_TRANSPILER_V9.2...",
+    "> MOUNTING_SOURCE_BUFFER...",
+    "> INITIALIZING_IDE_ENVIRONMENT... OK"
+];
 
 export const ShellMakerPage = () => {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+
     const [code, setCode] = useState<string | undefined>(DEFAULT_CODE);
     const [logs, setLogs] = useState<string[]>([]);
     const [waitingForInput, setWaitingForInput] = useState(false);
@@ -165,6 +176,13 @@ export const ShellMakerPage = () => {
             kernelRef.current.kill();
         };
     }, []);
+
+    if (loading) {
+        return <Loader logs={BOOT_LOGS} onComplete={() => setLoading(false)} />;
+    }
+
+
+
 
     return (
         <div className="h-screen w-screen flex flex-col bg-black overflow-hidden text-zinc-300 font-sans">

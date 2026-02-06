@@ -1,12 +1,12 @@
-# CPU Scheduler Visualizer (OKernel v0.3.0)
+# CPU Scheduler Visualizer (OKernel v1.0.1)
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/syscore-v0.3.0-green.svg)
+![Version](https://img.shields.io/badge/syscore-v1.0.1-green.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
 **OKernel** is an interactive, browser-based Operating System simulation designed to help students master core OS concepts. It features a fully functional **SysCore Engine** that drives a realistic terminal interface and a visual CPU scheduler.
 
-## Features (v0.3.0)
+## Features (v1.0.1)
 
 ### SysCore Terminal
 - **Interactive Shell**: A robust command-line interface with history, auto-completion (Tab), and colored output.
@@ -71,7 +71,9 @@ src/
 
 ## Roadmap
 
-- [x] **v0.3.0: SysCore Engine Refactor** (Modular Architecture, Advanced CLI)
+- [x] **v1.0.1: CI/CD & Mobile Polish** (Responsive UI, Auto-Tests, Linting)
+- [x] **v1.0.0: SysCore Engine 2** (Virtual Machine, RAM Inspector, Shell-Maker)
+- [x] **v0.3.0: Core Visualizer** (Round Robin, Gantt Charts)
 - [x] **v0.2.0: Core Visualizer** (Round Robin, Gantt Charts)
 - [ ] **v0.4.0: Memory Management** (Paging, Segmentation Visualizer)
 - [ ] **v0.5.0: Process Synchronization** (Deadlock simulation, Semaphores)

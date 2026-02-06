@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 
-import logo from '../../assets/OKernel.png';
+import logo from '../../assets/okernel_v2.png';
 
 export const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -37,7 +37,7 @@ export const Navbar = () => {
                 <div className="flex items-center justify-between h-12">
                     <Link to="/" className="flex items-center gap-3 group font-mono text-sm">
                         {/* Logo Image */}
-                        <div className="w-10 h-10 rounded overflow-hidden transition-transform group-hover:scale-105">
+                        <div className="w-8 h-8 rounded overflow-hidden transition-transform group-hover:scale-105">
                             <img src={logo} alt="OKernel Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className="font-bold tracking-tight text-foreground text-lg group-hover:text-primary transition-colors">

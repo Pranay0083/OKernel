@@ -1,14 +1,29 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useScheduler } from '../../hooks/useScheduler';
 import { Cpu } from './components/Cpu';
 import { ReadyQueue } from './components/ReadyQueue';
 import { ProcessList } from './components/ProcessList';
 import { Controls } from './components/Controls';
 import { Layout } from '../../components/layout/Layout';
+import { Loader } from '../../components/ui/Loader';
 
 import { LayoutGroup } from 'framer-motion';
 
+const BOOT_LOGS = [
+    "> INITIALIZING_SCHEDULER_ENGINE...",
+    "> LOADING_ALGORITHMS [FCFS, SJF, RR]...",
+    "> CALIBRATING_QUANTUM_TICKS...",
+    "> STARTING_VISUALIZER... OK"
+];
+
 export const Visualizer = () => {
+    const [booting, setBooting] = useState(true);
+
+    const handleBootComplete = React.useCallback(() => {
+        setBooting(false);
+    }, []);
+
     const { state, setState, addProcess, reset, clear } = useScheduler();
 
     const runningProcess = state.runningProcessId
@@ -23,8 +38,13 @@ export const Visualizer = () => {
         ? (completed.reduce((acc, p) => acc + (p.waitingTime || 0), 0) / completed.length).toFixed(2)
         : 0;
 
+
+    if (booting) {
+        return <Loader logs={BOOT_LOGS} onComplete={handleBootComplete} />;
+    }
+
     return (
-        <Layout>
+        <Layout showFooter={false}>
             <LayoutGroup>
                 {/* Main Cockpit Container - Fixed Grid Layout to prevent Layout Shifts */}
                 <div
