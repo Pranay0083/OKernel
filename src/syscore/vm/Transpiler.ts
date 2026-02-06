@@ -36,11 +36,12 @@ export class Transpiler {
             js = js.replace(assignRegex, `__sys.write32(${v}_ptr, $1);`);
 
             // x++; -> __sys.write32(x_ptr, __sys.read32(x_ptr) + 1);
-            const incRegex = new RegExp(`\\b${v}\\+\\+;`, 'g');
+            // We match 'x++' possibly without a semicolon (for loops)
+            const incRegex = new RegExp(`\\b${v}\\+\\+;?`, 'g');
             js = js.replace(incRegex, `__sys.write32(${v}_ptr, __sys.read32(${v}_ptr) + 1);`);
 
             // x--;
-            const decRegex = new RegExp(`\\b${v}--;`, 'g');
+            const decRegex = new RegExp(`\\b${v}--;?`, 'g');
             js = js.replace(decRegex, `__sys.write32(${v}_ptr, __sys.read32(${v}_ptr) - 1);`);
         });
 
@@ -105,8 +106,9 @@ export class Transpiler {
         js = js.replace(/clear\s*\(\);/g, 'await __sys.clear();');
 
         // 8. Loop Guards
-        js = js.replace(/while\s*\(([^)]+)\)\s*\{/g, 'while ($1) { await __sys.yield();');
-        js = js.replace(/for\s*\(([^)]+)\)\s*\{/g, 'for ($1) { await __sys.yield();');
+        // Updated regex to use non-greedy match (.*?) to handle nested parentheses like __sys.read32(...)
+        js = js.replace(/while\s*\((.*?)\)\s*\{/g, 'while ($1) { await __sys.yield();');
+        js = js.replace(/for\s*\((.*?)\)\s*\{/g, 'for ($1) { await __sys.yield();');
         js = js.replace(/while\s*\(1\)/g, 'while(true)');
 
         // 9. Cleanup

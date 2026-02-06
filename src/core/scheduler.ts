@@ -79,7 +79,8 @@ export const nextTick = (state: SimulationState): SimulationState => {
             activeProcessId = nextId;
 
             // Init Quantum
-            if (algorithm === 'RR') nextQuantum = timeQuantum;
+            // Fix: Decrement immediately because this process will execute in this tick
+            if (algorithm === 'RR') nextQuantum = timeQuantum - 1;
         }
     }
 

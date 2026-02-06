@@ -25,6 +25,7 @@ function shouldPreempt(quantumRemaining) {
     },
     // Preemption Logic specific to RR
     shouldPreempt: (current: Process, queue: number[], processes: Process[], quantumRemaining: number): boolean => {
-        return quantumRemaining <= 0;
+        // Changed to < 0 to allow the 0-th tick (last tick) to execute
+        return quantumRemaining < 0;
     }
 };
