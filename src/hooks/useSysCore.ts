@@ -30,8 +30,15 @@ interface TraceEvent {
     phase?: 'start' | 'stop'; // For GC
     info?: any; // For GC
     timestamp?: number;
+    process_time?: number; // CPU time in ns
+    duration?: number; // Calculated duration in ns
     filename?: string;
     event?: 'line' | 'call' | 'return' | 'exception' | 'opcode';
+    hardware?: {
+        type: 'MEM_READ' | 'MEM_WRITE' | 'ALU' | 'CONTROL' | 'STACK' | 'FUNCTION' | 'OTHER';
+        cost: number;
+        opcode: string;
+    };
 }
 
 interface SysCoreState {
@@ -92,8 +99,25 @@ export const useSysCore = () => {
                 const logs: string[] = [];
                 const history: TraceEvent[] = [];
 
-                events.forEach(e => {
+                events.forEach((e, i) => {
                     if (e.type === 'Trace') {
+                        // Calculate duration from previous event's process_time
+                        if (i > 0) {
+                            const prev = events[i - 1];
+                            if (prev.process_time && e.process_time) {
+                                // Assign duration to the PREVIOUS event (as it took that long to reach current event)
+                                // We need to find the previous Trace event in our history array to update it
+                                // But here we are iterating 'events' which includes Stdout/Stderr.
+                                // Simplification: Just calculate delta from previous event in the raw list.
+                                const duration = e.process_time - prev.process_time;
+                                // We want to associate this duration with the code that WAS executing.
+                                // If prev was Line 1, and now we are at Line 2, then Line 1 took duration.
+                                // So we attach 'duration' to the previous TRACE event in our 'history' list.
+                                if (history.length > 0) {
+                                    history[history.length - 1].duration = duration;
+                                }
+                            }
+                        }
                         history.push(e);
                     } else if (e.type === 'GC') {
                         // Push GC events to history for timeline visualization

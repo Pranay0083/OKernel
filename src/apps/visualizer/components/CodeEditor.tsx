@@ -6,9 +6,10 @@ interface CodeEditorProps {
     onChange: (value: string) => void;
     language: 'python' | 'cpp';
     highlightLine?: number;
+    lineExecutionTimes?: Record<number, number>; // Line Number -> Duration (ns)
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highlightLine }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highlightLine, lineExecutionTimes }) => {
     const editorRef = useRef<any>(null);
     const monaco = useMonaco();
 
@@ -36,8 +37,35 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
             });
         }
 
+        // Add heat/duration decorations
+        if (lineExecutionTimes) {
+            // Find max duration for normalization
+            const maxDuration = Math.max(...Object.values(lineExecutionTimes));
+
+            Object.entries(lineExecutionTimes).forEach(([line, duration]) => {
+                const lineNum = parseInt(line);
+                if (duration > 0) {
+                    // Normalize intensity (0.1 to 0.6 opacity)
+                    const intensity = 0.1 + (duration / maxDuration) * 0.5;
+                    const color = duration > 1000000 ? `rgba(239, 68, 68, ${intensity})` : `rgba(59, 130, 246, ${intensity})`; // Red if > 1ms, else Blue
+
+                    decorations.push({
+                        range: new monaco.Range(lineNum, 1, lineNum, 1),
+                        options: {
+                            isWholeLine: false, // Don't highlight whole line background, maybe just gutter or end?
+                            // Let's use afterContentClassName to show time at end of line
+                            afterContentClassName: 'text-xs text-zinc-500 ml-4 font-mono opacity-50',
+                            after: {
+                                content: duration < 1000 ? `${duration}ns` : duration < 1000000 ? `${(duration / 1000).toFixed(0)}µs` : `${(duration / 1000000).toFixed(1)}ms`
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
         const oldDecorations = editor.getDecorationsInRange(model.getFullModelRange())
-            .filter((d: any) => d.options.className?.includes('bg-green-500/20'))
+            .filter((d: any) => d.options.className?.includes('bg-green-500/20') || d.options.afterContentClassName?.includes('text-xs'))
             .map((d: any) => d.id);
 
         editor.deltaDecorations(oldDecorations, decorations);
@@ -47,7 +75,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
             editor.revealLineInCenter(highlightLine);
         }
 
-    }, [highlightLine, monaco]);
+    }, [highlightLine, monaco, lineExecutionTimes]);
 
     return (
         <Editor

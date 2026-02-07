@@ -111,6 +111,10 @@ function App() {
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />
       <Route path="/dev/execution" element={<SysCoreVisualizer />} />
+      <Route path="/dev/execution:cpu" element={<SysCoreVisualizer />} />
+      <Route path="/dev/execution:mem" element={<SysCoreVisualizer />} />
+      <Route path="/dev/execution:compare" element={<SysCoreVisualizer />} />
+      <Route path="/dev/execution:hardware" element={<SysCoreVisualizer />} />
       <Route path="/console" element={<Console />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

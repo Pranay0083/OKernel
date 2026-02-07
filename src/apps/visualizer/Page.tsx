@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight, BarChart2, Cpu, MemoryStick } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import HeapView from './components/HeapView';
 import StackView from './components/StackView';
+import { StatsView } from './components/StatsView';
+import { FlameGraph } from './components/FlameGraph';
+
+// ... (existing imports)
+
+
+
 import { useSysCore } from '../../hooks/useSysCore';
-import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
 
@@ -14,6 +22,27 @@ const VisualizerPage: React.FC = () => {
     const [language, setLanguage] = useState<'python' | 'cpp'>('python');
     const [highlightedAddress, setHighlightedAddress] = useState<string | null>(null);
     const updateXarrow = useXarrow();
+
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Parse View Mode from URL
+    const viewMode = useMemo(() => {
+        if (location.pathname.includes(':cpu')) return 'cpu';
+        if (location.pathname.includes(':mem')) return 'mem';
+        if (location.pathname.includes(':compare')) return 'compare';
+        if (location.pathname.includes(':hardware')) return 'hardware';
+        return 'default';
+    }, [location.pathname]);
+
+    const setViewMode = (mode: 'default' | 'cpu' | 'mem' | 'compare' | 'hardware') => {
+        // Strip existing suffix
+        let base = location.pathname.replace(/:cpu|:mem|:compare|:hardware/g, '');
+        if (base.endsWith('/')) base = base.slice(0, -1);
+
+        if (mode === 'default') navigate(base);
+        else navigate(`${base}:${mode}`);
+    };
 
     // Force update arrows on scroll or resize
     useEffect(() => {
@@ -123,6 +152,17 @@ const VisualizerPage: React.FC = () => {
         return changes;
     }, [macroIndex, microIndex, macroHistory, frameToRender]);
 
+    // Compute execution times per line for heatmap
+    const lineExecutionTimes = useMemo(() => {
+        const times: Record<number, number> = {};
+        history.forEach(event => {
+            if (event.line && event.duration) {
+                times[event.line] = (times[event.line] || 0) + event.duration;
+            }
+        });
+        return times;
+    }, [history]);
+
 
     // Transform locals into Stack Frames for StackView
     const stackFrames = useMemo(() => {
@@ -155,6 +195,13 @@ const VisualizerPage: React.FC = () => {
 
         return objects;
     }, [frameToRender]);
+
+    const formatDuration = (ns: number) => {
+        if (!ns) return '';
+        if (ns < 1000) return `${ns}ns`;
+        if (ns < 1000000) return `${(ns / 1000).toFixed(1)}µs`;
+        return `${(ns / 1000000).toFixed(1)}ms`;
+    };
 
     const getEventLabel = (frame: any) => {
         if (!frame) return 'Idle';
@@ -220,6 +267,7 @@ const VisualizerPage: React.FC = () => {
                             onChange={setCode}
                             language={language}
                             highlightLine={frameToRender ? frameToRender.line : undefined}
+                            lineExecutionTimes={lineExecutionTimes}
                         />
 
                         <div className="absolute bottom-6 right-6 flex gap-3 z-10">
@@ -254,7 +302,36 @@ const VisualizerPage: React.FC = () => {
                     <div className="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-zinc-900/50">
                         <div className="flex items-center gap-3">
                             <span className="font-mono font-bold tracking-wider text-sm text-blue-400">MEMORY MODEL</span>
-                            <div className="flex items-center gap-1.5 bg-zinc-800 px-2 py-1 rounded border border-white/5">
+
+                            {/* View Switcher */}
+                            <div className="flex items-center bg-zinc-800 rounded p-0.5 border border-white/5 ml-4">
+                                <button
+                                    onClick={() => setViewMode('default')}
+                                    className={`px-2 py-0.5 text-[10px] rounded ${viewMode === 'default' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+                                >
+                                    DEFAULT
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('cpu')}
+                                    className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${viewMode === 'cpu' ? 'bg-orange-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+                                >
+                                    <Cpu size={10} /> CPU
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('mem')}
+                                    className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${viewMode === 'mem' ? 'bg-cyan-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+                                >
+                                    <Database size={10} /> MEM
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('hardware')}
+                                    className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${viewMode === 'hardware' ? 'bg-zinc-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+                                >
+                                    <Server size={10} /> HARDWARE
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-zinc-800 px-2 py-1 rounded border border-white/5 ml-auto">
                                 <Activity size={12} className="text-orange-400" />
                                 <span className="text-[10px] font-mono whitespace-nowrap">
                                     {getEventLabel(frameToRender)}
@@ -269,51 +346,95 @@ const VisualizerPage: React.FC = () => {
                                     </span>
                                 </div>
                             )}
+                            {/* Duration Badge */}
+                            {frameToRender?.duration && (
+                                <div className="flex items-center gap-1.5 bg-zinc-800 px-2 py-1 rounded border border-white/5">
+                                    <Clock size={12} className="text-pink-400" />
+                                    <span className="text-[10px] font-mono whitespace-nowrap text-pink-300">
+                                        {formatDuration(frameToRender.duration)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                         <span className="text-xs text-zinc-500 font-mono">Job: {jobId ? jobId.substring(0, 8) : '---'}</span>
                     </div>
 
-                    {/* Main Visualization Area: Stack | Heap */}
+                    {/* Main Visualization Area */}
                     <div className="flex-1 flex min-h-0 relative">
-                        {/* Arrows Layer */}
-                        {renderArrows()}
+                        {/* HARDWARE VIEW */}
+                        {viewMode === 'hardware' && (
+                            <div className="flex-1 bg-zinc-950 overflow-hidden">
+                                <StatsView history={history} />
+                            </div>
+                        )}
 
-                        {/* Stack Frames Panel */}
-                        <div className="w-1/3 border-r border-white/10 flex flex-col z-20 bg-zinc-950">
-                            <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
-                                <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">Stack Frames</span>
+                        {/* CPU VIEW: FlameGraph */}
+                        {viewMode === 'cpu' && (
+                            <div className="flex-1 p-4 bg-zinc-950 flex flex-col gap-4">
+                                <div className="h-2/3">
+                                    <FlameGraph history={history} />
+                                </div>
+                                <div className="h-1/3 bg-zinc-900/30 border border-white/5 rounded p-4 overflow-auto">
+                                    <h3 className="text-orange-400 font-mono text-xs mb-2">HOTSPOTS (Top 5)</h3>
+                                    {Object.entries(lineExecutionTimes)
+                                        .sort(([, a], [, b]) => b - a)
+                                        .slice(0, 5)
+                                        .map(([line, duration], i) => (
+                                            <div key={i} className="flex justify-between items-center text-xs font-mono py-1 border-b border-white/5">
+                                                <span className="text-zinc-400">Line {line}</span>
+                                                <span className="text-zinc-200">{formatDuration(duration)}</span>
+                                            </div>
+                                        ))}
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
-                                <StackView
-                                    frames={stackFrames}
-                                    onVariableHover={setHighlightedAddress}
-                                    onVariableClick={(addr) => setHighlightedAddress(addr)}
-                                    changedVars={changedVars}
-                                />
-                            </div>
-                        </div>
+                        )}
 
-                        {/* Heap Objects Panel */}
-                        <div className="w-2/3 flex flex-col z-20 bg-zinc-950">
-                            <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
-                                <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Heap Objects</span>
-                                <span className="ml-auto text-[9px] text-zinc-600 font-mono">{heapObjects.length} objects</span>
-                            </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
-                                <HeapView
-                                    objects={heapObjects}
-                                    highlightId={highlightedAddress || undefined}
-                                    onObjectClick={(id) => setHighlightedAddress(id)}
-                                    changedIds={changedVars}
-                                />
-                            </div>
-                        </div>
+                        {/* DEFAULT / MEM VIEW */}
+                        {(viewMode === 'default' || viewMode === 'mem') && (
+                            <>
+                                {/* Arrows Layer */}
+                                {viewMode === 'default' && renderArrows()}
+
+                                {/* Stack Frames Panel */}
+                                {viewMode === 'default' && (
+                                    <div className="w-1/3 border-r border-white/10 flex flex-col z-20 bg-zinc-950">
+                                        <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
+                                            <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">Stack Frames</span>
+                                        </div>
+                                        <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
+                                            <StackView
+                                                frames={stackFrames}
+                                                onVariableHover={setHighlightedAddress}
+                                                onVariableClick={(addr) => setHighlightedAddress(addr)}
+                                                changedVars={changedVars}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Heap Objects Panel */}
+                                <div className={`${viewMode === 'mem' ? 'w-full' : 'w-2/3'} flex flex-col z-20 bg-zinc-950`}>
+                                    <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
+                                        <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Heap Objects</span>
+                                        <span className="ml-auto text-[9px] text-zinc-600 font-mono">{heapObjects.length} objects</span>
+                                    </div>
+                                    <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
+                                        <HeapView
+                                            objects={heapObjects}
+                                            highlightId={highlightedAddress || undefined}
+                                            onObjectClick={(id) => setHighlightedAddress(id)}
+                                            changedIds={changedVars}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Timeline & Controls */}
-                    <div className="h-28 border-t border-white/10 bg-zinc-900/50 p-3 flex flex-col gap-2 z-30">
+                    <div className="h-48 border-t border-white/10 bg-zinc-900/50 p-3 flex flex-col gap-2 z-30">
                         {/* Memory Chart with GC Markers */}
-                        <div className="h-10 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative group/chart">
+                        <div className="h-32 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative group/chart">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={history.map((h, i) => ({
                                     time: i,

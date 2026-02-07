@@ -1,4 +1,4 @@
-FROM gcc:13-slim
+FROM python:3.11-slim
 
 # Install profiling tools
 RUN apt-get update && apt-get install -y \
@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     linux-perf \
     valgrind \
     gdb \
+    g++ \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,4 +16,5 @@ USER runner
 WORKDIR /home/runner
 
 COPY entrypoint.sh /entrypoint.sh
+COPY runner.py /runner.py
 ENTRYPOINT ["/entrypoint.sh"]

@@ -11,6 +11,48 @@ import time
 # Initialize tracemalloc
 tracemalloc.start()
 
+
+# Hardware Cost Mapping (Machine Sympathy)
+OPCODE_HARDWARE_MAP = {
+    # MEMORY READ
+    "LOAD_CONST": ("MEM_READ", 2), "LOAD_FAST": ("MEM_READ", 2), "LOAD_NAME": ("MEM_READ", 4),
+    "LOAD_GLOBAL": ("MEM_READ", 4), "LOAD_ATTR": ("MEM_READ", 4), "LOAD_METHOD": ("MEM_READ", 3),
+    "BINARY_SUBSCR": ("MEM_READ", 4),
+    
+    # MEMORY WRITE
+    "STORE_FAST": ("MEM_WRITE", 2), "STORE_NAME": ("MEM_WRITE", 4), "STORE_ATTR": ("MEM_WRITE", 4),
+    "STORE_SUBSCR": ("MEM_WRITE", 4), "DELETE_FAST": ("MEM_WRITE", 1),
+    
+    # ALU (COMPUTE)
+    "BINARY_ADD": ("ALU", 1), "BINARY_SUBTRACT": ("ALU", 1), "BINARY_MULTIPLY": ("ALU", 3),
+    "BINARY_TRUE_DIVIDE": ("ALU", 5), "BINARY_FLOOR_DIVIDE": ("ALU", 5), "BINARY_MODULO": ("ALU", 5),
+    "BINARY_POWER": ("ALU", 10), "BINARY_OR": ("ALU", 1), "BINARY_XOR": ("ALU", 1), "BINARY_AND": ("ALU", 1),
+    "INPLACE_ADD": ("ALU", 1), "INPLACE_SUBTRACT": ("ALU", 1), # ... patterns
+    
+    # CONTROL FLOW
+    "COMPARE_OP": ("CONTROL", 2), "JUMP_FORWARD": ("CONTROL", 1), "JUMP_ABSOLUTE": ("CONTROL", 1),
+    "POP_JUMP_IF_TRUE": ("CONTROL", 2), "POP_JUMP_IF_FALSE": ("CONTROL", 2),
+    "FOR_ITER": ("CONTROL", 3), "RETURN_VALUE": ("CONTROL", 2),
+    
+    # STACK / FUNCTION
+    "POP_TOP": ("STACK", 1), "ROT_TWO": ("STACK", 1), "DUP_TOP": ("STACK", 1),
+    "CALL_FUNCTION": ("FUNCTION", 10), "CALL_METHOD": ("FUNCTION", 8),
+}
+
+def get_hardware_info(opname):
+    # Default fallback
+    if opname in OPCODE_HARDWARE_MAP:
+        return OPCODE_HARDWARE_MAP[opname]
+    
+    # Heuristics
+    if "LOAD" in opname: return ("MEM_READ", 3)
+    if "STORE" in opname: return ("MEM_WRITE", 3)
+    if "BINARY" in opname or "INPLACE" in opname: return ("ALU", 2)
+    if "JUMP" in opname or "IF" in opname: return ("CONTROL", 2)
+    if "CALL" in opname: return ("FUNCTION", 8)
+    
+    return ("OTHER", 1)
+
 class TraceRunner:
     def __init__(self):
         self.events = []
@@ -60,6 +102,7 @@ class TraceRunner:
         # Opcode details
         opcode_name = ""
         opcode_arg = ""
+        hardware_info = None
         
         if event == 'opcode':
             try:
@@ -72,10 +115,15 @@ class TraceRunner:
                 if lasti >= 0 and lasti < len(code_bytes):
                     op = code_bytes[lasti]
                     opcode_name = dis.opname[op]
-                    # This implies we might want to decode the arg, but for now just the name is huge progress
                     
-                    # Optional: Getting the argument is complex without full disassembly, 
-                    # but dis.get_instructions(co) could be cached to map offset -> instruction
+                    # Hardware Classification
+                    hw_type, hw_cost = get_hardware_info(opcode_name)
+                    hardware_info = {
+                        "type": hw_type,
+                        "cost": hw_cost,
+                        "opcode": opcode_name
+                    }
+                    
             except Exception as e:
                 opcode_name = "ERROR_OP"
 
@@ -93,7 +141,9 @@ class TraceRunner:
                 "opcode": opcode_name,
                 "offset": frame.f_lasti
             },
-            "timestamp": time.time_ns() 
+            "hardware": hardware_info, # New field
+            "timestamp": time.time_ns(),
+            "process_time": time.process_time_ns()
         }
         
         # Emit event
@@ -109,6 +159,7 @@ def gc_callback(phase, info):
         "phase": phase, # 'start' or 'stop'
         "info": info,
         "timestamp": time.time_ns(),
+        "process_time": time.process_time_ns(),
         "memory_curr": tracemalloc.get_traced_memory()[0]
     }
     sys.__stdout__.write(f"__SYSCORE_EVENT__{json.dumps(event_data)}\n")
