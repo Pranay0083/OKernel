@@ -134,20 +134,34 @@
 
   /* Custom Scrollbar for that "IDE" feel */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #09090b;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
     background: #3f3f46;
-    border-radius: 2px;
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
     background: #52525b;
+  }
+
+  /* Glassmorphism Utility */
+  .glass {
+    @apply bg-zinc-900/50 backdrop-blur-md border border-white/5;
+  }
+  
+  .glass-hover {
+    @apply hover:bg-zinc-800/50 hover:border-white/10 transition-all duration-300;
+  }
+
+  /* Global Selection Color */
+  ::selection {
+    @apply bg-purple-500/30 text-white;
   }
 }

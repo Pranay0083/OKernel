@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight, BarChart2, Cpu, MemoryStick } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import HeapView from './components/HeapView';
 import StackView from './components/StackView';
@@ -12,6 +12,7 @@ import { FlameGraph } from './components/FlameGraph';
 
 
 import { useSysCore } from '../../hooks/useSysCore';
+import { Persistence } from '../../services/persistence';
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
@@ -19,9 +20,41 @@ import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
 const VisualizerPage: React.FC = () => {
     const { isConnected, isExecuting, logs, metrics, executeCode, jobId, history } = useSysCore();
     const [code, setCode] = useState<string>('l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
+    const [input, setInput] = useState<string>('');
+    const [showInput, setShowInput] = useState(false);
     const [language, setLanguage] = useState<'python' | 'cpp'>('python');
     const [highlightedAddress, setHighlightedAddress] = useState<string | null>(null);
     const updateXarrow = useXarrow();
+
+    // Persistence Logic
+    const startTimeRef = useRef<number>(0);
+    const [lastJobId, setLastJobId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isExecuting) {
+            startTimeRef.current = Date.now();
+            setLastJobId(jobId);
+        } else if (jobId && jobId !== lastJobId && startTimeRef.current > 0) {
+            // Execution finished
+            const duration = Date.now() - startTimeRef.current;
+            const status = logs.some(l => l.includes('Traceback') || l.includes('Error')) ? 'failed' : 'success';
+
+            Persistence.addJob({
+                id: jobId,
+                timestamp: Date.now(),
+                code,
+                language,
+                status,
+                duration,
+                input
+            });
+            startTimeRef.current = 0;
+            setLastJobId(jobId);
+
+            // Trigger update in sidebar
+            window.dispatchEvent(new Event('okernel-session-update'));
+        }
+    }, [isExecuting, jobId, logs, code, language, lastJobId, input]);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -43,6 +76,31 @@ const VisualizerPage: React.FC = () => {
         if (mode === 'default') navigate(base);
         else navigate(`${base}:${mode}`);
     };
+
+    // Load Job from URL
+    const [searchParams] = useSearchParams();
+    useEffect(() => {
+        const loadJobId = searchParams.get('loadJob');
+        const autoRun = searchParams.get('autoRun') === 'true';
+
+        if (loadJobId) {
+            const job = Persistence.getJob(loadJobId);
+            if (job) {
+                setCode(job.code);
+                setLanguage(job.language);
+                setInput(job.input || '');
+                if (job.input) setShowInput(true);
+
+                // Auto-Exectute if requested
+                if (autoRun) {
+                    // Slight delay to allow state to settle
+                    setTimeout(() => {
+                        executeCode(job.language, job.code, job.input);
+                    }, 100);
+                }
+            }
+        }
+    }, [searchParams]);
 
     // Force update arrows on scroll or resize
     useEffect(() => {
@@ -280,7 +338,7 @@ const VisualizerPage: React.FC = () => {
                                 <option value="cpp">C++ (GCC)</option>
                             </select>
                             <button
-                                onClick={() => executeCode(language, code)}
+                                onClick={() => executeCode(language, code, input)}
                                 disabled={isExecuting}
                                 className={`flex items-center gap-2 px-6 py-2 rounded shadow-lg font-bold text-white transition-all transform hover:scale-105
                                     ${isExecuting
@@ -292,6 +350,28 @@ const VisualizerPage: React.FC = () => {
                                 {isExecuting ? 'RUNNING' : 'EXECUTE'}
                             </button>
                         </div>
+                    </div>
+
+                    {/* Input Panel (Collapsible) */}
+                    <div className={`border-t border-white/10 bg-zinc-900/30 transition-all duration-300 ${showInput ? 'h-32' : 'h-8'}`}>
+                        <div
+                            onClick={() => setShowInput(!showInput)}
+                            className="h-8 flex items-center justify-between px-4 cursor-pointer hover:bg-white/5"
+                        >
+                            <span className="text-[10px] font-mono text-zinc-500 uppercase flex items-center gap-2">
+                                <span className={showInput ? 'rotate-90 transition-transform' : 'transition-transform'}>▶</span>
+                                Standard Input (Stdin)
+                            </span>
+                            {input && !showInput && <span className="text-[10px] text-zinc-600 truncate max-w-[150px]">{input}</span>}
+                        </div>
+                        {showInput && (
+                            <textarea
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Enter input for your program here..."
+                                className="w-full h-[calc(100%-2rem)] bg-zinc-950/50 p-3 text-sm font-mono text-zinc-300 outline-none resize-none"
+                            />
+                        )}
                     </div>
                 </div>
 

@@ -60,7 +60,7 @@ export const useSysCore = () => {
         history: []
     });
 
-    const executeCode = useCallback(async (language: 'python' | 'cpp', code: string) => {
+    const executeCode = useCallback(async (language: 'python' | 'cpp', code: string, input?: string) => {
         try {
             // Reset state
             setState(prev => ({
@@ -73,7 +73,7 @@ export const useSysCore = () => {
             }));
 
             // 1. Execute via API (waits for full execution and upload)
-            const response = await sysCoreApi.execute(language, code);
+            const response = await sysCoreApi.execute(language, code, input || "");
             // Assuming response is string (jobId) or object { output: jobId, status: "success" }
             // The current sysCoreApi.execute implementation likely returns the output string
             // I should check sysCoreApi implementation. Assuming it returns jobId based on my backend change.

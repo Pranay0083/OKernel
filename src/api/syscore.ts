@@ -17,10 +17,11 @@ export const sysCoreApi = {
         }
     },
 
-    execute: async (language: 'python' | 'cpp', code: string): Promise<string> => {
+    execute: async (language: 'python' | 'cpp', code: string, input?: string): Promise<string> => {
         const res = await axios.post<ExecuteResponse>(`${API_BASE}/execute`, {
             language,
-            code
+            code,
+            input: input || ""
         });
         if (res.data.status === 'success') {
             return res.data.output; // Job ID

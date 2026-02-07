@@ -31,6 +31,8 @@ import { Sponsor } from './pages/Sponsor';
 import { NotFound } from './pages/NotFound';
 import { Maintenance } from './pages/Maintenance';
 import { useSystemConfig } from './hooks/useSystemConfig';
+import AppLayout from './apps/visualizer/components/AppLayout';
+import ComparePage from './apps/visualizer/ComparePage';
 
 function App() {
   const navigate = useNavigate();
@@ -110,11 +112,16 @@ function App() {
 
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />
-      <Route path="/dev/execution" element={<SysCoreVisualizer />} />
-      <Route path="/dev/execution:cpu" element={<SysCoreVisualizer />} />
-      <Route path="/dev/execution:mem" element={<SysCoreVisualizer />} />
-      <Route path="/dev/execution:compare" element={<SysCoreVisualizer />} />
-      <Route path="/dev/execution:hardware" element={<SysCoreVisualizer />} />
+
+      {/* OKernel Visualizer Routes (Wrapped in App Shell) */}
+      <Route element={<AppLayout />}>
+        <Route path="/dev/execution" element={<SysCoreVisualizer />} />
+        <Route path="/dev/execution:cpu" element={<SysCoreVisualizer />} />
+        <Route path="/dev/execution:mem" element={<SysCoreVisualizer />} />
+        <Route path="/dev/execution:compare" element={<ComparePage />} />
+        <Route path="/dev/execution:hardware" element={<SysCoreVisualizer />} />
+      </Route>
+
       <Route path="/console" element={<Console />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
