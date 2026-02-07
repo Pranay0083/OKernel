@@ -17,6 +17,7 @@ import { SystemConfig } from './pages/admin/SystemConfig';
 import { Roadmap } from './pages/Roadmap';
 import { Changelog } from './pages/Changelog';
 import { ShellMakerPage } from './apps/shell_maker/Page';
+import SysCoreVisualizer from './apps/visualizer/Page';
 import { Documentation } from './pages/Documentation';
 import { OSConcepts } from './pages/OSConcepts';
 import { AlgoWiki } from './pages/AlgoWiki';
@@ -109,6 +110,7 @@ function App() {
 
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Visualizer />} />
+      <Route path="/dev/execution" element={<SysCoreVisualizer />} />
       <Route path="/console" element={<Console />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
