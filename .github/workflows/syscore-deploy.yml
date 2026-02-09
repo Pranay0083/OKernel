@@ -64,7 +64,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
-    # 🛑 This enables the "Human Intervention" / Manual Approval button
+    # This enables the "Human Intervention" / Manual Approval button
     environment: 
       name: production
       url: https://api.hackmist.tech/health
@@ -95,14 +95,14 @@ jobs:
           script_stop: true
           envs: BINARY_NAME,DEPLOY_PATH,SERVICE_NAME
           script: |
-            set -x # 👈 Enable Debug Mode (Prints every command)
+            set -x # Enable Debug Mode (Prints every command)
             
             VERSION="${{ needs.build.outputs.version }}"
             ARTIFACT="/tmp/${BINARY_NAME}-${VERSION}.tar.gz"
             RELEASE_DIR="${DEPLOY_PATH}/releases/${VERSION}"
             CURRENT_LINK="${DEPLOY_PATH}/current"
             
-            echo "🚀 Starting Deployment for $VERSION..."
+            echo "Starting Deployment for $VERSION..."
             
             # Debug: Check sudo capability explicitly
             # We remove the 'if' block so we can see the raw error from sudo itself
@@ -116,22 +116,22 @@ jobs:
             sudo chmod +x "$RELEASE_DIR/$BINARY_NAME"
             
             # 3. Capture Previous State (for Rollback)
+            # We use a safe check pattern so 'script_stop' doesn't kill us if the link is missing
+            PREV_LINK_TARGET=""
             if [ -L "$CURRENT_LINK" ]; then
               PREV_LINK_TARGET=$(readlink "$CURRENT_LINK")
-            else
-              PREV_LINK_TARGET=""
-            fi
+            fi || true 
             
             # 4. Atomic Link Switch
-            echo "🔗 Switching symlink..."
+            echo "Switching symlink..."
             sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
             
             # 5. Restart Systemd
-            echo "🔄 Restarting Service..."
+            echo "Restarting Service..."
             if ! sudo systemctl restart $SERVICE_NAME; then
-               echo "❌ Service failed to start."
+               echo "Service failed to start."
                if [ -n "$PREV_LINK_TARGET" ]; then
-                 echo "🔙 Rolling back to previous version..."
+                 echo "Rolling back to previous version..."
                  sudo ln -sfn "$PREV_LINK_TARGET" "$CURRENT_LINK"
                  sudo systemctl restart $SERVICE_NAME
                fi
@@ -139,17 +139,17 @@ jobs:
             fi
             
             # 6. Health Check
-            echo "💓 Checking Health..."
+            echo "Checking Health..."
             sleep 3
             if ! curl -s --fail http://127.0.0.1:3001/health; then
-               echo "❌ Health check failed."
+               echo "Health check failed."
                if [ -n "$PREV_LINK_TARGET" ]; then
-                 echo "🔙 Rolling back due to health failure..."
+                 echo "Rolling back due to health failure..."
                  sudo ln -sfn "$PREV_LINK_TARGET" "$CURRENT_LINK"
                  sudo systemctl restart $SERVICE_NAME
                fi
                exit 1
             fi
             
-            echo "✅ Deployment Complete: $VERSION"
+            echo "Deployment Complete: $VERSION"
             rm "$ARTIFACT"
