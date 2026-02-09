@@ -5,13 +5,15 @@
  * Simulated In-Memory File System - Now refactored to be an API wrapper.
  */
 
-const API_BASE = "http://localhost:3001/api/vm/fs";
+import { config } from '../../config';
+
+const API_BASE = `${config.apiUrl}/api/vm/fs`;
 
 export class MockFileSystem {
     // We maintain a local representation for the UI, but operations go to backend
     private files: string[] = ['README.txt', 'secret.c'];
 
-    constructor() {}
+    constructor() { }
 
     async listFiles(): Promise<string[]> {
         try {

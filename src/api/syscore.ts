@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:3001/api';
+import { config } from '../config';
+
+const API_BASE = `${config.apiUrl}/api`;
 
 export interface ExecuteResponse {
     status: string;
@@ -10,7 +12,7 @@ export interface ExecuteResponse {
 export const sysCoreApi = {
     checkHealth: async (): Promise<boolean> => {
         try {
-            const res = await axios.get('http://localhost:3001/health');
+            const res = await axios.get(`${config.apiUrl}/health`);
             return res.status === 200;
         } catch {
             return false;

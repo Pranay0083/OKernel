@@ -5,7 +5,9 @@
  * Now refactored to be an API wrapper for the Rust backend.
  */
 
-const API_BASE = "http://localhost:3001/api/vm";
+import { config } from '../../config';
+
+const API_BASE = `${config.apiUrl}/api/vm`;
 
 export class Memory {
     static readonly SIZE = 1024 * 1024; // 1MB RAM
