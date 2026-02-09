@@ -29,12 +29,17 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          target: x86_64-unknown-linux-musl
           override: true
+
+      - name: Install musl-tools
+        run: sudo apt-get install -y musl-tools
 
       - name: Build Release Binary
         run: |
           cd syscore
-          cargo build --release
+          # Inject version at build time using environment variable
+          SYSCORE_VERSION="${{ steps.version.outputs.VERSION }}" cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Generate Version
         id: version
@@ -45,9 +50,9 @@ jobs:
 
       - name: Package Artifact
         run: |
-          cd syscore/target/release
+          cd syscore/target/x86_64-unknown-linux-musl/release
           # Compress the binary into a tarball
-          tar -czf ../../../${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz ${{ env.BINARY_NAME }}
+          tar -czf ../../../../${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz ${{ env.BINARY_NAME }}
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

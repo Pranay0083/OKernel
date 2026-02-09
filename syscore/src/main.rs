@@ -76,6 +76,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn health_check() -> &'static str {
-    "SysCore Backend: ONLINE"
+async fn health_check() -> String {
+    let version = option_env!("SYSCORE_VERSION").unwrap_or("unknown");
+    format!("SysCore Backend: ONLINE (Build: {})", version)
 }
