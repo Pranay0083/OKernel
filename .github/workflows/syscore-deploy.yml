@@ -50,9 +50,14 @@ jobs:
 
       - name: Package Artifact
         run: |
-          cd syscore/target/x86_64-unknown-linux-musl/release
-          # Compress the binary into a tarball
-          tar -czf ../../../../${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz ${{ env.BINARY_NAME }}
+          # Create a staging area
+          mkdir staging
+          cp syscore/target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }} staging/
+          cp -r syscore/docker staging/
+          
+          # Compress the staging area into a tarball
+          cd staging
+          tar -czf ../${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz .
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
