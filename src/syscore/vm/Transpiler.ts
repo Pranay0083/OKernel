@@ -16,8 +16,8 @@ export class Transpiler {
         js = js.replace(/\/\/[^\n]*/g, '');
 
         // 2. Identify and Transpile Variable Declarations (Integers)
-        // int x = 10; -> const x_ptr = __sys.stack_alloc(4); __sys.write32(x_ptr, 10);
-        // int x;      -> const x_ptr = __sys.stack_alloc(4); __sys.write32(x_ptr, 0);
+        // int x = 10; -> const x_ptr = await __sys.stack_alloc(4); await __sys.write32(x_ptr, 10);
+        // int x;      -> const x_ptr = await __sys.stack_alloc(4); await __sys.write32(x_ptr, 0);
 
         // Note: We use a specific suffix '_ptr' to avoid collision with JS keywords if user uses them.
         // We capture the declaration relative to the scope? No, global replace for now (MVP).
@@ -26,23 +26,23 @@ export class Transpiler {
         js = js.replace(/int\s+(\w+)(\s*=\s*([^;]+))?;/g, (match, name, eqPart, val) => {
             vars.add(name);
             const initVal = val ? val.trim() : '0';
-            return `const ${name}_ptr = __sys.stack_alloc(4); __sys.write32(${name}_ptr, ${initVal});`;
+            return `const ${name}_ptr = await __sys.stack_alloc(4); await __sys.write32(${name}_ptr, ${initVal});`;
         });
 
         // 3. Transpile Assignments (L-Values)
-        // x = 20; -> __sys.write32(x_ptr, 20);
+        // x = 20; -> await __sys.write32(x_ptr, 20);
         vars.forEach(v => {
             const assignRegex = new RegExp(`\\b${v}\\s*=\\s*([^;]+);`, 'g');
-            js = js.replace(assignRegex, `__sys.write32(${v}_ptr, $1);`);
+            js = js.replace(assignRegex, `await __sys.write32(${v}_ptr, $1);`);
 
-            // x++; -> __sys.write32(x_ptr, __sys.read32(x_ptr) + 1);
+            // x++; -> await __sys.write32(x_ptr, await __sys.read32(x_ptr) + 1);
             // We match 'x++' possibly without a semicolon (for loops)
             const incRegex = new RegExp(`\\b${v}\\+\\+;?`, 'g');
-            js = js.replace(incRegex, `__sys.write32(${v}_ptr, __sys.read32(${v}_ptr) + 1);`);
+            js = js.replace(incRegex, `await __sys.write32(${v}_ptr, await __sys.read32(${v}_ptr) + 1);`);
 
             // x--;
             const decRegex = new RegExp(`\\b${v}--;?`, 'g');
-            js = js.replace(decRegex, `__sys.write32(${v}_ptr, __sys.read32(${v}_ptr) - 1);`);
+            js = js.replace(decRegex, `await __sys.write32(${v}_ptr, await __sys.read32(${v}_ptr) - 1);`);
         });
 
         // 4. Transpile Reads (R-Values)
@@ -50,7 +50,7 @@ export class Transpiler {
         vars.forEach(v => {
             // Negative lookahead to ensure we don't match x_ptr
             const readRegex = new RegExp(`\\b${v}\\b(?!_ptr)`, 'g');
-            js = js.replace(readRegex, `__sys.read32(${v}_ptr)`);
+            js = js.replace(readRegex, `await __sys.read32(${v}_ptr)`);
         });
 
         // 5. User Functions (Async Wrapper)
@@ -86,9 +86,9 @@ export class Transpiler {
         // Wait, char arrays.
 
         // 7. Char Arrays (Strings)
-        // char cmd[100]; -> const cmd_ptr = __sys.malloc(100); __sys.write8(cmd_ptr, 0);
+        // char cmd[100]; -> const cmd_ptr = await __sys.malloc(100); await __sys.write8(cmd_ptr, 0);
         js = js.replace(/char\s+(\w+)\[(\d+)\];/g, (match, name, size) => {
-            return `const ${name} = __sys.malloc(${size}); __sys.write8(${name}, 0);`; // Null init
+            return `const ${name} = await __sys.malloc(${size}); await __sys.write8(${name}, 0);`; // Null init
         });
 
         // get_input(cmd) -> await __sys.input(cmd) ?
@@ -96,11 +96,11 @@ export class Transpiler {
         js = js.replace(/get_input\s*\(([^)]+)\);/g, 'await __sys.input($1);');
 
         // strcmp(cmd, "str")
-        // We need a helper for this: __sys.strcmp(cmd, "str")
-        js = js.replace(/strcmp\s*\(([^,]+),\s*([^)]+)\)/g, '__sys.strcmp($1, $2)');
+        // We need a helper for this: await __sys.strcmp(cmd, "str")
+        js = js.replace(/strcmp\s*\(([^,]+),\s*([^)]+)\)/g, 'await __sys.strcmp($1, $2)');
 
-        // sprintf(buf, "fmt", ...) -> __sys.sprintf(buf, "fmt", ...)
-        js = js.replace(/sprintf\s*\(([^,]+),/g, '__sys.sprintf($1,');
+        // sprintf(buf, "fmt", ...) -> await __sys.sprintf(buf, "fmt", ...)
+        js = js.replace(/sprintf\s*\(([^,]+),/g, 'await __sys.sprintf($1,');
 
         // Constants (Simulated)
         js = js.replace(/clear\s*\(\);/g, 'await __sys.clear();');

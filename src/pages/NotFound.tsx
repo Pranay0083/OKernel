@@ -42,7 +42,7 @@ export const NotFound = () => {
                             <Home className="mr-2" size={18} /> Reboot System
                         </Button>
                     </Link>
-                    <Link to="/dev/console">
+                    <Link to="/console">
                         <Button size="lg" variant="outline" className="border-zinc-700 hover:bg-zinc-800 bg-black">
                             <Terminal className="mr-2" size={18} /> Debug in Console
                         </Button>

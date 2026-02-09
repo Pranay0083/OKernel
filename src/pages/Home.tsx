@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Zap, Layers, Clock, Terminal, ArrowRight, Cpu, Lock, Heart } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Home = () => {
     const { config } = useSystemConfig();
+    const navigate = useNavigate();
     const [feedback, setFeedback] = useState('');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -16,6 +17,13 @@ export const Home = () => {
     const [testimonials, setTestimonials] = useState<{ message: string; name: string; role?: string }[]>([]);
 
     React.useEffect(() => {
+        // Redirect if already logged in
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                navigate('/dashboard');
+            }
+        });
+
         const fetchTestimonials = async () => {
             const { data } = await supabase
                 .from('featured_reviews')
@@ -29,7 +37,7 @@ export const Home = () => {
             }
         };
         fetchTestimonials();
-    }, []);
+    }, [navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,8 +70,34 @@ export const Home = () => {
 
     return (
         <Layout>
-            {/* Hero Section */}
-            <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 border-b border-border bg-black/40 overflow-hidden">
+            {/* NEW: OKernel.Sympathy Banner */}
+            <section className="pt-20 pb-12 relative border-b border-green-500/20 bg-zinc-950/80 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.15),transparent_70%)] pointer-events-none"></div>
+                <div className="container mx-auto px-4 text-center relative z-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/20 border border-green-500/30 text-green-400 text-xs font-mono rounded-full mb-4 animate-pulse">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        NEW PRODUCT RELEASE
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-4">
+                        OKernel.<span className="text-green-500">Sympathy</span>
+                    </h1>
+                    <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto mb-8 leading-relaxed font-light">
+                        A cycle-accurate execution engine for <span className="text-white font-medium">Python & C++</span>.
+                        <span className="text-zinc-500 text-sm block mt-1">(More languages coming soon)</span>
+                        <span className="text-green-400 font-mono text-base block mt-4">Trace 100+ lines of code state without a debugger.</span>
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <Link to="/platform">
+                            <Button size="lg" className="h-12 px-6 text-base bg-white text-black hover:bg-zinc-200 font-bold rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                                Explore Sympathy &rarr;
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Original Hero Section (Restored) */}
+            <section className="relative pt-16 pb-16 md:pt-24 md:pb-24 border-b border-border bg-black/40 overflow-hidden">
                 <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
 
                     <div className="space-y-10">
@@ -93,12 +127,12 @@ export const Home = () => {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 items-start pt-4 animate-in delay-300">
-                            <Link to="/dev/shell">
+                            <Link to="/shell">
                                 <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-green-500 hover:bg-green-400 text-black font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all">
                                     <Terminal className="mr-2" /> Launch Shell Maker
                                 </Button>
                             </Link>
-                            <Link to="/dev/scheduler">
+                            <Link to="/scheduler">
                                 <Button size="lg" variant="outline" className="rounded-full px-8 h-16 border-zinc-700 hover:bg-white/5">
                                     <Cpu className="mr-2 size-4" /> Boot Scheduler
                                 </Button>
@@ -337,7 +371,7 @@ int main() {
                     </div>
 
                     <div className="mt-12">
-                        <Link to="/dev/shell">
+                        <Link to="/shell">
                             <Button className="rounded-full px-8 bg-white text-black hover:bg-zinc-200 font-bold">
                                 Start Coding &rarr;
                             </Button>
@@ -359,7 +393,7 @@ int main() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Link to="/dev/os-concepts" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-green-500/50 transition-colors">
+                        <Link to="/os-concepts" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-green-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-green-500/10">
                                 <Clock className="text-zinc-400 group-hover:text-green-500" size={20} />
                             </div>
@@ -367,7 +401,7 @@ int main() {
                             <p className="text-xs text-zinc-500">FCFS, Round Robin, SJF. Time quantum analysis.</p>
                         </Link>
 
-                        <Link to="/dev/shell" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-blue-500/50 transition-colors">
+                        <Link to="/shell" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-blue-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-blue-500/10">
                                 <Terminal className="text-zinc-400 group-hover:text-blue-500" size={20} />
                             </div>
@@ -383,7 +417,7 @@ int main() {
                             <p className="text-xs text-zinc-500">Mutex Visualization. Deadlock detection algorithms.</p>
                         </div>
 
-                        <Link to="/dev/algo-wiki" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-purple-500/50 transition-colors">
+                        <Link to="/algo-wiki" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-purple-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-purple-500/10">
                                 <Layers className="text-zinc-400 group-hover:text-purple-500" size={20} />
                             </div>
@@ -459,7 +493,7 @@ int main() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* CPU Unit */}
-                    <Link to="/console" className="group relative bg-zinc-950 border border-zinc-800 hover:border-green-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                    <Link to="/scheduler" className="group relative bg-zinc-950 border border-zinc-800 hover:border-green-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
@@ -483,7 +517,7 @@ int main() {
                     </Link>
 
                     {/* Shell Maker Unit */}
-                    <Link to="/dev/shell" className="group relative bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                    <Link to="/shell" className="group relative bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
@@ -529,7 +563,7 @@ int main() {
             </section >
 
             {/* Impact / Testimonials (Dynamic Carousel) */}
-            < section className="py-24 border-t border-zinc-800 bg-zinc-900/20" >
+            <section className="py-24 border-t border-zinc-800 bg-zinc-900/20">
                 <div className="container mx-auto px-4">
                     <div className="mb-12 text-center">
                         <h2 className="text-2xl font-bold mb-2">User Feedback</h2>
@@ -564,10 +598,10 @@ int main() {
                         )
                     )}
                 </div>
-            </section >
+            </section>
 
             {/* System Showcase (Screenshots) */}
-            < section className="py-24 bg-zinc-950 relative overflow-hidden" >
+            <section className="py-24 bg-zinc-950 relative overflow-hidden">
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold tracking-tight mb-4">Terminal Uplink</h2>
@@ -705,12 +739,10 @@ int main() {
 const Testimonial = ({ quote, author, role }: { quote: string, author: string, role: string }) => (
     <div className="p-8 rounded bg-black border border-zinc-800 relative">
         <div className="text-4xl text-zinc-800 absolute top-4 left-4 font-serif">"</div>
-        <p className="text-zinc-300 relative z-10 mb-6 leading-relaxed text-sm">
-            {quote}
-        </p>
+        <p className="text-zinc-300 italic mb-6 relative z-10">{quote}</p>
         <div>
             <div className="font-bold text-white text-sm">{author}</div>
-            <div className="text-xs text-zinc-500 font-mono">{role}</div>
+            <div className="text-xs text-zinc-500">{role}</div>
         </div>
     </div>
 );

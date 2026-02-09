@@ -69,7 +69,11 @@ export const AdminLogin = () => {
                 {/* Header */}
                 <div className="bg-zinc-900/50 px-4 py-3 flex items-center gap-2 border-b border-zinc-800">
                     <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                        <div 
+                            onClick={() => navigate('/')}
+                            className="w-3 h-3 rounded-full bg-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all"
+                            title="Abort Sequence"
+                        />
                         <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                         <div className="w-3 h-3 rounded-full bg-green-500/50" />
                     </div>

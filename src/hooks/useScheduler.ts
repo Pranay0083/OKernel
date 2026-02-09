@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SimulationState, Process } from '../core/types';
-import { nextTick } from '../core/scheduler';
+import { tick } from '../syscore/cpu';
 
 const initialState: SimulationState = {
     currentTime: 0,
@@ -20,23 +20,33 @@ export const useScheduler = () => {
     const [state, setState] = useState<SimulationState>(initialState);
 
     useEffect(() => {
-        let interval: ReturnType<typeof setInterval> | undefined;
-        if (state.isPlaying) {
-            interval = setInterval(() => {
-                setState(prev => {
-                    // Check execution limit to prevent infinite loops if logic fails
-                    if (prev.currentTime > 1000) return { ...prev, isPlaying: false };
+        let timeout: ReturnType<typeof setTimeout> | undefined;
 
-                    const allDone = prev.processes.length > 0 && prev.processes.every(p => p.state === 'COMPLETED');
-                    if (allDone) {
-                        return { ...prev, isPlaying: false };
-                    }
-                    return nextTick(prev);
-                });
-            }, state.speed);
+        const performTick = () => {
+            const allDone = state.processes.length > 0 && state.processes.every(p => p.state === 'COMPLETED');
+            if (allDone || state.currentTime > 1000) {
+                setState(prev => ({ ...prev, isPlaying: false }));
+                return;
+            }
+
+            try {
+                // Use local simulation logic instead of backend
+                const nextState = tick(state);
+                setState(nextState);
+            } catch (error) {
+                console.error('Simulation tick failed:', error);
+                setState(prev => ({ ...prev, isPlaying: false }));
+            }
+        };
+
+        if (state.isPlaying) {
+            timeout = setTimeout(performTick, state.speed);
         }
-        return () => clearInterval(interval);
-    }, [state.isPlaying, state.speed]);
+
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [state]);
 
     const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime'>) => {
         setState(prev => {

@@ -1,70 +1,78 @@
+
 import React from 'react';
 import { Layout } from '../../components/layout/Layout';
-import { Shield, Eye, Server } from 'lucide-react';
+import { Shield, Lock, Eye, Server } from 'lucide-react';
 
 export const Privacy = () => {
     return (
         <Layout>
-            <div className="container mx-auto px-4 pt-32 pb-24 max-w-3xl">
-                <div className="mb-12 border-b border-zinc-800 pb-6">
-                    <div className="text-xs font-mono text-zinc-500 mb-2">Legal Compliance</div>
-                    <h1 className="text-4xl font-bold text-white font-mono">/etc/privacy.conf</h1>
+            <div className="container mx-auto px-6 pt-32 pb-24 max-w-4xl bg-[#050505] min-h-screen text-zinc-300 font-mono">
+
+                {/* Header */}
+                <div className="mb-16 border-b border-zinc-800 pb-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-mono rounded mb-4 uppercase tracking-widest">
+                        <Shield size={12} className="text-green-500" />
+                        <span>SECURITY_PROTOCOL_V1</span>
+                    </div>
+                    <h1 className="text-4xl font-bold tracking-tight text-white mb-2">PRIVACY POLICY</h1>
+                    <p className="text-zinc-500 font-mono text-xs">
+                        &gt; Data handling and retention specifications.
+                    </p>
                 </div>
 
-                <div className="space-y-12 text-zinc-300 leading-relaxed font-mono text-sm">
+                <div className="space-y-16">
+                    {/* Section 1 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Shield className="text-green-500" size={20} /> Data Collection Policy
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <Server size={14} className="text-blue-500" /> 1. DATA_COLLECTION
                         </h2>
-                        <div className="p-6 bg-zinc-900/50 rounded border border-zinc-800 space-y-4">
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
                             <p>
-                                <strong className="text-white">TL;DR:</strong> We do not sell, trade, or actively monitor your personal data.
+                                <strong className="text-white">1.1 Authentication Data:</strong> When you authenticate via Google OAuth, we store your email address and unique provider ID. We do not store passwords.
                             </p>
                             <p>
-                                OKernel is an open-source educational project. Our primary goal is to provide a platform for learning Operating Systems concepts.
-                                Most of the execution (SysCore Engine, Compilation) happens <span className="text-green-500">locally in your browser</span>.
+                                <strong className="text-white">1.2 Execution Logs:</strong> We may retain anonymized C++/Python execution traces for performance debugging of the SysCore Engine.
+                            </p>
+                            <p>
+                                <strong className="text-white">1.3 Local Storage:</strong> Configuration settings and un-synced project files are stored in your browser's `localStorage` and `IndexedDB`.
                             </p>
                         </div>
                     </section>
 
+                    {/* Section 2 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Server className="text-blue-500" size={20} /> Third-Party Services
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <Lock size={14} className="text-red-500" /> 2. DATA_SECURITY
                         </h2>
-                        <ul className="space-y-4">
-                            <li className="flex gap-4">
-                                <div className="min-w-[4px] bg-zinc-700 rounded-full"></div>
-                                <div>
-                                    <strong className="text-white block mb-1">Supabase (Authentication & Config)</strong>
-                                    We use Supabase for authentication (if you log in as an Admin) and to fetch dynamic system configurations (like the Message of the Day).
-                                </div>
-                            </li>
-                            <li className="flex gap-4">
-                                <div className="min-w-[4px] bg-zinc-700 rounded-full"></div>
-                                <div>
-                                    <strong className="text-white block mb-1">Netlify / Vercel (Hosting)</strong>
-                                    Standard server logs (IP address, User Agent) may be processed by our hosting provider for security and reliability purposes.
-                                </div>
-                            </li>
-                        </ul>
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
+                            <p>
+                                All traffic is encrypted in transit via TLS 1.3. Database persistence is handled by Supabase with Row Level Security (RLS) policies enabled.
+                            </p>
+                            <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono text-[10px] text-zinc-500 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Encryption: AES-256-GCM
+                            </div>
+                        </div>
                     </section>
 
+                    {/* Section 3 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Eye className="text-yellow-500" size={20} /> Local Storage
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <Eye size={14} className="text-yellow-500" /> 3. USER_RIGHTS
                         </h2>
-                        <p>
-                            We use <code>localStorage</code> to save your preferences (theme settings, shell history) on your device.
-                            This data never leaves your browser unless explicitly synced.
-                        </p>
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
+                            <p>
+                                You retain full ownership of any code snippets or diagrams created within OKernel.
+                            </p>
+                            <p>
+                                To request a full data export or account deletion, please submit a ticket via the Feedback terminal or email privacy@syscore.dev.
+                            </p>
+                        </div>
                     </section>
+                </div>
 
-                    <section className="pt-8 border-t border-zinc-800">
-                        <p className="text-zinc-500 text-xs text-center">
-                            Last Updated: February 2026. <br />
-                            For concerns, open an issue on our GitHub repository.
-                        </p>
-                    </section>
+                <div className="mt-20 pt-8 border-t border-zinc-800 text-center text-[10px] text-zinc-600 font-mono">
+                    LAST_UPDATED: 2026-02-08 | REF: COMPLIANCE-2026-A
                 </div>
             </div>
         </Layout>

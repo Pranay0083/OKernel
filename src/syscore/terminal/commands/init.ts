@@ -11,7 +11,7 @@ export const init: TerminalCommand = {
                 type: 'system',
                 content: {
                     action: 'navigate',
-                    path: '/dev/scheduler',
+                    path: '/scheduler',
                     message: 'INITIALIZING CPU SCHEDULER...'
                 }
             };
@@ -20,7 +20,7 @@ export const init: TerminalCommand = {
                 type: 'system',
                 content: {
                     action: 'navigate',
-                    path: '/dev/shell',
+                    path: '/shell',
                     message: 'INITIALIZING SHELL MAKER...'
                 }
             };

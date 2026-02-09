@@ -1,74 +1,74 @@
+
 import React from 'react';
 import { Layout } from '../../components/layout/Layout';
-import { Github, Scale, AlertTriangle } from 'lucide-react';
+import { Scale, AlertTriangle, ShieldCheck, Gavel } from 'lucide-react';
 
 export const Terms = () => {
     return (
         <Layout>
-            <div className="container mx-auto px-4 pt-32 pb-24 max-w-3xl">
-                <div className="mb-12 border-b border-zinc-800 pb-6">
-                    <div className="text-xs font-mono text-zinc-500 mb-2">Legal Compliance</div>
-                    <h1 className="text-4xl font-bold text-white font-mono">/etc/terms_of_service.txt</h1>
+            <div className="container mx-auto px-6 pt-32 pb-24 max-w-4xl bg-[#050505] min-h-screen text-zinc-300 font-mono">
+
+                {/* Header */}
+                <div className="mb-16 border-b border-zinc-800 pb-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] font-mono rounded mb-4 uppercase tracking-widest">
+                        <Scale size={12} className="text-green-500" />
+                        <span>LEGAL_AGREEMENT_V1</span>
+                    </div>
+                    <h1 className="text-4xl font-bold tracking-tight text-white mb-2">TERMS OF SERVICE</h1>
+                    <p className="text-zinc-500 font-mono text-xs">
+                        &gt; Conditions for usage of the SysCore Runtime Environment.
+                    </p>
                 </div>
 
-                <div className="space-y-12 text-zinc-300 leading-relaxed font-mono text-sm">
+                <div className="space-y-16">
+                    {/* Section 1 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Scale className="text-white" size={20} /> MIT License
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <ShieldCheck size={14} className="text-blue-500" /> 1. ACCEPTANCE_OF_TERMS
                         </h2>
-                        <div className="p-6 bg-zinc-900/50 rounded border border-zinc-800 font-mono text-xs text-zinc-400">
-                            <p className="mb-4">
-                                Copyright (c) 2026 Vaiditya Tanwar
-                            </p>
-                            <p className="mb-4">
-                                Permission is hereby granted, free of charge, to any person obtaining a copy
-                                of this software and associated documentation files (the "Software"), to deal
-                                in the Software without restriction, including without limitation the rights
-                                to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                                copies of the Software, and to permit persons to whom the Software is
-                                furnished to do so, subject to the following conditions:
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
+                            <p>
+                                By accessing OKernel (the "Platform"), you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the service.
                             </p>
                             <p>
-                                The above copyright notice and this permission notice shall be included in all
-                                copies or substantial portions of the Software.
+                                The Platform is provided for educational purposes. We reserve the right to modify these terms at any time.
                             </p>
                         </div>
                     </section>
 
+                    {/* Section 2 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <AlertTriangle className="text-yellow-500" size={20} /> Disclaimer of Warranty
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <AlertTriangle size={14} className="text-yellow-500" /> 2. USAGE_LIMITS
                         </h2>
-                        <p>
-                            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-                            IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-                            FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-                            AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-                            LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-                            OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                            SOFTWARE.
-                        </p>
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
+                            <p>
+                                <strong className="text-white">2.1 Resource Quotas:</strong> Users are allocated a fixed amount of CPU time and memory (1MB Heap) per execution cycle. Attempts to bypass these limits may result in temporary bans.
+                            </p>
+                            <p>
+                                <strong className="text-white">2.2 Malicious Code:</strong> You must not attempt to upload viruses, trojans, or any code designed to compromise the SysCore Sandbox.
+                            </p>
+                        </div>
                     </section>
 
+                    {/* Section 3 */}
                     <section>
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Github className="text-white" size={20} /> Open Source Etiquette
+                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-white border-b border-zinc-800 pb-4 uppercase tracking-wider font-mono text-xs">
+                            <Gavel size={14} className="text-red-500" /> 3. DISCLAIMER
                         </h2>
-                        <p className="mb-4">
-                            This is an educational project. While you are free to fork and modify it:
-                        </p>
-                        <ul className="list-disc list-inside space-y-2 pl-4">
-                            <li>Please provide attribution to the original repository.</li>
-                            <li>Do not use this platform to distribute malicious code or malware.</li>
-                            <li>Respect the community guidelines when opening Issues or Pull Requests.</li>
-                        </ul>
+                        <div className="bg-[#0A0A0A] border border-zinc-800 p-6 space-y-4 text-xs leading-relaxed text-zinc-400">
+                            <p className="uppercase text-white font-bold">
+                                THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+                            </p>
+                            <p>
+                                In no event shall the authors be liable for any claim, damages or other liability arising from the use of the software.
+                            </p>
+                        </div>
                     </section>
+                </div>
 
-                    <section className="pt-8 border-t border-zinc-800">
-                        <p className="text-zinc-500 text-xs text-center">
-                            Last Updated: February 2026.
-                        </p>
-                    </section>
+                <div className="mt-20 pt-8 border-t border-zinc-800 text-center text-[10px] text-zinc-600 font-mono">
+                    LAST_UPDATED: 2026-02-08 | REF: TOS-2026-A
                 </div>
             </div>
         </Layout>

@@ -6,7 +6,7 @@ import { syscore } from './commands/syscore_cli';
 // import { exit } from './commands/exit'; // To be implemented
 
 import { TerminalCommand, SystemAction } from './types';
-import { algos } from '../cpu'; // For syscore.cpu access
+import { ALGO_METADATA } from '../../core/algorithms'; // For syscore.cpu access
 
 const commands: Record<string, TerminalCommand> = {
     help,
@@ -130,7 +130,7 @@ const handleSysCoreAPI = (path: string, args: string[]): { type: string; content
                         <div className="pl-2">
                             <p className="mb-1 text-white underline">Available Algorithms:</p>
                             <div className="grid grid-cols-2 gap-2">
-                                {Object.values(algos).map(a => (
+                                {Object.values(ALGO_METADATA).map(a => (
                                     <div key={a.code} className="bg-zinc-900/50 p-1 px-2 rounded border border-zinc-800">
                                         <span className="text-green-400 font-bold">{a.name}</span>
                                         <span className="block text-zinc-600 text-[10px]">syscore.algos.{a.name.toLowerCase().replace(/ /g, '_')}</span>
@@ -146,13 +146,13 @@ const handleSysCoreAPI = (path: string, args: string[]): { type: string; content
 
         // 'syscore.algos.<name>'
         // Find algo by fuzzy name
-        const key = Object.keys(algos).find(k =>
-            algos[k as keyof typeof algos].name.toLowerCase().replace(/ /g, '_') === algoName ||
+        const key = Object.keys(ALGO_METADATA).find(k =>
+            ALGO_METADATA[k as keyof typeof ALGO_METADATA].name.toLowerCase().replace(/ /g, '_') === algoName ||
             k.toLowerCase() === algoName
         );
 
         if (key) {
-            const algo = algos[key as keyof typeof algos];
+            const algo = ALGO_METADATA[key as keyof typeof ALGO_METADATA];
 
             // 'syscore.algos.rr.info'
             if (method === 'info') {
