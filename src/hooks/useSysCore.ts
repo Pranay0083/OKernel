@@ -106,11 +106,11 @@ export const useSysCore = () => {
                         if (i > 0) {
                             const prev = events[i - 1];
                             // Only calculate if timestamps are valid and monotonic
-                            if (prev.process_time && e.process_time && prev.timestamp && e.timestamp) {
+                            if (prev.process_time !== undefined && e.process_time !== undefined && prev.timestamp !== undefined && e.timestamp !== undefined) {
                                 const cpuDelta = e.process_time - prev.process_time; // ns
                                 const wallDelta = e.timestamp - prev.timestamp; // ns
 
-                                const duration = cpuDelta; // Execution cost is CPU time
+                                const duration = cpuDelta > 0 ? cpuDelta : 1000; // Minimum 1us if no time passed
 
                                 // CPU Usage % (0.0 to 1.0, can exceed 1.0 if multi-core but Python is GIL bound so 0-1)
                                 // Avoid division by zero
