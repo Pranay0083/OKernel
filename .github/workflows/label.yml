@@ -1,73 +1,14 @@
-name: AI PR Labeler
-
-on:
-  pull_request_target:
-    types: [opened, edited, synchronize]
+name: Labeler
+on: [pull_request_target]
 
 jobs:
-  label-pr:
+  label:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-      id-token: write
-      issues: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Analyze PR with AI
-        id: inference
-        uses: actions/ai-inference@v1
+      - uses: actions/labeler@v4
         with:
-          prompt: |
-            You are an expert GitHub PR reviewer and labeler.
-            
-            Analyze the following Pull Request:
-            Title: "${{ github.event.pull_request.title }}"
-            Body: "${{ github.event.pull_request.body }}"
-            
-            Determine the most appropriate labels based on the work described.
-            
-            Common Labels:
-            - 'feature': Adds new functionality
-            - 'bugfix': Fixes an issue
-            - 'refactor': Code cleanup without behavior change
-            - 'docs': Documentation updates
-            - 'ci': CI/CD workflow changes
-            - 'test': Adding or updating tests
-            - 'dependencies': Dependency updates
-            - 'breaking-change': Changes that break backward compatibility
-            - 'wip': Work in progress (if title says WIP or Draft)
-            
-            Respond ONLY with valid JSON in this format:
-            {
-              "labels": ["label1", "label2"],
-              "reasoning": "brief explanation of why these labels were chosen"
-            }
-
-      - name: Apply Labels
-        run: |
-          set -e
-          echo "$RESPONSE" > response.json
-          
-          # Extract labels and loop through them
-          jq -r '.labels[]' response.json | while read label; do
-            echo "Applying label: $label"
-            
-            # Create label if it doesn't exist (ignoring errors if it does)
-            gh label create "$label" --force || true
-            
-            # Add label to PR
-            gh pr edit "$PR_NUMBER" --add-label "$label"
-          done
-          
-          # Optional: Post a comment with the reasoning
-          REASONING=$(jq -r '.reasoning' response.json)
-          gh pr comment "$PR_NUMBER" --body "🤖 **AI Labeler**: Applied labels based on analysis: $REASONING"
-          
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          RESPONSE: ${{ steps.inference.outputs.response }}
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
