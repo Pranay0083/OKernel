@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight, BarChart2, Cpu, MemoryStick, GitGraph } from 'lucide-react';
-import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { Play, Square, Activity, Database, Server, Clock, ChevronLeft, ChevronRight, Cpu, GitGraph } from 'lucide-react';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import HeapView from './components/HeapView';
 import StackView from './components/StackView';
@@ -12,51 +12,47 @@ import { RecursionTree } from './components/RecursionTree';
 
 import { useSysCore } from '../../hooks/useSysCore';
 import { Persistence } from '../../services/persistence';
-import { AreaChart, Area, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
+
+interface LocalVar {
+    value: string;
+    type: string;
+    address?: string;
+    size?: number;
+}
+interface FrameData {
+    locals?: Record<string, LocalVar>;
+    function?: string;
+    stack_depth?: number;
+    line?: number;
+    event?: string;
+    type?: string;
+    duration?: number;
+    bytecode?: { opcode: string };
+    content?: string;
+    phase?: string;
+    memory_curr?: number;
+    cpu_usage?: number;
+}
+
+interface ControlBtnProps {
+    icon: React.ReactNode;
+    onClick: () => void;
+    active?: boolean;
+}
+
+interface HeapObject {
+    id: string;
+    type: string;
+    value: string;
+    size: number;
+}
 
 const VisualizerPage: React.FC = () => {
     const { mode } = useParams<{ mode: string }>();
-    const { isConnected, isExecuting, logs, metrics, executeCode, jobId, history } = useSysCore();
-    const [code, setCode] = useState<string>('l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
-    const [input, setInput] = useState<string>('');
-    const [showInput, setShowInput] = useState(false);
-    const [language, setLanguage] = useState<'python' | 'cpp'>('python');
-    const [highlightedAddress, setHighlightedAddress] = useState<string | null>(null);
+    const { isConnected, isExecuting, logs, executeCode, jobId, history } = useSysCore();
     const updateXarrow = useXarrow();
-
-    // Persistence Logic
-    const startTimeRef = useRef<number>(0);
-    const [lastJobId, setLastJobId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (isExecuting) {
-            startTimeRef.current = Date.now();
-            setLastJobId(jobId);
-        } else if (jobId && jobId !== lastJobId && startTimeRef.current > 0) {
-            // Execution finished
-            const duration = Date.now() - startTimeRef.current;
-            const status = logs.some(l => l.includes('Traceback') || l.includes('Error')) ? 'failed' : 'success';
-
-            Persistence.addJob({
-                id: jobId,
-                timestamp: Date.now(),
-                code,
-                language,
-                status,
-                duration,
-                input
-            });
-            startTimeRef.current = 0;
-            setLastJobId(jobId);
-
-            // Trigger update in sidebar
-            window.dispatchEvent(new Event('okernel-session-update'));
-        }
-    }, [isExecuting, jobId, logs, code, language, lastJobId, input]);
-
-    const location = useLocation();
     const navigate = useNavigate();
 
     // Parse View Mode from URL
@@ -76,28 +72,25 @@ const VisualizerPage: React.FC = () => {
 
     // Load Job from URL
     const [searchParams] = useSearchParams();
+
+    // Initial State Logic
+    const loadJobId = searchParams.get('loadJob');
+    const autoRun = searchParams.get('autoRun') === 'true';
+    const existingJob = loadJobId ? Persistence.getJob(loadJobId) : null;
+
+    const [code, setCode] = useState<string>(existingJob?.code || 'l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
+    const [input, setInput] = useState<string>(existingJob?.input || '');
+    const [showInput, setShowInput] = useState(!!existingJob?.input);
+    const [language, setLanguage] = useState<'python' | 'cpp'>(existingJob?.language || 'python');
+
     useEffect(() => {
-        const loadJobId = searchParams.get('loadJob');
-        const autoRun = searchParams.get('autoRun') === 'true';
-
-        if (loadJobId) {
-            const job = Persistence.getJob(loadJobId);
-            if (job) {
-                setCode(job.code);
-                setLanguage(job.language);
-                setInput(job.input || '');
-                if (job.input) setShowInput(true);
-
-                // Auto-Exectute if requested
-                if (autoRun) {
-                    // Slight delay to allow state to settle
-                    setTimeout(() => {
-                        executeCode(job.language, job.code, job.input);
-                    }, 100);
-                }
-            }
+        if (existingJob && autoRun) {
+            // Slight delay to allow state to settle
+            setTimeout(() => {
+                executeCode(existingJob.language, existingJob.code, existingJob.input);
+            }, 100);
         }
-    }, [searchParams]);
+    }, [existingJob, autoRun, executeCode]);
 
     // Force update arrows on scroll or resize
     useEffect(() => {
@@ -106,10 +99,11 @@ const VisualizerPage: React.FC = () => {
         return () => window.removeEventListener('resize', updateXarrow);
     }, [updateXarrow]);
 
+
     // Group History into Macro Steps (Lines)
     const macroHistory = useMemo(() => {
-        const groups: { main: any; micros: any[] }[] = [];
-        let currentGroup: { main: any; micros: any[] } | null = null;
+        const groups: { main: FrameData; micros: FrameData[] }[] = [];
+        let currentGroup: { main: FrameData; micros: FrameData[] } | null = null;
 
         history.forEach(event => {
             if (['line', 'call', 'return', 'exception'].includes(event.event || '') || event.type === 'Stdout') {
@@ -131,6 +125,7 @@ const VisualizerPage: React.FC = () => {
     const [macroIndex, setMacroIndex] = useState(0);
     const [microIndex, setMicroIndex] = useState(-1);
     const [isReplaying, setIsReplaying] = useState(false);
+    const [highlightedAddress, setHighlightedAddress] = useState<string | null>(null);
     const replayInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Derived Current Frame
@@ -143,10 +138,22 @@ const VisualizerPage: React.FC = () => {
     // Auto-advance
     useEffect(() => {
         if (isExecuting && !isReplaying) {
-            setMacroIndex(Math.max(0, macroHistory.length - 1));
-            setMicroIndex(-1);
+            // We want to verify if this is actually causing issues. 
+            // The warning suggests cascades. 
+            // However, this effect depends on `macroHistory.length`, which changes when execution updates.
+            // Setting state here is intended to "follow" the head.
+            // To satisfy lint, we can wrap in a requestAnimationFrame or similar to decouple from render cycle,
+            // OR ignore if we accept the behavior.
+            // Better: Updating `macroIndex` is a side effect of `macroHistory` growing during execution.
+
+            const targetIndex = Math.max(0, macroHistory.length - 1);
+            if (macroIndex !== targetIndex) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setMacroIndex(targetIndex);
+                setMicroIndex(-1);
+            }
         }
-    }, [macroHistory.length, isExecuting, isReplaying]);
+    }, [macroHistory.length, isExecuting, isReplaying, macroIndex]);
 
     // Replay Logic
     const toggleReplay = () => {
@@ -205,7 +212,7 @@ const VisualizerPage: React.FC = () => {
             }
         });
         return changes;
-    }, [macroIndex, microIndex, macroHistory, frameToRender]);
+    }, [macroIndex, microIndex, macroHistory, frameToRender, currentMacro]);
 
     // Compute execution times per line for heatmap
     const lineExecutionTimes = useMemo(() => {
@@ -233,17 +240,17 @@ const VisualizerPage: React.FC = () => {
     // Transform locals into Heap Objects for HeapView
     const heapObjects = useMemo(() => {
         if (!frameToRender || !frameToRender.locals) return [];
-        const objects: { id: string; type: string; value: string; size: number }[] = [];
+        const objects: HeapObject[] = [];
         const seen = new Set<string>();
 
-        Object.values(frameToRender.locals).forEach((local: any) => {
+        Object.values(frameToRender.locals).forEach((local: LocalVar) => {
             if (local.address && !seen.has(local.address)) {
                 seen.add(local.address);
                 objects.push({
                     id: local.address,
                     type: local.type,
                     value: local.value,
-                    size: local.size,
+                    size: local.size || 0,
                 });
             }
         });
@@ -258,7 +265,7 @@ const VisualizerPage: React.FC = () => {
         return `${(ns / 1000000).toFixed(1)}ms`;
     };
 
-    const getEventLabel = (frame: any) => {
+    const getEventLabel = (frame: FrameData | null) => {
         if (!frame) return 'Idle';
         if (frame.type === 'GC') return `Garbage Collection (${frame.phase})`;
         if (frame.event === 'opcode') return `Opcode: ${frame.bytecode?.opcode}`;
@@ -278,7 +285,7 @@ const VisualizerPage: React.FC = () => {
         if (!frameToRender || !frameToRender.locals) return null;
         const arrows: React.ReactNode[] = [];
 
-        Object.values(frameToRender.locals).forEach((local: any) => {
+        Object.values(frameToRender.locals).forEach((local: LocalVar) => {
             if (local.address) {
                 arrows.push(
                     <Xarrow
@@ -328,7 +335,7 @@ const VisualizerPage: React.FC = () => {
                         <div className="absolute bottom-6 right-6 flex gap-3 z-10">
                             <select
                                 value={language}
-                                onChange={(e) => setLanguage(e.target.value as any)}
+                                onChange={(e) => setLanguage(e.target.value as 'python' | 'cpp')}
                                 className="bg-zinc-900 border border-white/10 text-xs rounded px-3 py-2 outline-none focus:border-green-500 text-gray-300"
                             >
                                 <option value="python">Python 3.11</option>
@@ -558,7 +565,7 @@ const VisualizerPage: React.FC = () => {
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={history.map((h, i) => ({
                                         time: i,
-                                        usage: (h as any).cpu_usage || 0
+                                        usage: (h as FrameData).cpu_usage || 0
                                     }))}>
                                         <defs>
                                             <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
@@ -622,7 +629,7 @@ const VisualizerPage: React.FC = () => {
     );
 };
 
-const ControlBtn = ({ icon, onClick, active }: any) => (
+const ControlBtn = ({ icon, onClick, active }: ControlBtnProps) => (
     <button
         onClick={onClick}
         className={`p-1.5 rounded transition-all ${active

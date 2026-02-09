@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ProductNavbar } from '../../components/layout/ProductNavbar';
 import { Footer } from '../../components/layout/Footer';
 import { Button } from '../../components/ui/Button';
-import { Play, Terminal, Cpu, Database, Network, Binary, ArrowRight, Lock, Code2, Layers, Zap } from 'lucide-react';
+import { ArrowRight, Terminal, Cpu, Zap, Layers } from 'lucide-react';
 
 export const SympathyLanding = () => {
     const navigate = useNavigate();

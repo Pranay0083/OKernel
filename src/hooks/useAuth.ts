@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { config } from '../config';
 
 export const useAuth = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -12,7 +13,7 @@ export const useAuth = () => {
             console.log('[useAuth] Dev Mode: Using Mock User');
             setUser({
                 id: 'mock-user-123',
-                email: 'dev@okernel.local',
+                email: 'dev@hackmist.tech',
                 user_metadata: {
                     full_name: 'Dev Operator'
                 },

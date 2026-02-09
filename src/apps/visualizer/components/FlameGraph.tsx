@@ -1,10 +1,8 @@
-
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
 
 export interface TraceEvent {
     type: string;
-    line?: number; // Added line
+    line?: number;
     function?: string;
     stack_depth?: number;
     duration?: number;
@@ -15,49 +13,8 @@ interface FlameGraphProps {
     history: TraceEvent[];
 }
 
-interface StackNode {
-    name: string;
-    value: number; // total duration
-    children: StackNode[];
-    depth: number;
-    startTime: number;
-    endTime: number;
-}
-
 export const FlameGraph: React.FC<FlameGraphProps> = ({ history }) => {
-
-    // Transform flat history trace into a flame graph tree structure
-    // This is complex because we have flat events, not enter/exit events.
-    // Heuristic:
-    // If we see a deeper stack_depth, it's a call.
-    // If we see a shallower stack_depth, it's a return.
-
-    const rootNodes = useMemo(() => {
-        const roots: StackNode[] = [];
-        let stack: StackNode[] = [];
-
-        let startTime = history[0]?.timestamp || 0;
-
-        history.forEach((event, i) => {
-            if (!event.function || !event.duration) return;
-
-            const depth = event.stack_depth || 1;
-            const duration = event.duration;
-            const name = event.function;
-
-            // Adjust stack based on depth
-            // If current depth > stack length, we pushed a frame
-            // If current depth < stack length, we popped frames
-            // But with line-by-line tracing, depth stays same inside a function.
-
-            // Simplified Flame Graph: Just visualize time spent in each function per sample?
-            // "Icicle Graph" might be easier: Time on X axis. Stack depth on Y axis.
-
-            // Let's build a timeline based list of blocks
-        });
-
-        return roots;
-    }, [history]);
+    // Alternative: Just render a "Timeline Flame Chart"
 
     // Alternative: Just render a "Timeline Flame Chart"
     // X-axis: Time (0 to Total Duration)
@@ -75,11 +32,11 @@ export const FlameGraph: React.FC<FlameGraphProps> = ({ history }) => {
             const hue = (event.function?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % 360;
 
             items.push({
-                name: `${event.function}:${event.line}`,
+                name: `${event.function}:${event.line} `,
                 start: totalTime,
                 duration: event.duration,
                 depth: event.stack_depth || 1,
-                color: `hsla(${hue}, 70%, 50%, 0.6)`
+                color: `hsla(${hue}, 70 %, 50 %, 0.6)`
             });
 
             totalTime += event.duration;
@@ -92,10 +49,10 @@ export const FlameGraph: React.FC<FlameGraphProps> = ({ history }) => {
 
     const formatDuration = (ns: number) => {
         if (!ns) return '0s';
-        if (ns < 1000) return `${ns}ns`;
-        if (ns < 1000000) return `${(ns / 1000).toFixed(1)}µs`;
-        if (ns < 1000000000) return `${(ns / 1000000).toFixed(1)}ms`;
-        return `${(ns / 1000000000).toFixed(2)}s`;
+        if (ns < 1000) return `${ns} ns`;
+        if (ns < 1000000) return `${(ns / 1000).toFixed(1)} µs`;
+        if (ns < 1000000000) return `${(ns / 1000000).toFixed(1)} ms`;
+        return `${(ns / 1000000000).toFixed(2)} s`;
     };
 
     return (
@@ -118,9 +75,9 @@ export const FlameGraph: React.FC<FlameGraphProps> = ({ history }) => {
                             key={i}
                             className="absolute border-r border-white/5 flex items-center justify-center overflow-hidden hover:brightness-125 transition-all cursor-pointer group rounded-sm"
                             style={{
-                                left: `${(block.start / totalTime) * 100}%`,
-                                width: `${(block.duration / totalTime) * 100}%`,
-                                bottom: `${(block.depth - 1) * 24}px`,
+                                left: `${(block.start / totalTime) * 100}% `,
+                                width: `${(block.duration / totalTime) * 100}% `,
+                                bottom: `${(block.depth - 1) * 24} px`,
                                 height: '22px',
                                 backgroundColor: block.color,
                             }}

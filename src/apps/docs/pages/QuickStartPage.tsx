@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Copy, Check, Play, Settings } from 'lucide-react';
+import { Copy, Check, Play } from 'lucide-react';
 import { useState } from 'react';
 
 export const QuickStartPage = () => {
@@ -63,16 +63,16 @@ export const QuickStartPage = () => {
                     <h3 className="text-xl font-bold text-white">Configure Environment</h3>
                 </div>
                 <p className="text-zinc-400 text-sm">
-                    Create a <code className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-200">.env</code> file in the root directory. 
+                    Create a <code className="bg-zinc-800 px-1 py-0.5 rounded text-zinc-200">.env</code> file in the root directory.
                     For local development without persistence, you can skip Supabase keys, but some features might be disabled.
                 </p>
-                <CodeBlock 
+                <CodeBlock
                     label=".env"
-                    code={`VITE_SUPABASE_URL=https://your-project.supabase.co\nVITE_SUPABASE_ANON_KEY=your-anon-key`} 
+                    code={`VITE_SUPABASE_URL=https://your-project.supabase.co\nVITE_SUPABASE_ANON_KEY=your-anon-key`}
                 />
             </div>
 
-             {/* Step 4: Run */}
+            {/* Step 4: Run */}
             <div className="space-y-4" id="run-server">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-white border border-zinc-700">4</div>

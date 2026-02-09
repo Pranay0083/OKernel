@@ -12,7 +12,7 @@ export const sysCoreApi = {
         try {
             const res = await axios.get('http://localhost:3001/health');
             return res.status === 200;
-        } catch (e) {
+        } catch {
             return false;
         }
     },

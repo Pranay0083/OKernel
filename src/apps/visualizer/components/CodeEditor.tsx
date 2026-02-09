@@ -10,9 +10,11 @@ interface CodeEditorProps {
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highlightLine, lineExecutionTimes }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
     const monaco = useMonaco();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleEditorDidMount = (editor: any) => {
         editorRef.current = editor;
     };
@@ -25,6 +27,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
 
         if (!model) return;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const decorations: any[] = [];
         if (highlightLine) {
             decorations.push({
@@ -39,15 +42,12 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
 
         // Add heat/duration decorations
         if (lineExecutionTimes) {
-            // Find max duration for normalization
-            const maxDuration = Math.max(...Object.values(lineExecutionTimes));
-
             Object.entries(lineExecutionTimes).forEach(([line, duration]) => {
                 const lineNum = parseInt(line);
                 if (duration > 0) {
                     // Normalize intensity (0.1 to 0.6 opacity)
-                    const intensity = 0.1 + (duration / maxDuration) * 0.5;
-                    const color = duration > 1000000 ? `rgba(239, 68, 68, ${intensity})` : `rgba(59, 130, 246, ${intensity})`; // Red if > 1ms, else Blue
+                    // const intensity = 0.1 + (duration / maxDuration) * 0.5;
+                    // const color = duration > 1000000 ? `rgba(239, 68, 68, ${intensity})` : `rgba(59, 130, 246, ${intensity})`; // Unused
 
                     decorations.push({
                         range: new monaco.Range(lineNum, 1, lineNum, 1),
@@ -65,7 +65,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
         }
 
         const oldDecorations = editor.getDecorationsInRange(model.getFullModelRange())
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .filter((d: any) => d.options.className?.includes('bg-green-500/20') || d.options.afterContentClassName?.includes('text-xs'))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((d: any) => d.id);
 
         editor.deltaDecorations(oldDecorations, decorations);

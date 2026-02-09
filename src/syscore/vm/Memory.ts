@@ -17,9 +17,9 @@ export class Memory {
     private localBuffer: Uint8Array = new Uint8Array(Memory.SIZE);
     private heapPtr: number = Memory.HEAP_BASE;
 
-    constructor() {}
+    constructor() { }
 
-    private async callApi(endpoint: string, body: any) {
+    private async callApi(endpoint: string, body: unknown) {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`, {
                 method: 'POST',
@@ -52,7 +52,7 @@ export class Memory {
                 root: {
                     name: "root",
                     type: "dir",
-                    children: {} 
+                    children: {}
                 }
             }
         };
@@ -120,7 +120,7 @@ export class Memory {
             state: this.getState(),
             size: size
         });
-        
+
         if (result.Ok) {
             const oldPtr = this.heapPtr;
             this.heapPtr = result.Ok.memory.heapPtr;

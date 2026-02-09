@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GitGraph, Network, X, Box, ZoomIn, ZoomOut, Move, Maximize } from 'lucide-react';
+import { GitGraph, Network, X, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 
 interface TreeNode {
     name: string;
@@ -9,9 +9,11 @@ interface TreeNode {
     children: TreeNode[];
     returnValue?: string;
     status: 'active' | 'completed' | 'error';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     locals?: Record<string, any>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function RecursionTree({ history }: { history: any[] }) {
     const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -20,7 +22,7 @@ export function RecursionTree({ history }: { history: any[] }) {
     const lastMouse = useRef({ x: 0, y: 0 });
 
     // --- Tree Construction & Filtering ---
-    const tree = useMemo(() => {
+    const tree = useMemo<TreeNode | null>(() => {
         const root: TreeNode = {
             name: 'Root',
             id: 'root',
@@ -135,7 +137,7 @@ export function RecursionTree({ history }: { history: any[] }) {
     // Center on mount
     useEffect(() => {
         if (tree && containerRef.current) {
-            const { clientWidth, clientHeight } = containerRef.current;
+            const { clientWidth } = containerRef.current;
             // Rough center assumption
             setTransform({ x: clientWidth / 2 - 100, y: 50, scale: 1 });
         }
@@ -189,7 +191,7 @@ export function RecursionTree({ history }: { history: any[] }) {
                         <ZoomOut size={16} />
                     </button>
                     <div className="w-px h-4 bg-white/10 mx-1" />
-                    <button onClick={() => setTransform({ x: containerRef.current?.offsetWidth! / 2 - 100 || 0, y: 50, scale: 1 })} className="p-1.5 hover:bg-white/10 rounded text-zinc-400 hover:text-white" title="Reset View">
+                    <button onClick={() => setTransform({ x: containerRef.current?.offsetWidth ? containerRef.current.offsetWidth / 2 - 100 : 0, y: 50, scale: 1 })} className="p-1.5 hover:bg-white/10 rounded text-zinc-400 hover:text-white" title="Reset View">
                         <Maximize size={16} />
                     </button>
                 </div>
@@ -236,6 +238,7 @@ export function RecursionTree({ history }: { history: any[] }) {
 
                                 {selectedNode.locals && Object.keys(selectedNode.locals).length > 0 ? (
                                     <div className="space-y-2">
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {Object.entries(selectedNode.locals).map(([key, val]: [string, any]) => (
                                             <div key={key} className="bg-zinc-900/50 rounded border border-white/5 p-2 flex items-center justify-between group hover:border-white/10 transition-colors">
                                                 <div className="flex items-center gap-2">

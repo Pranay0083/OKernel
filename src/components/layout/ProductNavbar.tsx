@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Lock, Cpu } from 'lucide-react';
+import { Terminal, Cpu } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export const ProductNavbar = () => {

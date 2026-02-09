@@ -3,13 +3,20 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, ChevronRight, Home, ArrowRight } from 'lucide-react';
 import { ARCH_NAVIGATION } from './os_arch/OSArchConfig';
-import { Navbar } from '../components/layout/Navbar'; 
+import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
+
+interface SearchResult {
+    path: string;
+    title: string;
+    description?: string;
+    icon?: React.ReactNode;
+}
 
 export const OSConcepts = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -26,7 +33,7 @@ export const OSConcepts = () => {
         const results = [];
         for (const section of ARCH_NAVIGATION) {
             for (const item of section.items) {
-                if (item.title.toLowerCase().includes(query.toLowerCase()) || 
+                if (item.title.toLowerCase().includes(query.toLowerCase()) ||
                     item.description?.toLowerCase().includes(query.toLowerCase())) {
                     results.push(item);
                 }
@@ -55,14 +62,14 @@ export const OSConcepts = () => {
         }
 
         if (path.includes('philosophies')) {
-             return [
+            return [
                 { id: 'unix', label: 'Unix Philosophy' },
                 { id: 'windows', label: 'Windows Philosophy' },
             ];
         }
 
         if (path.includes('languages')) {
-             return [
+            return [
                 { id: 'c', label: 'C Language' },
                 { id: 'rust', label: 'Rust' },
             ];
@@ -76,11 +83,11 @@ export const OSConcepts = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-blue-500/30 flex flex-col">
             <Navbar />
-            
+
             <div className="flex-1 flex pt-24 relative max-w-screen-2xl mx-auto w-full">
-                
+
                 {/* Mobile Sidebar Toggle */}
-                <button 
+                <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                     className="md:hidden fixed bottom-6 right-6 z-50 p-4 bg-blue-600 text-white rounded-full shadow-lg"
                 >
@@ -96,8 +103,8 @@ export const OSConcepts = () => {
                     <div className="p-6 space-y-8">
                         {/* Header */}
                         <div className="px-3">
-                             <div className="text-sm font-bold text-white mb-1">Architecture</div>
-                             <div className="text-xs text-zinc-500 font-mono">/sys/class/arch</div>
+                            <div className="text-sm font-bold text-white mb-1">Architecture</div>
+                            <div className="text-xs text-zinc-500 font-mono">/sys/class/arch</div>
                         </div>
 
                         {/* Search Input */}
@@ -105,9 +112,9 @@ export const OSConcepts = () => {
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Search size={14} className="text-zinc-500" />
                             </div>
-                            <input 
-                                type="text" 
-                                placeholder="Search architecture..." 
+                            <input
+                                type="text"
+                                placeholder="Search architecture..."
                                 value={searchQuery}
                                 onChange={handleSearch}
                                 className="w-full bg-zinc-900/50 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
@@ -119,7 +126,7 @@ export const OSConcepts = () => {
                                         <ul>
                                             {searchResults.map((result) => (
                                                 <li key={result.path}>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             navigate(result.path);
                                                             setSearchQuery('');
@@ -150,14 +157,14 @@ export const OSConcepts = () => {
                                     <ul className="space-y-0.5">
                                         {section.items.map((item) => (
                                             <li key={item.path}>
-                                                <NavLink 
+                                                <NavLink
                                                     to={item.path}
-                                                    end={item.path === '/os-concepts'} 
+                                                    end={item.path === '/os-concepts'}
                                                     onClick={() => setSidebarOpen(false)}
                                                     className={({ isActive }) => `
                                                         flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all group relative
-                                                        ${isActive 
-                                                            ? 'text-blue-400 bg-blue-500/5 font-medium' 
+                                                        ${isActive
+                                                            ? 'text-blue-400 bg-blue-500/5 font-medium'
                                                             : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}
                                                     `}
                                                 >
@@ -175,12 +182,12 @@ export const OSConcepts = () => {
                                 </div>
                             ))}
                         </nav>
-                        
+
                         {/* Cross Link */}
                         <div className="pt-8 border-t border-zinc-800">
                             <div className="px-3">
                                 <p className="text-xs text-zinc-500 mb-3">Looking for Algorithms?</p>
-                                <NavLink 
+                                <NavLink
                                     to="/algo-wiki"
                                     className="flex items-center gap-2 text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors"
                                 >
@@ -200,12 +207,12 @@ export const OSConcepts = () => {
                         <span>Architecture</span>
                         <ChevronRight size={12} />
                         <span className="text-blue-500">
-                             {ARCH_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
+                            {ARCH_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
                         </span>
                     </div>
 
                     <Outlet />
-                    
+
                     <div className="mt-20 pt-10 border-t border-white/5">
                         <Footer minimal />
                     </div>
@@ -216,16 +223,16 @@ export const OSConcepts = () => {
                     <div className="sticky top-32">
                         <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">On this page</h4>
                         <ul className="space-y-2 text-sm text-zinc-500 border-l border-zinc-800">
-                           {toc.length > 0 ? toc.map((item) => (
-                               <li key={item.id} 
-                                   className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
-                                   onClick={() => scrollToSection(item.id)}
-                               >
-                                   {item.label}
-                               </li>
-                           )) : (
-                               <li className="pl-4 text-zinc-600 italic">Overview</li>
-                           )}
+                            {toc.length > 0 ? toc.map((item) => (
+                                <li key={item.id}
+                                    className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
+                                    onClick={() => scrollToSection(item.id)}
+                                >
+                                    {item.label}
+                                </li>
+                            )) : (
+                                <li className="pl-4 text-zinc-600 italic">Overview</li>
+                            )}
                         </ul>
                     </div>
                 </aside>

@@ -5,9 +5,9 @@ interface StackFrame {
     name: string;           // Function name
     locals: Record<string, {
         value: string;
-        address: string;
-        type: string;
-        size: number;
+        address?: string;
+        type?: string;
+        size?: number;
     }>;
     isActive: boolean;      // Is this the current frame?
     depth: number;          // Stack depth (0 = global)
@@ -32,7 +32,7 @@ const StackView: React.FC<StackViewProps> = ({ frames, onVariableHover, onVariab
     return (
         <div className="h-full overflow-auto p-2 custom-scrollbar flex flex-col-reverse gap-2">
             <AnimatePresence>
-                {frames.map((frame, index) => (
+                {frames.map((frame, _index) => (
                     <motion.div
                         key={`${frame.name}-${frame.depth}`}
                         initial={{ opacity: 0, x: -20 }}
@@ -86,9 +86,9 @@ const StackView: React.FC<StackViewProps> = ({ frames, onVariableHover, onVariab
                                                 ? 'bg-yellow-500/20 border border-yellow-500/30'
                                                 : 'bg-zinc-800/50 hover:bg-zinc-700/50'}
                                         `}
-                                        onMouseEnter={() => onVariableHover?.(data.address)}
+                                        onMouseEnter={() => onVariableHover?.(data.address ?? null)}
                                         onMouseLeave={() => onVariableHover?.(null)}
-                                        onClick={() => onVariableClick?.(data.address)}
+                                        onClick={() => data.address && onVariableClick?.(data.address)}
                                     >
                                         <span className="text-blue-400 font-mono text-xs font-medium">
                                             {name}
@@ -98,7 +98,7 @@ const StackView: React.FC<StackViewProps> = ({ frames, onVariableHover, onVariab
                                             {data.value}
                                         </span>
                                         {/* Arrow indicator (will connect to heap) */}
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className={`transition-opacity ${data.address ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}>
                                             <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-400">
                                                 <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>

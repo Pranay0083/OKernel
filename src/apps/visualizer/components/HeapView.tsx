@@ -45,6 +45,7 @@ const HeapView: React.FC<HeapViewProps> = ({ objects, highlightId, onObjectClick
                 const items = JSON.parse(obj.value.replace(/'/g, '"'));
                 return (
                     <div className="flex gap-0.5 mt-1">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {items.map((item: any, i: number) => (
                             <div key={i} className="flex flex-col items-center">
                                 <span className="text-[8px] text-zinc-500">{i}</span>
@@ -68,6 +69,7 @@ const HeapView: React.FC<HeapViewProps> = ({ objects, highlightId, onObjectClick
                 const items = JSON.parse(jsonStr);
                 return (
                     <div className="flex flex-col gap-1 mt-1">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {Object.entries(items).map(([k, v]: [string, any], i) => (
                             <div key={i} className="flex items-center gap-1 text-[10px]">
                                 <span className="text-purple-300">{k}:</span>

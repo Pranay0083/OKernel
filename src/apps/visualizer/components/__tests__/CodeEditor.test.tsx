@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import CodeEditor from '../CodeEditor';
 
 vi.mock('@monaco-editor/react', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Editor: (props: any) => {
         return <div data-testid="monaco-editor">{props.value}</div>;
     },

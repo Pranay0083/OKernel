@@ -46,7 +46,7 @@ export const useScheduler = () => {
         return () => {
             if (timeout) clearTimeout(timeout);
         };
-    }, [state.isPlaying, state.speed, state.currentTime, state.processes]);
+    }, [state]);
 
     const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime'>) => {
         setState(prev => {

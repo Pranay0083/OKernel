@@ -1,12 +1,7 @@
-
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Cpu, Zap, Database, Server, Activity, ArrowRight } from 'lucide-react';
-
-interface StatsViewProps {
-    history: any[];
-}
+import { Cpu, Zap, Database, Activity, ArrowRight } from 'lucide-react';
 
 const COLORS = {
     MEM_READ: '#3b82f6', // blue
@@ -18,7 +13,16 @@ const COLORS = {
     OTHER: '#71717a'      // zinc
 };
 
-export function StatsView({ history, minimal = false }: { history: any[], minimal?: boolean }) {
+interface HardwareEvent {
+    hardware?: {
+        type: string;
+        cost: number;
+        opcode: string;
+    };
+    timestamp?: number;
+}
+
+export function StatsView({ history, minimal = false }: { history: HardwareEvent[], minimal?: boolean }) {
     const stats = useMemo(() => {
         let totalCycles = 0;
         let instructionCount = 0;
@@ -264,7 +268,7 @@ export function StatsView({ history, minimal = false }: { history: any[], minima
                         ))}
                         {stream.length === 0 && (
                             <div className="text-center text-zinc-600 py-10">
-                                No instructions recorded.
+                                No instructions recorded. Run code to see the pipeline.
                             </div>
                         )}
                     </div>

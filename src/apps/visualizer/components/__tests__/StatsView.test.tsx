@@ -7,10 +7,14 @@ vi.mock('recharts', () => {
     const OriginalModule = vi.importActual('recharts');
     return {
         ...OriginalModule,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         PieChart: ({ children }: any) => <div data-testid="pie-chart">{children}</div>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Pie: ({ data }: any) => (
             <div data-testid="pie">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {data.map((d: any) => (
                     <div key={d.name} data-testid="pie-slice" data-name={d.name} data-value={d.value} />
                 ))}

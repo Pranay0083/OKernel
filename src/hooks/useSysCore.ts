@@ -28,7 +28,7 @@ interface TraceEvent {
         offset: number;
     };
     phase?: 'start' | 'stop'; // For GC
-    info?: any; // For GC
+    info?: unknown; // For GC
     timestamp?: number;
     process_time?: number; // CPU time in ns
     duration?: number; // Calculated duration in ns
@@ -39,6 +39,7 @@ interface TraceEvent {
         cost: number;
         opcode: string;
     };
+    cpu_usage?: number;
 }
 
 interface SysCoreState {
@@ -118,12 +119,12 @@ export const useSysCore = () => {
                                 // Attach metrics to the CURRENT event (state at this point)
                                 e.duration = duration;
                                 // We store cpu_usage to visualize "effort" leading to this state
-                                (e as any).cpu_usage = cpuUsage * 100; // Store as percentage
+                                e.cpu_usage = cpuUsage * 100; // Store as percentage
 
                                 // Also back-propagate duration to history for line highlighting
                                 if (history.length > 0) {
                                     history[history.length - 1].duration = duration;
-                                    (history[history.length - 1] as any).cpu_usage = cpuUsage * 100;
+                                    history[history.length - 1].cpu_usage = cpuUsage * 100;
                                 }
                             }
                         }
@@ -143,7 +144,7 @@ export const useSysCore = () => {
                     logs,
                     isExecuting: false,
                     metrics: history.length > 0 ? {
-                        cpu: (history[history.length - 1] as any).cpu_usage || 0,
+                        cpu: history[history.length - 1].cpu_usage || 0,
                         memory: history[history.length - 1].memory_curr || 0
                     } : { cpu: 0, memory: 0 }
                 }));
@@ -151,9 +152,10 @@ export const useSysCore = () => {
                 setState(prev => ({ ...prev, logs: ["No trace data found."], isExecuting: false }));
             }
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Execution failed:", e);
-            setState(prev => ({ ...prev, logs: [...prev.logs, `Error: ${e.message || e}`], isExecuting: false }));
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            setState(prev => ({ ...prev, logs: [...prev.logs, `Error: ${errorMessage}`], isExecuting: false }));
         }
     }, []);
 

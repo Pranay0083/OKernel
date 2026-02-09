@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, ChevronRight, Home, Command } from 'lucide-react';
+import { Search, Menu, X, ChevronRight, Home } from 'lucide-react'; // Removed unused imports
 import { DOCS_NAVIGATION } from './DocsConfig';
-import { Navbar } from '../../components/layout/Navbar'; 
+import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 
 export const DocsLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const location = useLocation();
     const navigate = useNavigate();
@@ -25,7 +26,7 @@ export const DocsLayout = () => {
         const results = [];
         for (const section of DOCS_NAVIGATION) {
             for (const item of section.items) {
-                if (item.title.toLowerCase().includes(query.toLowerCase()) || 
+                if (item.title.toLowerCase().includes(query.toLowerCase()) ||
                     item.description?.toLowerCase().includes(query.toLowerCase())) {
                     results.push(item);
                 }
@@ -40,10 +41,10 @@ export const DocsLayout = () => {
 
         // Introduction
         if (path === '/docs' || path === '/docs/intro') {
-             return [
-                 { id: 'features', label: 'Core Features' },
-                 { id: 'how-it-works', label: 'How It Works' }
-             ];
+            return [
+                { id: 'features', label: 'Core Features' },
+                { id: 'how-it-works', label: 'How It Works' }
+            ];
         }
 
         // Quick Start
@@ -65,13 +66,13 @@ export const DocsLayout = () => {
                 { id: 'pipeline', label: 'Pipeline Stages' },
             ];
         }
-        
+
         // Architecture - Overview
         if (path.includes('architecture') && !path.includes('sympathy')) {
-             return [
-                 { id: 'data-flow', label: 'Data Flow Pipeline' },
-                 { id: 'core-components', label: 'Core Components' }
-             ];
+            return [
+                { id: 'data-flow', label: 'Data Flow Pipeline' },
+                { id: 'core-components', label: 'Core Components' }
+            ];
         }
 
         // Architecture - Sympathy
@@ -112,10 +113,10 @@ export const DocsLayout = () => {
 
         // API - SysCore
         if (path.includes('api')) {
-             return [
-                 { id: 'shell-commands', label: 'Shell Commands' },
-                 { id: 'system-calls', label: 'System Calls' }
-             ];
+            return [
+                { id: 'shell-commands', label: 'Shell Commands' },
+                { id: 'system-calls', label: 'System Calls' }
+            ];
         }
 
         return [];
@@ -133,11 +134,11 @@ export const DocsLayout = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-purple-500/30 flex flex-col">
             <Navbar /> {/* Standard Main Navbar */}
-            
+
             <div className="flex-1 flex pt-24 relative max-w-screen-2xl mx-auto w-full">
-                
+
                 {/* Mobile Sidebar Toggle */}
-                <button 
+                <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                     className="md:hidden fixed bottom-6 right-6 z-50 p-4 bg-green-600 text-black rounded-full shadow-lg"
                 >
@@ -146,19 +147,19 @@ export const DocsLayout = () => {
 
                 {/* Sidebar Navigation */}
                 <aside className={`
-                    fixed md:sticky top-24 left-0 h-[calc(100vh-6rem)] w-72 bg-[#050505]/95 backdrop-blur border-r border-white/5 
-                    transform transition-transform duration-300 z-40 overflow-y-auto custom-scrollbar
+                    fixed md:sticky top - 24 left - 0 h - [calc(100vh - 6rem)] w - 72 bg - [#050505] / 95 backdrop - blur border - r border - white / 5 
+                    transform transition - transform duration - 300 z - 40 overflow - y - auto custom - scrollbar
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                `}>
+`}>
                     <div className="p-6 space-y-8">
                         {/* Search Input */}
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Search size={14} className="text-zinc-500" />
                             </div>
-                            <input 
-                                type="text" 
-                                placeholder="Search docs..." 
+                            <input
+                                type="text"
+                                placeholder="Search docs..."
                                 value={searchQuery}
                                 onChange={handleSearch}
                                 className="w-full bg-zinc-900/50 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-300 focus:outline-none focus:border-green-500/50 transition-colors"
@@ -170,7 +171,7 @@ export const DocsLayout = () => {
                                         <ul>
                                             {searchResults.map((result) => (
                                                 <li key={result.path}>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             navigate(result.path);
                                                             setSearchQuery('');
@@ -199,20 +200,22 @@ export const DocsLayout = () => {
                                         {section.title}
                                     </h3>
                                     <ul className="space-y-0.5">
-                                        {section.items.map((item) => (
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                        {section.items.map((item: any) => ( // Added type 'any' to item as per instruction's intent to fix types
                                             <li key={item.path}>
-                                                <NavLink 
+                                                <NavLink
                                                     to={item.path}
                                                     end={item.path === '/docs'} // Only exact match for root
                                                     onClick={() => setSidebarOpen(false)}
                                                     className={({ isActive }) => `
-                                                        flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all group relative
-                                                        ${isActive 
-                                                            ? 'text-green-400 bg-green-500/5 font-medium' 
-                                                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}
-                                                    `}
+                                                        flex items - center gap - 3 px - 3 py - 2 rounded - md text - sm transition - all group relative
+                                                        ${isActive
+                                                            ? 'text-green-400 bg-green-500/5 font-medium'
+                                                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
+                                                        }
+`}
                                                 >
-                                                    <span className={`transition-colors ${location.pathname === item.path ? 'text-green-500' : 'text-zinc-600 group-hover:text-zinc-400'}`}>
+                                                    <span className={`transition - colors ${location.pathname === item.path ? 'text-green-500' : 'text-zinc-600 group-hover:text-zinc-400'} `}>
                                                         {item.icon}
                                                     </span>
                                                     {item.title}
@@ -238,12 +241,12 @@ export const DocsLayout = () => {
                         <span>Docs</span>
                         <ChevronRight size={12} />
                         <span className="text-green-500">
-                             {DOCS_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
+                            {DOCS_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
                         </span>
                     </div>
 
                     <Outlet />
-                    
+
                     <div className="mt-20 pt-10 border-t border-white/5">
                         <Footer minimal />
                     </div>
@@ -254,16 +257,16 @@ export const DocsLayout = () => {
                     <div className="sticky top-32">
                         <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">On this page</h4>
                         <ul className="space-y-2 text-sm text-zinc-500 border-l border-zinc-800">
-                           {toc.length > 0 ? toc.map((item) => (
-                               <li key={item.id} 
-                                   className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
-                                   onClick={() => scrollToSection(item.id)}
-                               >
-                                   {item.label}
-                               </li>
-                           )) : (
-                               <li className="pl-4 text-zinc-600 italic">No subsections</li>
-                           )}
+                            {toc.length > 0 ? toc.map((item) => (
+                                <li key={item.id}
+                                    className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
+                                    onClick={() => scrollToSection(item.id)}
+                                >
+                                    {item.label}
+                                </li>
+                            )) : (
+                                <li className="pl-4 text-zinc-600 italic">No subsections</li>
+                            )}
                         </ul>
                     </div>
                 </aside>

@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Terminal, History, Settings, Plus, Cpu, Layers, Play } from 'lucide-react';
-import { Persistence, UserSession, JobRecord } from '../../../services/persistence';
+import { Layout, History, Settings, Plus, Play } from 'lucide-react';
+import { Persistence, UserSession } from '../../../services/persistence';
 
 export const AppLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [session, setSession] = useState<UserSession | null>(null);
+    const [session, setSession] = useState<UserSession | null>(() => Persistence.getSession());
 
     useEffect(() => {
-        const s = Persistence.getSession();
-        setSession(s);
-
         // Listen for storage events to update UI across tabs (or if updated elsewhere)
         const handleStorage = () => setSession(Persistence.getSession());
         window.addEventListener('storage', handleStorage);
@@ -32,7 +29,7 @@ export const AppLayout = () => {
             <div className="w-64 flex flex-col border-r border-white/5 bg-[#0a0a0a]">
                 {/* OS Header */}
                 <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2 select-none">
-                    <div 
+                    <div
                         onClick={() => navigate(-1)}
                         className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all"
                         title="Close Window"
@@ -128,7 +125,15 @@ export const AppLayout = () => {
     );
 };
 
-const NavItem = ({ icon, label, active, onClick, badge }: any) => (
+interface NavItemProps {
+    icon: React.ReactElement;
+    label: string;
+    active: boolean;
+    onClick: () => void;
+    badge?: string;
+}
+
+const NavItem = ({ icon, label, active, onClick, badge }: NavItemProps) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all group ${active
@@ -136,7 +141,7 @@ const NavItem = ({ icon, label, active, onClick, badge }: any) => (
             : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
             }`}
     >
-        {React.cloneElement(icon, { size: 16, className: active ? 'text-purple-400' : 'text-zinc-500 group-hover:text-zinc-400' })}
+        {React.cloneElement(icon, { size: 16, className: active ? 'text-purple-400' : 'text-zinc-500 group-hover:text-zinc-400' } as React.Attributes)}
         <span className="text-xs font-medium">{label}</span>
         {badge && (
             <span className="ml-auto text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded-full font-mono">

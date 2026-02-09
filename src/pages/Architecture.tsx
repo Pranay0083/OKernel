@@ -1,6 +1,6 @@
 
 import { Layout } from '../components/layout/Layout';
-import { Cpu, Database, Layout as LayoutIcon, Terminal, ArrowRight, Box, HardDrive, Cpu as Zap, ShieldCheck, Microscope } from 'lucide-react';
+import { Cpu, Database, Layout as LayoutIcon, ArrowRight, Box, HardDrive, Cpu as Zap, ShieldCheck, Microscope } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Architecture = () => {
@@ -35,7 +35,7 @@ export const Architecture = () => {
                         {/* 4-Layer "Stack" Diagram */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 mb-16">
                             {['Presentation (React)', 'SysCore VM (Kernel)', 'Scheduling Engine', 'Persistence (DB)'].map((layer, i) => (
-                                <div key={i} className={`p-6 bg-[#0A0A0A] flex items-center justify-center font-mono text-xs uppercase tracking-wider ${i === 1 ? 'text-green-500 bg-zinc-900/30' : 'text-zinc-500'}`}>
+                                <div key={i} className={`p - 6 bg - [#0A0A0A] flex items - center justify - center font - mono text - xs uppercase tracking - wider ${i === 1 ? 'text-green-500 bg-zinc-900/30' : 'text-zinc-500'} `}>
                                     {i + 1}. {layer}
                                 </div>
                             ))}
@@ -218,7 +218,7 @@ export const Architecture = () => {
                                     </p>
                                     <p className="text-zinc-400 leading-relaxed mb-6 text-sm font-sans">
                                         At each step, we serialize the entire heap graph using structural sharing.
-                                        This allows "Time Travel" debugging - you can step BACKWARDS because we have the state snapshot of `t-1`.
+                                        This allows "Time Travel" debugging - you can step BACKWARDS because we have the state snapshot of `t - 1`.
                                     </p>
                                 </div>
                                 <div className="bg-[#0A0A0A] border border-zinc-800 p-8 font-mono text-xs flex items-center justify-center">
@@ -232,7 +232,7 @@ export const Architecture = () => {
                                         </div>
                                         <div className="grid grid-cols-5 gap-2">
                                             {[1, 2, 3, 4, 5].map(i => (
-                                                <div key={i} className={`h-8 border border-zinc-800 ${i === 4 ? 'bg-purple-900/20 border-purple-500/50 text-purple-400' : 'bg-zinc-900 text-zinc-600'} flex items-center justify-center`}>
+                                                <div key={i} className={`h - 8 border border - zinc - 800 ${i === 4 ? 'bg-purple-900/20 border-purple-500/50 text-purple-400' : 'bg-zinc-900 text-zinc-600'} flex items - center justify - center`}>
                                                     t-{5 - i}
                                                 </div>
                                             ))}

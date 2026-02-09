@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, RotateCcw, Split, Clock, Database, Cpu, Server } from 'lucide-react';
+import { Play, RotateCcw, Split, Clock, Cpu, Server } from 'lucide-react';
 import CodeEditor from './components/CodeEditor';
 import { StatsView } from './components/StatsView';
 import { FlameGraph } from './components/FlameGraph';
@@ -42,7 +42,7 @@ const ComparePage: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <select
                         value={language}
-                        onChange={(e) => setLanguage(e.target.value as any)}
+                        onChange={(e) => setLanguage(e.target.value as 'python' | 'cpp')}
                         className="bg-zinc-800 border border-white/10 text-xs rounded px-3 py-1.5"
                     >
                         <option value="python">Python 3.11</option>
@@ -218,7 +218,14 @@ const ComparePage: React.FC = () => {
     );
 };
 
-const MetricCard = ({ label, valA, valB, better }: any) => {
+interface MetricCardProps {
+    label: string;
+    valA: string | number;
+    valB: string | number;
+    better: 'lower' | 'higher';
+}
+
+const MetricCard = ({ label, valA, valB }: MetricCardProps) => {
     // Simple naive comparison for visual impact
     // Assuming numeric values would require parsing since we formatted them strings.
     // For now just display values.

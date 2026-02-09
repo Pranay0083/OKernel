@@ -8,6 +8,7 @@ import { FlameGraph } from '../FlameGraph';
 
 vi.mock('framer-motion', () => ({
     motion: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },
 }));
@@ -30,7 +31,7 @@ describe('FlameGraph', () => {
         // history.forEach -> totalTime += event.duration;
         // So 1000 + 500 = 1500ns = 1.5µs
 
-        expect(screen.getByText('1.5µs Total Time')).toBeInTheDocument();
+        expect(screen.getByText('1.5 µs Total Time')).toBeInTheDocument();
     });
 
     it('renders blocks for functions', () => {

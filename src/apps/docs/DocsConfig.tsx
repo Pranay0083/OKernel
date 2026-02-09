@@ -1,5 +1,5 @@
 import React from 'react';
-import { Book, Cpu, Terminal, Layers, Code, Zap, Globe, Database, Shield } from 'lucide-react';
+import { Book, Cpu, Terminal, Layers, Code, Zap, Globe, Database } from 'lucide-react';
 
 // Import Pages
 import { IntroPage } from './pages/IntroPage';

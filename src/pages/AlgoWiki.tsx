@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, ChevronRight, Home } from 'lucide-react';
 import { WIKI_NAVIGATION } from './wiki/AlgoWikiConfig';
-import { Navbar } from '../components/layout/Navbar'; 
+import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 
 export const AlgoWiki = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const location = useLocation();
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const AlgoWiki = () => {
         const results = [];
         for (const section of WIKI_NAVIGATION) {
             for (const item of section.items) {
-                if (item.title.toLowerCase().includes(query.toLowerCase()) || 
+                if (item.title.toLowerCase().includes(query.toLowerCase()) ||
                     item.description?.toLowerCase().includes(query.toLowerCase())) {
                     results.push(item);
                 }
@@ -56,7 +57,7 @@ export const AlgoWiki = () => {
         }
 
         if (path.includes('synchronization')) {
-             return [
+            return [
                 { id: 'race-conditions', label: 'Race Conditions' },
                 { id: 'mutex', label: 'Mutex Locks' },
                 { id: 'semaphores', label: 'Semaphores' },
@@ -64,7 +65,7 @@ export const AlgoWiki = () => {
         }
 
         if (path.includes('memory')) {
-             return [
+            return [
                 { id: 'virtual-memory', label: 'Virtual Memory' },
                 { id: 'paging', label: 'Paging' },
                 { id: 'tlb', label: 'TLB' },
@@ -102,11 +103,11 @@ export const AlgoWiki = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-purple-500/30 flex flex-col">
             <Navbar />
-            
+
             <div className="flex-1 flex pt-24 relative max-w-screen-2xl mx-auto w-full">
-                
+
                 {/* Mobile Sidebar Toggle */}
-                <button 
+                <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                     className="md:hidden fixed bottom-6 right-6 z-50 p-4 bg-purple-600 text-white rounded-full shadow-lg"
                 >
@@ -122,8 +123,8 @@ export const AlgoWiki = () => {
                     <div className="p-6 space-y-8">
                         {/* Header */}
                         <div className="px-3">
-                             <div className="text-sm font-bold text-white mb-1">AlgoWiki</div>
-                             <div className="text-xs text-zinc-500 font-mono">/sys/class/algos</div>
+                            <div className="text-sm font-bold text-white mb-1">AlgoWiki</div>
+                            <div className="text-xs text-zinc-500 font-mono">/sys/class/algos</div>
                         </div>
 
                         {/* Search Input */}
@@ -131,9 +132,9 @@ export const AlgoWiki = () => {
                             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                 <Search size={14} className="text-zinc-500" />
                             </div>
-                            <input 
-                                type="text" 
-                                placeholder="Search algorithms..." 
+                            <input
+                                type="text"
+                                placeholder="Search algorithms..."
                                 value={searchQuery}
                                 onChange={handleSearch}
                                 className="w-full bg-zinc-900/50 border border-zinc-800 rounded-md py-2 pl-9 pr-4 text-sm text-zinc-300 focus:outline-none focus:border-purple-500/50 transition-colors"
@@ -145,7 +146,7 @@ export const AlgoWiki = () => {
                                         <ul>
                                             {searchResults.map((result) => (
                                                 <li key={result.path}>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             navigate(result.path);
                                                             setSearchQuery('');
@@ -176,19 +177,19 @@ export const AlgoWiki = () => {
                                     <ul className="space-y-0.5">
                                         {section.items.map((item) => (
                                             <li key={item.path}>
-                                                <NavLink 
+                                                <NavLink
                                                     to={item.path}
-                                                    end={item.path === '/algo-wiki'} 
+                                                    end={item.path === '/algo-wiki'}
                                                     onClick={() => setSidebarOpen(false)}
                                                     className={({ isActive }) => `
                                                         flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all group relative
-                                                        ${isActive 
-                                                            ? 'text-purple-400 bg-purple-500/5 font-medium' 
+                                                        ${isActive
+                                                            ? 'text-purple-400 bg-purple-500/5 font-medium'
                                                             : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}
                                                     `}
                                                 >
                                                     <span className={`transition-colors ${location.pathname === item.path ? 'text-purple-500' : 'text-zinc-600 group-hover:text-zinc-400'}`}>
-                                                        
+
                                                     </span>
                                                     {item.title}
                                                     {location.pathname === item.path && (
@@ -213,12 +214,12 @@ export const AlgoWiki = () => {
                         <span>Wiki</span>
                         <ChevronRight size={12} />
                         <span className="text-purple-500">
-                             {WIKI_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
+                            {WIKI_NAVIGATION.flatMap(s => s.items).find(i => i.path === location.pathname)?.title || 'Page'}
                         </span>
                     </div>
 
                     <Outlet />
-                    
+
                     <div className="mt-20 pt-10 border-t border-white/5">
                         <Footer minimal />
                     </div>
@@ -229,16 +230,16 @@ export const AlgoWiki = () => {
                     <div className="sticky top-32">
                         <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">On this page</h4>
                         <ul className="space-y-2 text-sm text-zinc-500 border-l border-zinc-800">
-                           {toc.length > 0 ? toc.map((item) => (
-                               <li key={item.id} 
-                                   className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
-                                   onClick={() => scrollToSection(item.id)}
-                               >
-                                   {item.label}
-                               </li>
-                           )) : (
-                               <li className="pl-4 text-zinc-600 italic">Overview</li>
-                           )}
+                            {toc.length > 0 ? toc.map((item) => (
+                                <li key={item.id}
+                                    className="pl-4 hover:text-zinc-300 hover:border-zinc-600 cursor-pointer transition-colors"
+                                    onClick={() => scrollToSection(item.id)}
+                                >
+                                    {item.label}
+                                </li>
+                            )) : (
+                                <li className="pl-4 text-zinc-600 italic">Overview</li>
+                            )}
                         </ul>
                     </div>
                 </aside>

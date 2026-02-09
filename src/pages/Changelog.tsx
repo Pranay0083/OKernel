@@ -1,11 +1,10 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { GitCommit, Tag, Calendar, ArrowRight, Cpu, Shield, Zap, Layout as LayoutIcon } from 'lucide-react';
-import { useSystemConfig } from '../hooks/useSystemConfig';
+import { GitCommit, Calendar, ArrowRight, Cpu, Shield } from 'lucide-react';
 
 export const Changelog = () => {
-    const { config } = useSystemConfig();
+    // const config = { version: '1.2.0' }; // Removed unused variable, kept as comment if needed latereSystemConfig();
 
     return (
         <Layout>
@@ -35,7 +34,7 @@ export const Changelog = () => {
                                     Hard Technical Upgrade
                                 </h3>
                                 <p className="text-zinc-400 text-sm leading-relaxed">
-                                    A massive overhaul of the system's core interface and security layers. 
+                                    A massive overhaul of the system's core interface and security layers.
                                     We have shifted to a strict Google Auth-only flow and redesigned the entire landing experience to match our "Hard Technical" aesthetic.
                                 </p>
                             </div>

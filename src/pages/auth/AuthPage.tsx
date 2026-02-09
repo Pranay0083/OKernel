@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, Shield, Lock, Cpu } from 'lucide-react';
+import { Lock, Cpu } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export const AuthPage = () => {
@@ -50,9 +50,9 @@ export const AuthPage = () => {
                 {/* Header */}
                 <div className="bg-zinc-900/50 px-4 py-3 flex items-center gap-2 border-b border-zinc-800">
                     <div className="flex gap-1.5">
-                        <div 
+                        <div
                             onClick={() => navigate('/')}
-                            className="w-3 h-3 rounded-full bg-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all" 
+                            className="w-3 h-3 rounded-full bg-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all"
                             title="Go Home"
                         />
                         <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
