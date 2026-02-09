@@ -95,6 +95,8 @@ jobs:
           script_stop: true
           envs: BINARY_NAME,DEPLOY_PATH,SERVICE_NAME
           script: |
+            set -x # 👈 Enable Debug Mode (Prints every command)
+            
             VERSION="${{ needs.build.outputs.version }}"
             ARTIFACT="/tmp/${BINARY_NAME}-${VERSION}.tar.gz"
             RELEASE_DIR="${DEPLOY_PATH}/releases/${VERSION}"
@@ -102,29 +104,29 @@ jobs:
             
             echo "🚀 Starting Deployment for $VERSION..."
             
-            # 1. Prepare Directory
-            # We use sudo -n to ensure it fails fast if password is required (permissions check)
-            if ! sudo -n true; then
-                echo "❌ Error: sudo requires a password. Check /etc/sudoers.d/syscore-deploy"
-                exit 1
-            fi
-
+            # Debug: Check sudo capability explicitly
+            # We remove the 'if' block so we can see the raw error from sudo itself
+            sudo -n uptime
+            
+            # 1. Create Directory
             sudo mkdir -p "$RELEASE_DIR"
+            
+            # 2. Extract
             sudo tar -xzf "$ARTIFACT" -C "$RELEASE_DIR"
             sudo chmod +x "$RELEASE_DIR/$BINARY_NAME"
             
-            # 2. Capture Previous State (for Rollback)
+            # 3. Capture Previous State (for Rollback)
             if [ -L "$CURRENT_LINK" ]; then
               PREV_LINK_TARGET=$(readlink "$CURRENT_LINK")
             else
               PREV_LINK_TARGET=""
             fi
             
-            # 3. Atomic Link Switch
+            # 4. Atomic Link Switch
             echo "🔗 Switching symlink..."
             sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
             
-            # 4. Restart Systemd
+            # 5. Restart Systemd
             echo "🔄 Restarting Service..."
             if ! sudo systemctl restart $SERVICE_NAME; then
                echo "❌ Service failed to start."
@@ -136,7 +138,7 @@ jobs:
                exit 1
             fi
             
-            # 5. Health Check
+            # 6. Health Check
             echo "💓 Checking Health..."
             sleep 3
             if ! curl -s --fail http://127.0.0.1:3001/health; then
