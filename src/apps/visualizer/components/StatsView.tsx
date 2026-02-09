@@ -194,7 +194,7 @@ export function StatsView({ history, minimal = false }: { history: HardwareEvent
                         <h3 className="text-sm font-semibold text-zinc-300">Instruction Mix</h3>
                     </div>
                     <div className="flex-1 min-h-[200px] relative">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={stats.pieData}
