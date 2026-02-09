@@ -27,3 +27,5 @@ dist-ssr
 .env
 /sql
 /scripts
+
+syscore/target/

@@ -1,6 +1,8 @@
 use axum::{Json, extract::State};
 use serde::{Deserialize, Serialize};
 use crate::docker::manager::{ContainerManager, Language};
+use crate::simulation::{SimulationState, next_tick};
+use crate::vm::{VMState, VMMallocRequest, VMWriteRequest, FSOperationRequest, FSOperationResponse};
 
 #[derive(Deserialize)]
 pub struct ExecuteRequest {
@@ -36,5 +38,86 @@ pub async fn execute_handler(
             status: "error".to_string(),
             output: e,
         }),
+    }
+}
+
+pub async fn simulate_tick_handler(
+    Json(payload): Json<SimulationState>,
+) -> Json<SimulationState> {
+    let next_state = next_tick(payload);
+    Json(next_state)
+}
+
+pub async fn vm_malloc_handler(
+    Json(payload): Json<VMMallocRequest>,
+) -> Json<Result<VMState, String>> {
+    let mut state = payload.state;
+    match state.memory.malloc(payload.size) {
+        Ok(_) => Json(Ok(state)),
+        Err(e) => Json(Err(e)),
+    }
+}
+
+pub async fn vm_write_handler(
+    Json(payload): Json<VMWriteRequest>,
+) -> Json<VMState> {
+    let mut state = payload.state;
+    if payload.is_string {
+        state.memory.write_string(payload.address, &payload.data);
+    } else {
+        // Assume data is a number if not string
+        if let Ok(val) = payload.data.parse::<i32>() {
+            state.memory.write32(payload.address, val);
+        }
+    }
+    Json(state)
+}
+
+pub async fn vm_reset_handler(
+    Json(mut state): Json<VMState>,
+) -> Json<VMState> {
+    state.memory.reset();
+    Json(state)
+}
+
+pub async fn vm_fs_handler(
+    Json(payload): Json<FSOperationRequest>,
+) -> Json<FSOperationResponse> {
+    // For now, we use a static FS since we don't have a persistent session-based FS yet
+    let mut fs = crate::vm::fs::MockFileSystem::new();
+    
+    match payload.op.as_str() {
+        "ls" => {
+            Json(FSOperationResponse {
+                success: true,
+                files: Some(fs.list_files()),
+                content: None,
+                error: None,
+            })
+        },
+        "create" => {
+            if let Some(name) = payload.name {
+                fs.create_file(name);
+                Json(FSOperationResponse {
+                    success: true,
+                    files: None,
+                    content: None,
+                    error: None,
+                })
+            } else {
+                Json(FSOperationResponse {
+                    success: false,
+                    files: None,
+                    content: None,
+                    error: Some("Name missing".to_string()),
+                })
+            }
+        },
+        _ => Json(FSOperationResponse {
+            success: false,
+            files: None,
+            content: None,
+            error: Some("Unknown op".to_string()),
+        })
     }
 }

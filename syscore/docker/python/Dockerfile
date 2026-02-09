@@ -8,7 +8,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python profilers
-RUN pip install py-spy memory_profiler
+# Install Python profilers with robust network settings
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    --default-timeout=100 \
+    --trusted-host pypi.org \
+    --trusted-host pypi.python.org \
+    --trusted-host files.pythonhosted.org \
+    py-spy memory_profiler
 
 # Create non-root user
 RUN useradd -m runner

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { User, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useAuth } from '../../hooks/useAuth';
 
-import logo from '../../assets/okernel_v2.png';
+const logo = '/logo.png';
 
 export const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { user, signOut } = useAuth();
     const location = useLocation();
 
     useEffect(() => {
@@ -15,13 +17,20 @@ export const Navbar = () => {
             setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
+
+    const handleSignOut = async () => {
+        await signOut();
+    };
 
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'Architecture', path: '/dev/architecture' },
-        { name: 'About', path: '/dev/about' },
+        { name: 'Architecture', path: '/architecture' },
+        { name: 'About', path: '/about' },
+        // { name: 'Docs', path: '/docs' },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -33,10 +42,9 @@ export const Navbar = () => {
                 : 'bg-transparent border-transparent py-4'
                 }`}
         >
-            <div className="w-full px-8 sm:px-12"> {/* Updated container to be full width with margin */}
+            <div className="w-full px-8 sm:px-12">
                 <div className="flex items-center justify-between h-12">
                     <Link to="/" className="flex items-center gap-3 group font-mono text-sm">
-                        {/* Logo Image */}
                         <div className="w-8 h-8 rounded overflow-hidden transition-transform group-hover:scale-105">
                             <img src={logo} alt="OKernel Logo" className="w-full h-full object-contain" />
                         </div>
@@ -57,14 +65,43 @@ export const Navbar = () => {
                                 {link.name}
                             </Link>
                         ))}
-                        {location.pathname === '/dev/scheduler' || location.pathname === '/visualizer' ? (
+
+                        {/* Auth Button */}
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <Link to="/dashboard">
+                                    <Button size="sm" variant="ghost" className="text-zinc-400 hover:text-white hover:bg-white/5">
+                                        Dashboard
+                                    </Button>
+                                </Link>
+                                <span className="hidden xl:inline text-xs font-mono text-zinc-500">{user.email}</span>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleSignOut}
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2"
+                                    title="Sign Out"
+                                >
+                                    <LogOut size={16} />
+                                </Button>
+                            </div>
+                        ) : (
+                            <Link to="/auth">
+                                <Button size="sm" variant="ghost" className="text-zinc-400 hover:text-white">
+                                    Sign In
+                                </Button>
+                            </Link>
+                        )}
+
+
+                        {location.pathname.startsWith('/platform') || location.pathname === '/scheduler' ? (
                             <Link to="/">
                                 <Button size="sm" variant="outline" className="rounded-full px-6 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300">
                                     Exit Visualizer
                                 </Button>
                             </Link>
                         ) : (
-                            <Link to="/dev/console">
+                            <Link to="/console">
                                 <Button size="sm" className="rounded-full px-6 font-mono font-bold">
                                     &gt;_ Launch Console
                                 </Button>
@@ -96,7 +133,25 @@ export const Navbar = () => {
                             {link.name}
                         </Link>
                     ))}
-                    <Link to="/dev/scheduler" onClick={() => setIsMobileMenuOpen(false)}>
+
+                    {user ? (
+                        <>
+                            <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full text-zinc-300 hover:text-white hover:bg-white/5 justify-start">
+                                    Dashboard
+                                </Button>
+                            </Link>
+                            <Button onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }} className="w-full bg-red-500/10 text-red-400 hover:bg-red-500/20 justify-start">
+                                <LogOut size={16} className="mr-2" /> Sign Out ({user.email})
+                            </Button>
+                        </>
+                    ) : (
+                        <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Button variant="outline" className="w-full">Sign In</Button>
+                        </Link>
+                    )}
+
+                    <Link to="/scheduler" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button className="w-full">Launch App</Button>
                     </Link>
                 </div>

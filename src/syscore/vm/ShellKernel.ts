@@ -50,7 +50,7 @@ export class ShellKernel {
     async boot(code: string, onUpdate: (logs: string[], waiting: boolean) => void) {
         this.killSignal = false;
         this.outputBuffer = "";
-        this.mem.reset(); // Wipe RAM on boot!
+        await this.mem.reset(); // Wipe RAM on boot!
 
         // Stack Pointer Simulation (Top of stack)
         let sp = Memory.STACK_TOP;
@@ -100,14 +100,16 @@ export class ShellKernel {
 
                     // Inline expansion for now:
                     let argIndex = 1;
-                    output = format.replace(/%[sd]/g, (match: string) => {
+                    // We need a loop to await replacements, or a helper
+                    const matches = [...format.matchAll(/%[sd]/g)];
+                    output = format;
+                    for (const match of matches) {
                         let val = args[argIndex++];
-                        if (match === '%s' && typeof val === 'number') {
-                            // It's a pointer! Read it.
-                            val = this.mem.readString(val);
+                        if (match[0] === '%s' && typeof val === 'number') {
+                            val = await this.mem.readString(val);
                         }
-                        return val !== undefined ? String(val) : match;
-                    });
+                        output = output.replace(match[0], val !== undefined ? String(val) : match[0]);
+                    }
 
                 } else {
                     output = args.join(' ');
@@ -124,18 +126,18 @@ export class ShellKernel {
                     this.inputResolver = resolve;
                 });
                 // Write string to RAM at 'addr'
-                this.mem.writeString(addr, str);
+                await this.mem.writeString(addr, str);
                 return str;
             },
 
-            strcmp: (ptr: number, compareTo: string) => {
-                const str = this.mem.readString(ptr);
+            strcmp: async (ptr: number, compareTo: string) => {
+                const str = await this.mem.readString(ptr);
                 return str === compareTo ? 0 : 1;
             },
 
-            sprintf: (ptr: number, fmt: string, ...args: unknown[]) => {
+            sprintf: async (ptr: number, fmt: string, ...args: unknown[]) => {
                 const str = sprintf(fmt, ...args);
-                this.mem.writeString(ptr, str);
+                await this.mem.writeString(ptr, str);
                 return str.length;
             },
 
@@ -149,21 +151,22 @@ export class ShellKernel {
             },
 
             // Memory / VM API
-            malloc: (size: number) => this.mem.malloc(size),
+            malloc: async (size: number) => await this.mem.malloc(size),
             // free: (ptr: number) => this.mem.free(ptr), // No-op for now
 
-            write32: (addr: number, val: number) => this.mem.write32(addr, val),
-            read32: (addr: number) => this.mem.read32(addr),
+            write32: async (addr: number, val: number) => await this.mem.write32(addr, val),
+            read32: async (addr: number) => await this.mem.read32(addr),
 
-            write8: (addr: number, val: number) => this.mem.write8(addr, val),
-            read8: (addr: number) => this.mem.read8(addr),
+            write8: async (addr: number, val: number) => await this.mem.write8(addr, val),
+            read8: async (addr: number) => await this.mem.read8(addr),
 
-            writeString: (addr: number, val: string) => this.mem.writeString(addr, val),
-            readString: (addr: number) => this.mem.readString(addr),
+            writeString: async (addr: number, val: string) => await this.mem.writeString(addr, val),
+            readString: async (addr: number) => await this.mem.readString(addr),
 
             // Stack Allocator (Simple bump down)
-            stack_alloc: (size: number) => {
+            stack_alloc: async (size: number) => {
                 sp -= size;
+                // We might want to sync SP to backend if it's part of VMState
                 return sp;
             },
 

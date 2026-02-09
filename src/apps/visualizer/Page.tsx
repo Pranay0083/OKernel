@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight, BarChart2, Cpu, MemoryStick } from 'lucide-react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Play, Square, Activity, Database, Server, Clock, Download, ChevronLeft, ChevronRight, BarChart2, Cpu, MemoryStick, GitGraph } from 'lucide-react';
+import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import HeapView from './components/HeapView';
 import StackView from './components/StackView';
 import { StatsView } from './components/StatsView';
 import { FlameGraph } from './components/FlameGraph';
-
-// ... (existing imports)
+import { RecursionTree } from './components/RecursionTree';
 
 
 
@@ -18,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
 
 const VisualizerPage: React.FC = () => {
+    const { mode } = useParams<{ mode: string }>();
     const { isConnected, isExecuting, logs, metrics, executeCode, jobId, history } = useSysCore();
     const [code, setCode] = useState<string>('l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
     const [input, setInput] = useState<string>('');
@@ -61,20 +61,17 @@ const VisualizerPage: React.FC = () => {
 
     // Parse View Mode from URL
     const viewMode = useMemo(() => {
-        if (location.pathname.includes(':cpu')) return 'cpu';
-        if (location.pathname.includes(':mem')) return 'mem';
-        if (location.pathname.includes(':compare')) return 'compare';
-        if (location.pathname.includes(':hardware')) return 'hardware';
+        if (mode === 'cpu') return 'cpu';
+        if (mode === 'mem') return 'mem';
+        if (mode === 'hardware') return 'hardware';
+        if (mode === 'recursion') return 'recursion';
         return 'default';
-    }, [location.pathname]);
+    }, [mode]);
 
-    const setViewMode = (mode: 'default' | 'cpu' | 'mem' | 'compare' | 'hardware') => {
-        // Strip existing suffix
-        let base = location.pathname.replace(/:cpu|:mem|:compare|:hardware/g, '');
-        if (base.endsWith('/')) base = base.slice(0, -1);
-
-        if (mode === 'default') navigate(base);
-        else navigate(`${base}:${mode}`);
+    const setViewMode = (newMode: 'default' | 'cpu' | 'mem' | 'compare' | 'hardware' | 'recursion') => {
+        if (newMode === 'default') navigate('/platform/execution');
+        else if (newMode === 'compare') navigate('/platform/compare');
+        else navigate(`/platform/${newMode}`);
     };
 
     // Load Job from URL
@@ -409,6 +406,12 @@ const VisualizerPage: React.FC = () => {
                                 >
                                     <Server size={10} /> HARDWARE
                                 </button>
+                                <button
+                                    onClick={() => setViewMode('recursion')}
+                                    className={`px-2 py-0.5 text-[10px] rounded flex items-center gap-1 ${viewMode === 'recursion' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+                                >
+                                    <GitGraph size={10} /> RECURSION
+                                </button>
                             </div>
 
                             <div className="flex items-center gap-1.5 bg-zinc-800 px-2 py-1 rounded border border-white/5 ml-auto">
@@ -436,7 +439,12 @@ const VisualizerPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                        <span className="text-xs text-zinc-500 font-mono">Job: {jobId ? jobId.substring(0, 8) : '---'}</span>
+                        <div className="flex-shrink-0 ml-4 flex items-center gap-2">
+                            <span className="text-[10px] text-zinc-600 font-mono uppercase">Job ID</span>
+                            <span className="text-xs text-zinc-400 font-mono bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
+                                {jobId ? jobId.substring(0, 8) : '---'}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Main Visualization Area */}
@@ -445,6 +453,13 @@ const VisualizerPage: React.FC = () => {
                         {viewMode === 'hardware' && (
                             <div className="flex-1 bg-zinc-950 overflow-hidden">
                                 <StatsView history={history} />
+                            </div>
+                        )}
+
+                        {/* RECURSION VIEW */}
+                        {viewMode === 'recursion' && (
+                            <div className="flex-1 bg-zinc-950 overflow-hidden">
+                                <RecursionTree history={history} />
                             </div>
                         )}
 
@@ -512,49 +527,55 @@ const VisualizerPage: React.FC = () => {
                     </div>
 
                     {/* Timeline & Controls */}
-                    <div className="h-48 border-t border-white/10 bg-zinc-900/50 p-3 flex flex-col gap-2 z-30">
-                        {/* Memory Chart with GC Markers */}
-                        <div className="h-32 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative group/chart">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={history.map((h, i) => ({
-                                    time: i,
-                                    usage: (h.memory_curr || 0) / 1024 / 1024,
-                                    isGC: h.type === 'GC',
-                                    phase: h.type === 'GC' ? h.phase : null
-                                }))}>
-                                    <Area
-                                        type="step"
-                                        dataKey="usage"
-                                        stroke="#4ade80"
-                                        fill="#4ade80"
-                                        fillOpacity={0.1}
-                                        strokeWidth={1}
-                                        isAnimationActive={false}
-                                    />
-                                    {/* GC Markers */}
-                                    {history.map((h, i) => (
-                                        h.type === 'GC' ? (
-                                            <ReferenceLine
-                                                key={i}
-                                                x={i}
-                                                stroke="#ef4444"
-                                                strokeDasharray="2 2"
-                                                strokeOpacity={0.5}
-                                                label={{
-                                                    value: 'GC',
-                                                    position: 'insideTop',
-                                                    fill: '#ef4444',
-                                                    fontSize: 8
-                                                }}
-                                            />
-                                        ) : null
-                                    ))}
-                                </AreaChart>
-                            </ResponsiveContainer>
+                    <div className="h-64 border-t border-white/10 bg-zinc-900/50 p-3 flex flex-col gap-2 z-30">
+                        {/* Charts Container */}
+                        <div className="flex-1 flex gap-2 min-h-0">
+                            {/* Memory Chart */}
+                            <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
+                                <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">Memory Usage</span>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={history.map((h, i) => ({
+                                        time: i,
+                                        usage: (h.memory_curr || 0) / 1024 / 1024,
+                                        isGC: h.type === 'GC'
+                                    }))}>
+                                        <defs>
+                                            <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#4ade80" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Area type="monotone" dataKey="usage" stroke="#4ade80" fill="url(#colorMem)" strokeWidth={1.5} isAnimationActive={false} />
+                                        {/* Cursor Line */}
+                                        <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* CPU Chart */}
+                            <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
+                                <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">CPU Intensity</span>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={history.map((h, i) => ({
+                                        time: i,
+                                        usage: (h as any).cpu_usage || 0
+                                    }))}>
+                                        <defs>
+                                            <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Area type="monotone" dataKey="usage" stroke="#f97316" fill="url(#colorCpu)" strokeWidth={1.5} isAnimationActive={false} />
+                                        {/* Cursor Line */}
+                                        <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
 
                         {/* Playback Controls */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 h-8 shrink-0">
                             <div className="flex items-center gap-2">
                                 <ControlBtn onClick={() => stepMacro(-1)} icon={<ChevronLeft size={16} />} />
                                 <ControlBtn onClick={toggleReplay} active={isReplaying} icon={isReplaying ? <Square size={14} /> : <Play size={14} />} />

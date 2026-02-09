@@ -32,7 +32,11 @@ export const AppLayout = () => {
             <div className="w-64 flex flex-col border-r border-white/5 bg-[#0a0a0a]">
                 {/* OS Header */}
                 <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2 select-none">
-                    <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                    <div 
+                        onClick={() => navigate(-1)}
+                        className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all"
+                        title="Close Window"
+                    ></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
                     <span className="ml-2 font-mono text-xs font-bold text-zinc-500 tracking-widest">OKERNEL OS</span>
@@ -43,15 +47,15 @@ export const AppLayout = () => {
                     <NavItem
                         icon={<Plus size={14} />}
                         label="New Experiment"
-                        active={isActive('/dev/execution') && !location.pathname.includes(':compare')}
-                        onClick={() => navigate('/dev/execution')}
+                        active={isActive('/platform/execution') && !location.pathname.includes('compare')}
+                        onClick={() => navigate('/platform/execution')}
                     />
                     <NavItem
                         icon={<Layout size={14} />}
                         label="Comparison View"
-                        active={isActive('/dev/execution:compare')}
+                        active={isActive('/platform/compare')}
                         badge="v2.0"
-                        onClick={() => navigate('/dev/execution:compare')}
+                        onClick={() => navigate('/platform/compare')}
                     />
                 </div>
 
@@ -73,7 +77,7 @@ export const AppLayout = () => {
                             key={job.id}
                             className="group flex flex-col gap-1 p-2 rounded hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5"
                             onClick={() => {
-                                navigate(`/dev/execution?loadJob=${job.id}`);
+                                navigate(`/platform/execution?loadJob=${job.id}`);
                             }}
                         >
                             <div className="flex items-center justify-between">
@@ -87,7 +91,7 @@ export const AppLayout = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(`/dev/execution?loadJob=${job.id}&autoRun=true`);
+                                            navigate(`/platform/execution?loadJob=${job.id}&autoRun=true`);
                                         }}
                                         className="p-1 rounded bg-white/5 hover:bg-green-500/20 hover:text-green-400 transition-colors"
                                         title="Replay"

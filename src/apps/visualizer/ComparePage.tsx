@@ -3,6 +3,7 @@ import { Play, RotateCcw, Split, Clock, Database, Cpu, Server } from 'lucide-rea
 import CodeEditor from './components/CodeEditor';
 import { StatsView } from './components/StatsView';
 import { FlameGraph } from './components/FlameGraph';
+import { RecursionTree } from './components/RecursionTree';
 import { useSysCore } from '../../hooks/useSysCore';
 
 const ComparePage: React.FC = () => {
@@ -15,6 +16,10 @@ const ComparePage: React.FC = () => {
     const [input, setInput] = useState("");
     const [showInput, setShowInput] = useState(false);
     const [language, setLanguage] = useState<'python' | 'cpp'>('python');
+
+    // Tab State
+    const [tabA, setTabA] = useState<'hardware' | 'recursion'>('hardware');
+    const [tabB, setTabB] = useState<'hardware' | 'recursion'>('recursion'); // Different default for contrast
 
     const isRunning = sysCoreA.isExecuting || sysCoreB.isExecuting;
 
@@ -128,6 +133,12 @@ const ComparePage: React.FC = () => {
                             valB={sysCoreB.history.length || 0}
                             better="lower"
                         />
+                        <MetricCard
+                            label="Max Stack Depth"
+                            valA={Math.max(0, ...sysCoreA.history.map(e => e.stack_depth || 0))}
+                            valB={Math.max(0, ...sysCoreB.history.map(e => e.stack_depth || 0))}
+                            better="lower"
+                        />
                     </div>
 
 
@@ -145,18 +156,59 @@ const ComparePage: React.FC = () => {
                     </div>
 
 
-                    {/* 4. Hardware Stats */}
+                    {/* 4. Deep Analysis Tabs */}
                     <h2 className="text-sm font-mono text-zinc-500 mb-6 uppercase tracking-wider flex items-center gap-2">
-                        <Server size={16} /> Hardware Inspector
+                        <Server size={16} /> Deep Analysis
                     </h2>
                     <div className="grid grid-cols-2 gap-6 h-[500px] mb-12">
-                        <div className="glass rounded-xl overflow-hidden relative p-1">
-                            <StatsView history={sysCoreA.history} minimal />
-                            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-black/50 border border-white/5 text-[9px] font-mono text-blue-400">BLUE PROFILE</div>
+                        {/* Variant A Analysis */}
+                        <div className="flex flex-col glass rounded-xl overflow-hidden relative">
+                            {/* Tab Bar */}
+                            <div className="flex items-center bg-zinc-900 border-b border-white/5 px-2 pt-2 gap-1">
+                                <button
+                                    onClick={() => setTabA('hardware')}
+                                    className={`px-4 py-1.5 rounded-t text-[10px] font-bold uppercase tracking-wider transition-colors ${tabA === 'hardware' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >Hardware</button>
+                                <button
+                                    onClick={() => setTabA('recursion')}
+                                    className={`px-4 py-1.5 rounded-t text-[10px] font-bold uppercase tracking-wider transition-colors ${tabA === 'recursion' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >Recursion</button>
+                                <span className="ml-auto mr-2 text-[9px] font-mono text-blue-400 opacity-50">VARIANT A</span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 relative overflow-hidden">
+                                {tabA === 'hardware' ? (
+                                    <StatsView history={sysCoreA.history} minimal />
+                                ) : (
+                                    <RecursionTree history={sysCoreA.history} />
+                                )}
+                            </div>
                         </div>
-                        <div className="glass rounded-xl overflow-hidden relative p-1">
-                            <StatsView history={sysCoreB.history} minimal />
-                            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-black/50 border border-white/5 text-[9px] font-mono text-purple-400">PURPLE PROFILE</div>
+
+                        {/* Variant B Analysis */}
+                        <div className="flex flex-col glass rounded-xl overflow-hidden relative">
+                            {/* Tab Bar */}
+                            <div className="flex items-center bg-zinc-900 border-b border-white/5 px-2 pt-2 gap-1">
+                                <button
+                                    onClick={() => setTabB('hardware')}
+                                    className={`px-4 py-1.5 rounded-t text-[10px] font-bold uppercase tracking-wider transition-colors ${tabB === 'hardware' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >Hardware</button>
+                                <button
+                                    onClick={() => setTabB('recursion')}
+                                    className={`px-4 py-1.5 rounded-t text-[10px] font-bold uppercase tracking-wider transition-colors ${tabB === 'recursion' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >Recursion</button>
+                                <span className="ml-auto mr-2 text-[9px] font-mono text-purple-400 opacity-50">VARIANT B</span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 relative overflow-hidden">
+                                {tabB === 'hardware' ? (
+                                    <StatsView history={sysCoreB.history} minimal />
+                                ) : (
+                                    <RecursionTree history={sysCoreB.history} />
+                                )}
+                            </div>
                         </div>
                     </div>
 

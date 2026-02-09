@@ -10,9 +10,9 @@ interface SystemConfig {
 
 export const useSystemConfig = () => {
     const [config, setConfig] = useState<SystemConfig>({
-        version: 'v0.4.1', // Fallback
+        version: 'v1.1.0', // Fallback
         status: 'ONLINE',
-        motd: ''
+        motd: 'SysCore v1.1.0 Stable'
     });
     const [loading, setLoading] = useState(true);
 

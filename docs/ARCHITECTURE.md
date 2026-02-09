@@ -1,142 +1,124 @@
-# The OKernel Architecture Manifesto
+# OKernel Architecture: The Deep Dive
 
-> **Version:** 1.0.1 (Stable)
-> **Codename:** "SysCore"
-> **Maintainer:** @Vaiditya2207
+> "The operating system is the soul of the machine." — OKernel Philosophy
 
----
-
-## 1. Our Philosophy
-
-Most "OS Simulators" are lies. They are mere animations—state machines that pretend to compute.
-
-**OKernel is different.**
-
-We believe that to truly understand an Operating System, you must constrain yourself to its limits. We built **SysCore**, a functional simulation engine that introduces "Artificial Hardware Constraints" into the limitless environment of the JavaScript browser runtime.
-
--   **We don't use variables.** We use a raw 1MB `ArrayBuffer` for memory.
--   **We don't use `eval()`.** We process C-like code through a regex-based transpiler to inject our own Kernel Traps.
--   **We don't guess.** Every process execution is cycle-accurate, driven by a deterministic tick loop.
+OKernel is not just a simulator; it is a **virtual execution environment** that bridges the gap between high-level code and low-level hardware operations. This document details the engineering decisions, data flows, and component interactions that make OKernel ticking.
 
 ---
 
-## 2. The High-Level View
+## 1. High-Level System Overview
 
-The application is a **Monolithic Frontend Kernel**. It runs entirely client-side but maintains a strict separation between "User Space" (The React UI) and "Kernel Space" (The SysCore Engine).
+The system follows a modern **Client-Server-DB** architecture, but with a twist: the Server is a specialized **Execution Engine** capable of running untrusted code safely while inspecting its internal state at the microsecond level.
 
-![OKernel Architecture Overview](./images/architecture_overview.png)
-
----
-
-## 3. The SysCore Virtual Machine
-
-The **SysCore VM** (`src/syscore/vm`) is the crown jewel of this project. It provides the isolated environment typically found in C/C++ runtimes, but inside JavaScript.
-
-**Architecture Visualized:**
-
-![SysCore VM Internals](./images/syscore_vm_anatomy.png)
-
-### 3.1 Memory Management Unit (MMU)
-We reject the convenience of JavaScript Objects. The MMU (`Memory.ts`) wraps a single `ArrayBuffer(1024 * 1024)`.
-
--   **Physical Addressing**: `0x0000` to `0xFFFFF`.
--   **Safety**: All reads/writes (`read32`, `write8`) are bounds-checked. A "Segmentation Fault" is just a standard JS Error we throw when you touch `0x100000`.
--   **Heap Allocator**: A Bump Allocator starting at `0x5000`. It grows upwards.
--   **Stack Allocator**: Starts at `0xFFFFF` and grows downwards. If `Heap_Ptr >= Stack_Ptr`, we throw a "Stack Overflow" / "OOM" Kernel Panic.
-
-### 3.2 The Transpiler Pipeline (`Transpiler.ts`)
-How do we run C code like `int x = 10;` in the browser?
-
-1.  **Lexical Analysis**: We scan for C keywords (`int`, `char*`, `while`).
-2.  **Memory Injection**:
-    -   `int x = 10;` becomes:
-        ```javascript
-        const x_ptr = __sys.stack_alloc(4);
-        __sys.write32(x_ptr, 10);
-        ```
-    -   Every variable access `x` becomes `__sys.read32(x_ptr)`.
-3.  **Preemptive Multitasking Injection**:
-    -   JavaScript is single-threaded. An infinite loop `while(1)` freezes the tab.
-    -   We inject `await __sys.yield()` into every loop body.
-    -   This allows the "Kernel" to pause execution, render a frame (60fps), and then resume the user's code in the next microtask.
-
----
-
-## 4. The CPU Scheduler (`src/apps/cpu_scheduler`)
-
-The Scheduler Visualization is an application running *on top* of the SysCore primitives. It implements standard Scheduling Algorithms found in Silberschatz & Galvin's "Operating System Concepts".
-
-### 4.1 The Tick Loop
-Instead of `setTimeout`, we use `requestAnimationFrame` to drive a deterministic "Tick".
-1.  **Fetch**: Get the current Running Process.
-2.  **Examine**: Check `BurstTime` vs `Quantum`.
-3.  **Execute**:
-    -   `RemainingTime--`
-    -   Check for Preemption (SRTF/Priority).
-4.  **Context Switch**: If necessary, move Current to Ready/Terminated, pick Next from Ready Queue.
-
-### 4.2 Algorithm Implementations (`src/syscore/cpu/algos`)
-Each algorithm is a pure function: `(processes, context) -> NextProcess`.
-
--   **FCFS**: Simple Queue `shift()`. $O(1)$.
--   **SJF**: Sort by `burstTime`. $O(N \log N)$.
--   **Round Robin**: Checks `timeSlice >= quantum`. Rotates Queue. $O(1)$.
-
----
-
-## 5. Directory Structure Map
-
-Understanding the codebase layout is key to contributing.
-
-```text
-src/
-├── app/                  # Application Entry
-│   ├── App.tsx           # Router & Main Combiner
-│   └── main.tsx          # DOM Entry Point
-│
-├── apps/                 # User-Facing "Apps"
-│   ├── cpu_scheduler/    # The Visualizer (Gantt Chart, Controls)
-│   └── shell_maker/      # The CIDE (Code Editor, Compiler UI)
-│
-├── components/           # Shared UI Library
-│   ├── layout/           # Navbar, Footer, Container
-│   └── ui/               # Buttons, Inputs, Cards (Glassmorphism)
-│
-├── hooks/                # React Hooks
-│   ├── useTerminal.tsx   # Tying xterm.js to ShellKernel
-│   └── useSystemConfig.ts # Supabase Config Sync
-│
-├── pages/                # Static Pages
-│   ├── Architecture.tsx  # The page you are updating
-│   └── About.tsx         # Credits & Stats
-│
-└── syscore/              # THE KERNEL SPACE
-    ├── cpu/              # Scheduling Logic
-    │   └── algos/        # RoundRobin.ts, SJF.ts...
-    │
-    ├── vm/               # Virtual Machine Stats
-    │   ├── Memory.ts     # The ArrayBuffer
-    │   ├── Transpiler.ts # C-to-JS Logic
-    │   └── ShellKernel.ts # The PID 1 Process
-    │
-    └── terminal/         # Command Dispatcher
-        └── commands/     # ls, cd, help implementations
+```mermaid
+graph TD
+    Client[Client (React/Vite)] -->|HTTP/REST| SysCore
+    Client -->|SQL| Supabase[(Supabase DB)]
+    
+    subgraph SysCore[SysCore (Rust Backend)]
+        API[Axum API Layer]
+        CM[Container Manager]
+        Docker[Docker SDK]
+    end
+    
+    SysCore -->|Spawn| Containers[Ephemeral Containers]
+    Containers -->|Trace Data| Supabase
 ```
 
----
-
-## 6. Technical Stack
-
--   **Frontend**: React 18, TypeScript 5, Vite 5.
--   **Styling**: Tailwind CSS (Custom "Zinc" Theme).
--   **Icons**: Lucide React.
--   **Backend**: Supabase (PostgreSQL 15 + GoTrue).
--   **Testing**: Vitest (Unit) + React Testing Library (Integration).
+### Key Components:
+- **Frontend (The Visualizer)**: A high-performance React application that renders the "Matrix" of execution data. It handles code editing, state management, and complex visualizations (FlameGraphs, Memory Maps).
+- **Backend (SysCore)**: A Rust-based high-concurrency server. It manages the lifecycle of Docker containers, enforcing strict resource limits and timeouts.
+- **Database (Supabase)**: Stores execution traces, user profiles, and historical jobs. It acts as the "Black Box Recorder" for every execution.
 
 ---
 
-## 7. Future Architecture Goals
+## 2. The Execution Pipeline (The "Heartbeat")
 
--   **WebAssembly Core**: Eventually replace `Transpiler.ts` with a real WASM-based C compiler (Clang-in-browser).
--   **Multi-Threading**: Use Web Workers to move `SysCore` off the main UI thread.
--   **P2P Networking**: Use WebRTC to allow terminals to "SSH" into each other.
+When a user clicks **EXECUTE**, a sophisticated pipeline is triggered. This isn't just `eval()`; it's a controlled industrial process.
+
+### Step 1: Request Isolation
+1.  **Ingestion**: The frontend packages the code (Python/C++) and Input (Stdin) into a JSON payload.
+2.  **Dispatch**: The request hits `/api/execute` on SysCore.
+3.  **Containment**: SysCore spins up a dedicated Docker container (`syscore-python` or `syscore-cpp`). This container is ephemeral—it lives only for the duration of the execution.
+
+### Step 2: Granular Instrumentation (The "Probe")
+Inside the container, we don't just run the code. We **trace** it.
+
+#### Python Runner (`sys.settrace`)
+We inject a custom runner that hooks into the Python interpreter's `sys.settrace`.
+-   **Line Events**: Every line of code executed emits an event.
+-   **Opcode Analysis**: We inspect the bytecode instructions (`dis`) to estimate CPU cost.
+-   **Memory Deltas**: We use `tracemalloc` to track every byte allocated or freed.
+-   **Variable Inspection**: We capture local variables at every frame, resolving pointers and references.
+
+#### C++ Runner (GDB-Python)
+For C++, we compile with debug flags (`-g -O0`) and run the binary under **GDB**.
+-   **GDB Python API**: A custom script drives GDB, stepping through the code line-by-line.
+-   **Stack Inspection**: We query GDB for stack frames and local variables.
+-   **Safety**: If the user code segfaults, GDB catches it and reports the exact memory violation.
+
+### Step 3: Data Synthesis & Storage
+1.  **Serialization**: The raw events (Line numbers, variables, timestamps) are serialized into a massive JSON array.
+2.  **Upload**: The container uploads this trace directly to **Supabase Storage**.
+3.  **Handoff**: SysCore returns a `Job ID` to the frontend.
+
+### Step 4: Visualization (The "Matrix")
+The frontend receives the Job ID and fetches the trace.
+-   **Replay Engine**: The visualizer "plays back" the trace events.
+-   **State Reconstruction**: At every step, it reconstructs the Stack and Heap state from the event logs.
+-   **Attribution**: It correlates time deltas with specific lines of code to generate heatmaps.
+
+---
+
+## 3. The Memory Model (Stack vs Heap)
+
+OKernel's proudest feature is its visual breakdown of memory.
+
+```mermaid
+classDiagram
+    class StackFrame {
+        +Function Name
+        +Local Variables
+        +Depth
+    }
+    class HeapObject {
+        +Address (0x...)
+        +Type
+        +Value
+        +Size
+    }
+    StackFrame --> HeapObject : Pointer/Reference
+```
+
+-   **Stack**: Visualized as a LIFO stack of function frames. We show variables as "Roots".
+-   **Heap**: Visualized as a chaotic but connected graph of objects.
+-   **Pointers**: We calculate the relationships between Stack Variables and Heap Objects, drawing Bezier curves (using `react-xarrows`) to show references. This visualizes **Aliasing** and **Garbage Collection** intuitively.
+
+---
+
+## 4. Hardware Simulation (The "Ghost in the Machine")
+
+While we run on high-level runtimes, OKernel estimates low-level hardware behavior to teach "Machine Sympathy".
+
+-   **The Pipeline**: We simulate the Fetch-Decode-Execute cycle based on opcode complexity.
+-   **Branch Prediction**: We track control flow changes. Smooth sequential execution is "Predicted Correctly"; sudden jumps (if/else) are "Mispredictions".
+-   **Memory Bus**: We classify operations as `MEM_READ` or `MEM_WRITE` based on opcode types (e.g., `LOAD_CONST` vs `STORE_NAME`), simulating bus traffic.
+
+---
+
+## 5. Security & Isolation
+
+-   **Docker Sandbox**: Code runs as a non-root user with no network access (`--network none`).
+-   **Timeouts**: Hard limits (e.g., 5 seconds) prevent infinite loops from locking resources.
+-   **Memory Limits**: Containers are capped (e.g., 128MB) to prevent OOM attacks.
+
+---
+
+## 6. Future Roadmap
+
+1.  **Distributed SysCore**: Run SysCore on a Kubernetes cluster for massive scale.
+2.  **WASM Runtime**: Execute safe languages (Rust/Go) directly in the browser via WebAssembly.
+3.  **Collaborative Debugging**: Multiplayer "Google Docs style" debugging sessions.
+
+---
+*Architecture Document v1.1.0 — Generated by Antigravity*

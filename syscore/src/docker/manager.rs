@@ -1,7 +1,6 @@
 use bollard::Docker;
-use bollard::container::{Config, CreateContainerOptions};
+use bollard::container::{Config, CreateContainerOptions, LogOutput, LogsOptions};
 use bollard::models::HostConfig;
-use bollard::exec::{CreateExecOptions, StartExecResults};
 use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -26,9 +25,8 @@ impl Language {
 #[derive(Clone)]
 pub struct ContainerManager {
     docker: Docker,
-    // Map of Language -> ContainerID
-    active_containers: Arc<Mutex<HashMap<Language, String>>>,
-    // Map of JobID -> Broadcast Sender
+    // We don't need active_containers for per-job isolation anymore
+    // Map of JobID -> Broadcast Sender (kept for potential future streaming)
     job_channels: Arc<Mutex<HashMap<String, broadcast::Sender<String>>>>,
 }
 
@@ -37,74 +35,77 @@ impl ContainerManager {
         let docker = Docker::connect_with_local_defaults()?;
         Ok(Self {
             docker,
-            active_containers: Arc::new(Mutex::new(HashMap::new())),
             job_channels: Arc::new(Mutex::new(HashMap::new())),
         })
     }
     
+    /// Verifies Docker connection and ability to run containers
+    pub async fn health_check(&self) -> Result<(), String> {
+        tracing::info!("Verifying Docker connection...");
+        
+        // 1. Check version/ping
+        let version = self.docker.version().await.map_err(|e| format!("Docker ping failed: {}", e))?;
+        tracing::info!("Docker connected: Version {}", version.version.unwrap_or_default());
+
+        // 2. Check if we can list images (basic permission check)
+        self.docker.list_images::<String>(None).await.map_err(|e| format!("Failed to list images (permission error?): {}", e))?;
+
+        Ok(())
+    }
+
     pub async fn subscribe(&self, job_id: &str) -> Option<broadcast::Receiver<String>> {
         let channels = self.job_channels.lock().await;
         channels.get(job_id).map(|sender| sender.subscribe())
     }
 
-    /// Spawns a runner container for a specific language if one isn't already running
-    pub async fn ensure_runner(&self, lang: Language) -> Result<String, String> {
-        let mut active = self.active_containers.lock().await;
-
-        // Check if we already have a live container for this language
-        if let Some(id) = active.get(&lang) {
-            // Ping container to ensure it's still alive
-            match self.docker.inspect_container(id, None).await {
-                Ok(info) => {
-                    if let Some(state) = info.state {
-                        if state.running.unwrap_or(false) {
-                            return Ok(id.clone());
-                        }
-                    }
-                },
-                Err(_) => {
-                    tracing::warn!("Container {} ({:?}) found in state but not reachable, removing.", id, lang);
-                }
-            }
-            // If we are here, container is dead or invalid
-            active.remove(&lang);
+    /// Checks if image exists, builds it if not
+    pub async fn ensure_image(&self, lang: Language) -> Result<(), String> {
+        let image_name = lang.image_name();
+        if self.docker.inspect_image(image_name).await.is_err() {
+            tracing::warn!("Image {} not found, attempting to build...", image_name);
+            self.build_image(lang).await?;
         }
+        Ok(())
+    }
 
-        // Check if we need to build the image (simplistic check: just try to create, if fail with 404, build)
-        // Actually, let's just verify if the image exists
-        /* 
-        if self.docker.inspect_image(lang.image_name()).await.is_err() {
-            tracing::info!("Image {} not found, building...", lang.image_name());
-            self.build_image(lang.clone()).await?;
-        }
-        */
+    /// Executes code by spawning a bespoke container, running it, collecting output, and destroying it.
+    pub async fn execute(&self, lang: Language, code: String) -> Result<String, String> {
+        let job_id = Uuid::new_v4().to_string();
+        tracing::info!("[Job {}] Starting execution for {:?}", job_id, lang);
 
-        // Spawn new container
-        tracing::info!("Spawning new runner for {:?}", lang);
-        
-        // Define host config (security limits would go here)
+        // 1. Ensure Image
+        self.ensure_image(lang.clone()).await?;
+
+        // 2. Prepare Command
+        let cmd = match lang {
+            Language::Python => crate::profiler::python::PythonProfiler::wrap_command(&code),
+            Language::Cpp => crate::profiler::cpp::CppProfiler::wrap_command(&code),
+        };
+
+        // 3. Configure Container (Ephemeral)
         let host_config = HostConfig {
             memory: Some(256 * 1024 * 1024), // 256 MB limit
             nano_cpus: Some(1_000_000_000), // 1 CPU
-            network_mode: Some("none".to_string()), // No network
+            network_mode: Some("none".to_string()), // No network access for security
+            auto_remove: Some(false), // We remove manually to safely collect logs first
             ..Default::default()
         };
 
+        // The container will run the command and then exit (because python script finishes)
         let config = Config {
             image: Some(lang.image_name()),
-            attach_stdin: Some(true),
+            cmd: Some(cmd.iter().map(|s| s.as_str()).collect()),
             attach_stdout: Some(true),
             attach_stderr: Some(true),
-            open_stdin: Some(true),
+            tty: Some(false), // Non-interactive
             host_config: Some(host_config),
             ..Default::default()
         };
 
-        let container_name = format!("okernel-{}-runner-{}", match lang {
-            Language::Python => "py",
-            Language::Cpp => "cpp",
-        }, Uuid::new_v4().to_string().chars().take(8).collect::<String>());
+        let container_name = format!("okernel-job-{}", job_id);
 
+        // 4. Create Container
+        tracing::debug!("[Job {}] Spawning container {}", job_id, container_name);
         let id = self.docker.create_container(
             Some(CreateContainerOptions { 
                 name: container_name.clone(),
@@ -113,58 +114,52 @@ impl ContainerManager {
             config,
         ).await.map_err(|e| format!("Failed to create container: {}", e))?.id;
 
+        // 5. Start Container
         self.docker.start_container::<String>(&id, None).await
-            .map_err(|e| format!("Failed to start container: {}", e))?;
+            .map_err(|e| {
+                // Cleanup if start fails
+                let _ = self.cleanup_container(&id); 
+                format!("Failed to start container: {}", e)
+            })?;
 
-        tracing::info!("Started runner {} ({})", id, container_name);
+        tracing::info!("[Job {}] Container started via Spawn->Run strategy", job_id);
+
+        // 6. Wait for execution to finish
+        // We accept exit code 0 or any other code (user code might crash)
+        let wait_res = self.docker.wait_container::<String>(&id, None).next().await;
         
-        active.insert(lang, id.clone());
-        Ok(id)
-    }
-
-    /// Executes code in the runner container, collects full trace, uploads to Supabase
-    /// Returns Job ID on success
-    pub async fn execute(&self, lang: Language, code: String) -> Result<String, String> {
-        // 1. Get container ID
-        let id = self.ensure_runner(lang.clone()).await?;
-        let job_id = Uuid::new_v4().to_string();
-
-        // 2. Prepare command
-        let cmd = match lang {
-            Language::Python => crate::profiler::python::PythonProfiler::wrap_command(&code),
-            Language::Cpp => crate::profiler::cpp::CppProfiler::wrap_command(&code),
-        };
+        if let Some(Ok(res)) = wait_res {
+             tracing::debug!("[Job {}] Container exited with code {}", job_id, res.status_code);
+        } else {
+             // If wait fails, likely container error or timeout?
+             tracing::warn!("[Job {}] Wait failed or container crashed specifically", job_id);
+        }
         
-        // 3. Create exec instance
-        let exec_config = CreateExecOptions {
-            cmd: Some(cmd.iter().map(|s| s.as_str()).collect()),
-            attach_stdout: Some(true),
-            attach_stderr: Some(true),
+        // 7. Collect Logs (Trace Events)
+        // Since the container has stopped, we can read all logs at once
+        let logs_opts = LogsOptions::<String> {
+            stdout: true,
+            stderr: true,
             ..Default::default()
         };
-
-        let exec_id = self.docker.create_exec(&id, exec_config).await
-            .map_err(|e| format!("Failed to create exec: {}", e))?
-            .id;
-
-        // 4. Start exec and collect output
-        let mut trace_events = Vec::new();
-        // We'll also collect logs if we want to store them separately or just rely on the trace
         
-        if let Ok(StartExecResults::Attached { mut output, .. }) = self.docker.start_exec(&exec_id, None).await {
-            while let Some(msg) = output.next().await {
-                if let Ok(log_output) = msg {
-                    let log_str = log_output.to_string();
+        let mut trace_events = Vec::new();
+        let mut log_stream = self.docker.logs(&id, Some(logs_opts));
+
+        while let Some(msg) = log_stream.next().await {
+            match msg {
+                Ok(LogOutput::StdOut { message }) | Ok(LogOutput::StdErr { message }) => {
+                    let log_str = String::from_utf8_lossy(&message);
                     for line in log_str.split('\n') {
-                        if line.is_empty() { continue; }
-                        if line.contains("__SYSCORE_EVENT__") {
+                         if line.is_empty() { continue; }
+                         if line.contains("__SYSCORE_EVENT__") {
                             if let Some(json_str) = line.split("__SYSCORE_EVENT__").nth(1) {
                                 if let Ok(event) = serde_json::from_str::<serde_json::Value>(json_str) {
                                     trace_events.push(event);
                                 }
                             }
                         } else {
-                            // Capture standard output
+                             // Capture standard output meant for user
                             let log_event = serde_json::json!({
                                 "type": "Stdout",
                                 "content": line
@@ -172,52 +167,66 @@ impl ContainerManager {
                             trace_events.push(log_event);
                         }
                     }
-                }
+                },
+                Ok(_) => {}, // Console/Stream types
+                Err(e) => tracing::warn!("[Job {}] Log retrieval error: {}", job_id, e),
             }
-        } else {
-             return Err("Failed to attach to exec output".to_string());
         }
 
+        // 8. Cleanup (Destroy)
+        tracing::debug!("[Job {}] Destroying container {}", job_id, id);
+        if let Err(e) = self.cleanup_container(&id).await {
+            tracing::error!("[Job {}] Failed to remove container: {}", job_id, e);
+        }
+
+        // 9. Upload Results
         if !trace_events.is_empty() {
-            tracing::info!("Uploading {} events for job {}", trace_events.len(), job_id);
+            tracing::info!("[Job {}] Uploading {} trace events", job_id, trace_events.len());
             if let Err(e) = crate::server::trace_store::upload_trace(&job_id, trace_events).await {
-                tracing::error!("Failed to upload trace: {}", e);
-                // We don't fail the request, but frontend won't find trace.
-                return Err(format!("Trace upload failed: {}", e));
+                 return Err(format!("Trace upload failed: {}", e));
             }
         } else {
-            tracing::warn!("No trace events collected for job {}", job_id);
+            tracing::warn!("[Job {}] No output collected from container", job_id);
         }
-        
+
         Ok(job_id)
+    }
+
+    async fn cleanup_container(&self, id: &str) -> Result<(), bollard::errors::Error> {
+        self.docker.remove_container(id, Some(bollard::container::RemoveContainerOptions {
+            force: true,
+            ..Default::default()
+        })).await
     }
 
     pub async fn build_image(&self, lang: Language) -> Result<(), String> {
         use bollard::image::BuildImageOptions;
         
-        // Simple tar logic: rely on system 'tar' command for simplicity in this scaffold
-        // In prod, use `tar` crate in-memory
+        // Check local directories first
         let path = match lang {
             Language::Python => "docker/python",
             Language::Cpp => "docker/cpp",
         };
         
-        // Check if we are in syscore root or project root
-        // Simplistic: if docker/ doesn't exist, try syscore/docker
-        let path = if std::path::Path::new(path).exists() {
+        let path_obj = std::path::Path::new(path);
+        let build_path = if path_obj.exists() {
             path.to_string()
+        } else if std::path::Path::new("syscore").join(path).exists() {
+             format!("syscore/{}", path)
         } else {
-            format!("syscore/{}", path)
+            return Err(format!("Build directory for {:?} not found at {} or syscore/{}", lang, path, path));
         };
         
+        tracing::info!("Building image for {:?} from {}", lang, build_path);
+
         let output = std::process::Command::new("tar")
             .arg("-czf")
             .arg("-")
-            .arg("--disable-copyfile") // macOS specific: don't include ._ files
+            .arg("--disable-copyfile") 
             .arg("--exclude=.DS_Store")
-            .arg("--no-xattrs") // Added based on instruction
+            .arg("--no-xattrs")
             .arg("-C")
-            .arg(path)
+            .arg(&build_path)
             .arg(".")
             .output()
             .map_err(|e| format!("Tar execution failed: {}", e))?;
@@ -228,6 +237,7 @@ impl ContainerManager {
         
         let build_options = BuildImageOptions {
             t: lang.image_name(),
+            networkmode: "host",
             ..Default::default()
         };
         
@@ -241,7 +251,9 @@ impl ContainerManager {
             match msg {
                 Ok(info) => {
                     if let Some(s) = info.stream {
-                        tracing::debug!("Build: {}", s.trim());
+                         if !s.trim().is_empty() {
+                             tracing::debug!("Build: {}", s.trim());
+                         }
                     }
                     if let Some(e) = info.error {
                         return Err(format!("Build failed: {}", e));
@@ -251,6 +263,7 @@ impl ContainerManager {
             }
         }
         
+        tracing::info!("Successfully built image for {:?}", lang);
         Ok(())
     }
 }

@@ -46,6 +46,14 @@ export function StatsView({ history, minimal = false }: { history: any[], minima
 
         const pieData = Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
 
+        // Calculate visual intensity for chip blocks (0.3 to 1.0)
+        const total = Math.max(instructionCount, 1);
+        const intensity = {
+            alu: 0.3 + (0.7 * (aluOps / total)),
+            branch: 0.3 + (0.7 * (branches / total)),
+            mem: 0.3 + (0.7 * ((memReads + memWrites) / total)),
+        };
+
         return {
             totalCycles,
             instructionCount,
@@ -54,64 +62,126 @@ export function StatsView({ history, minimal = false }: { history: any[], minima
             aluOps,
             branches,
             pieData,
-            cpi: instructionCount > 0 ? (totalCycles / instructionCount).toFixed(2) : "0.00"
+            cpi: instructionCount > 0 ? (totalCycles / instructionCount).toFixed(2) : "0.00",
+            intensity
         };
     }, [history]);
 
     // Instruction Stream (Last 50 items)
     const stream = history.filter(e => e.hardware).slice(-50).reverse();
 
-    return (
-        <div className={`h-full w-full bg-[#0a0a0a] text-zinc-300 font-mono overflow-y-auto custom-scrollbar ${minimal ? 'p-2' : 'p-6'}`}>
-            {/* Header - Hidden in Minimal Mode */}
-            {!minimal && (
-                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-purple-500/10 rounded-lg">
-                            <Cpu className="w-6 h-6 text-purple-400" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-white tracking-tight">Hardware Inspector</h2>
-                            <p className="text-xs text-zinc-500">MACHINE SYMPATHY DASHBOARD</p>
-                        </div>
-                    </div>
-                    <div className="flex space-x-6 text-sm">
-                        <div className="text-right">
-                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Total Cycles</div>
-                            <div className="text-2xl font-bold text-white">{stats.totalCycles.toLocaleString()}</div>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Instructions</div>
-                            <div className="text-2xl font-bold text-emerald-400">{stats.instructionCount.toLocaleString()}</div>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Avg CPI</div>
-                            <div className="text-2xl font-bold text-blue-400">{stats.cpi}</div>
-                        </div>
-                    </div>
-                </div>
-            )}
+    if (minimal) {
+        return (
+            <div className="h-full w-full bg-[#050505] p-4 font-mono relative overflow-hidden flex flex-col items-center justify-center">
+                {/* Chip Package Outline */}
+                <div className="w-full max-w-[200px] aspect-square bg-[#1a1a1a] rounded-xl border border-white/10 p-2 relative shadow-2xl shadow-black/50">
+                    {/* Corner Screws */}
+                    <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-zinc-700/50" />
+                    <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-zinc-700/50" />
+                    <div className="absolute bottom-1 left-1 w-1.5 h-1.5 rounded-full bg-zinc-700/50" />
+                    <div className="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full bg-zinc-700/50" />
 
-            {/* In Minimal Mode, show compact stats row */}
-            {minimal && (
-                <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
-                    <div className="bg-zinc-900/50 p-2 rounded border border-white/5 text-center">
-                        <div className="text-zinc-500 text-[9px] uppercase">Cycles</div>
-                        <div className="font-bold text-white">{stats.totalCycles.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-zinc-900/50 p-2 rounded border border-white/5 text-center">
-                        <div className="text-zinc-500 text-[9px] uppercase">CPI</div>
-                        <div className="font-bold text-blue-400">{stats.cpi}</div>
-                    </div>
-                    <div className="bg-zinc-900/50 p-2 rounded border border-white/5 text-center">
-                        <div className="text-zinc-500 text-[9px] uppercase">Instr.</div>
-                        <div className="font-bold text-emerald-400">{stats.instructionCount.toLocaleString()}</div>
+                    {/* Silicon Die */}
+                    <div className="w-full h-full bg-[#0a0a0a] rounded border border-white/5 grid grid-cols-2 grid-rows-3 gap-1 p-1">
+
+                        {/* ALU Block */}
+                        <div
+                            className="row-span-2 rounded border transition-all duration-500 flex flex-col items-center justify-center gap-1"
+                            style={{
+                                backgroundColor: `rgba(16, 185, 129, ${stats.intensity.alu * 0.2})`, // Green tint
+                                borderColor: `rgba(16, 185, 129, ${stats.intensity.alu})`
+                            }}
+                        >
+                            <Cpu size={16} className="text-emerald-500" style={{ opacity: stats.intensity.alu }} />
+                            <span className="text-[8px] font-bold text-emerald-500/80 tracking-widest">ALU</span>
+                            <span className="text-[8px] text-zinc-500">{stats.aluOps}</span>
+                        </div>
+
+                        {/* Control Unit */}
+                        <div
+                            className="rounded border transition-all duration-500 flex flex-col items-center justify-center gap-1"
+                            style={{
+                                backgroundColor: `rgba(245, 158, 11, ${stats.intensity.branch * 0.2})`, // Amber tint
+                                borderColor: `rgba(245, 158, 11, ${stats.intensity.branch})`
+                            }}
+                        >
+                            <Activity size={16} className="text-amber-500" style={{ opacity: stats.intensity.branch }} />
+                            <span className="text-[8px] font-bold text-amber-500/80 tracking-widest">CTRL</span>
+                        </div>
+
+                        {/* Registers (Static visual) */}
+                        <div className="rounded border border-white/5 bg-white/5 flex flex-col items-center justify-center">
+                            <div className="grid grid-cols-4 gap-0.5">
+                                {[...Array(8)].map((_, i) => (
+                                    <div key={i} className={`w-1 h-1 rounded-[1px] ${i < 4 ? 'bg-purple-500' : 'bg-zinc-700'}`} />
+                                ))}
+                            </div>
+                            <span className="text-[6px] text-zinc-600 mt-1">REG</span>
+                        </div>
+
+                        {/* Memory Controller */}
+                        <div
+                            className="col-span-2 rounded border transition-all duration-500 flex items-center justify-between px-3"
+                            style={{
+                                backgroundColor: `rgba(59, 130, 246, ${stats.intensity.mem * 0.2})`, // Blue tint
+                                borderColor: `rgba(59, 130, 246, ${stats.intensity.mem})`
+                            }}
+                        >
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-bold text-blue-500/80 tracking-widest">MMU</span>
+                                <span className="text-[8px] text-zinc-500">R:{stats.memReads} W:{stats.memWrites}</span>
+                            </div>
+                            <Database size={14} className="text-blue-500" style={{ opacity: stats.intensity.mem }} />
+                        </div>
                     </div>
                 </div>
-            )}
+
+                {/* Compact Stats Footer */}
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-4 text-[10px] text-zinc-500">
+                    <div className="flex flex-col items-center">
+                        <span className="text-white font-bold">{stats.totalCycles}</span>
+                        <span className="text-[8px] uppercase">Cycles</span>
+                    </div>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div className="flex flex-col items-center">
+                        <span className="text-blue-400 font-bold">{stats.cpi}</span>
+                        <span className="text-[8px] uppercase">CPI</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-full w-full bg-[#0a0a0a] text-zinc-300 font-mono overflow-y-auto custom-scrollbar p-6">
+            <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+                <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                        <Cpu className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white tracking-tight">Hardware Inspector</h2>
+                        <p className="text-xs text-zinc-500">MACHINE SYMPATHY DASHBOARD</p>
+                    </div>
+                </div>
+                <div className="flex space-x-6 text-sm">
+                    <div className="text-right">
+                        <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Total Cycles</div>
+                        <div className="text-2xl font-bold text-white">{stats.totalCycles.toLocaleString()}</div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Instructions</div>
+                        <div className="text-2xl font-bold text-emerald-400">{stats.instructionCount.toLocaleString()}</div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-zinc-500 text-[10px] uppercase tracking-wider">Avg CPI</div>
+                        <div className="text-2xl font-bold text-blue-400">{stats.cpi}</div>
+                    </div>
+                </div>
+            </div>
 
             {/* Main Grid */}
-            <div className={`grid grid-cols-1 ${minimal ? '' : 'lg:grid-cols-3'} gap-6 mb-8`}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
                 {/* 1. The Chip (Instruction Mix) */}
                 <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-4 flex flex-col">
@@ -165,7 +235,7 @@ export function StatsView({ history, minimal = false }: { history: any[], minima
                 </div>
 
                 {/* 2. The Pipeline (Tape) */}
-                <div className={`${minimal ? '' : 'lg:col-span-2'} bg-zinc-900/50 border border-white/5 rounded-xl p-4 flex flex-col h-[350px]`}>
+                <div className="lg:col-span-2 bg-zinc-900/50 border border-white/5 rounded-xl p-4 flex flex-col h-[350px]">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-2">
                             <ArrowRight className="w-4 h-4 text-zinc-500" />
@@ -202,7 +272,7 @@ export function StatsView({ history, minimal = false }: { history: any[], minima
             </div>
 
             {/* 3. Memory & Bus */}
-            <div className={`grid grid-cols-1 ${minimal ? '' : 'lg:grid-cols-2'} gap-6`}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-4">
                     <div className="flex items-center space-x-2 mb-4">
                         <Database className="w-4 h-4 text-zinc-500" />

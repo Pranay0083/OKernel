@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { GitCommit, Calendar, ArrowRight, Cpu } from 'lucide-react';
+import { GitCommit, Tag, Calendar, ArrowRight, Cpu, Shield, Zap, Layout as LayoutIcon } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Changelog = () => {
-    const { config: _config } = useSystemConfig();
+    const { config } = useSystemConfig();
 
     return (
         <Layout>
@@ -17,15 +17,73 @@ export const Changelog = () => {
 
                 <div className="space-y-16">
 
-                    {/* v1.0.1 (Current) */}
+                    {/* v1.1.0 (New Latest) */}
                     <div className="relative pl-8 border-l border-zinc-800">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
                         <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-white">v1.0.1</h2>
+                            <h2 className="text-2xl font-bold text-white">v1.1.0</h2>
+                            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 text-xs font-mono border border-purple-500/20">RELEASE</span>
+                        </div>
+                        <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
+                            <Calendar size={12} /> 2026-02-08
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <Shield size={16} className="text-purple-500" />
+                                    Hard Technical Upgrade
+                                </h3>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    A massive overhaul of the system's core interface and security layers. 
+                                    We have shifted to a strict Google Auth-only flow and redesigned the entire landing experience to match our "Hard Technical" aesthetic.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                    <h4 className="text-white text-sm font-bold mb-3">Core & Security</h4>
+                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Google Auth Only</strong>: Streamlined authentication flow for better security.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Cycle-Accurate Tracer</strong>: New Python execution tracer for SysCore.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                    <h4 className="text-white text-sm font-bold mb-3">UI & Experience</h4>
+                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Landing Overhaul</strong>: Complete redesign of Home and Auth pages.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Product Navbar</strong>: Focused navigation for distinct product areas.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Documentation</strong>: Expanded Architecture docs with Sandbox details.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* v1.0.1 */}
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-75">
+                        <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <h2 className="text-2xl font-bold text-zinc-400">v1.0.1</h2>
                             <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 text-xs font-mono border border-blue-500/20">PATCH</span>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
-                            <Calendar size={12} /> {new Date().toLocaleDateString()}
+                            <Calendar size={12} /> 2026-02-05
                         </div>
 
                         <div className="space-y-6">
@@ -65,7 +123,7 @@ export const Changelog = () => {
                     </div>
 
                     {/* v1.0.0 */}
-                    <div className="relative pl-8 border-l border-zinc-800 opacity-75">
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-50">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <div className="flex items-center gap-4 mb-4">
                             <h2 className="text-2xl font-bold text-zinc-400">v1.0.0</h2>
@@ -93,15 +151,11 @@ export const Changelog = () => {
                                     <ul className="space-y-2 text-xs text-zinc-400 font-mono">
                                         <li className="flex items-start gap-2">
                                             <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Virtual Machine</strong>: Users can now write recursive C code, allocate memory, and crash the kernel safely.</span>
+                                            <span><strong>Virtual Machine</strong>: Recursive C code, memory allocation.</span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                             <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Physical RAM Inspector</strong>: A live 1MB Heatmap of the system memory. See your variables physically!</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Shell Maker v0.0.0</strong>: Build your own shell with <code>int main()</code> access.</span>
+                                            <span><strong>RAM Inspector</strong>: Live 1MB Heap Heatmap.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -110,11 +164,11 @@ export const Changelog = () => {
                                     <ul className="space-y-2 text-xs text-zinc-400 font-mono">
                                         <li className="flex items-start gap-2">
                                             <span className="text-blue-500">•</span>
-                                            <span><strong>Transpiler v2</strong>: Support for <code>sprintf</code>, <code>void functions</code>, and pointer arithmetic.</span>
+                                            <span><strong>Transpiler v2</strong>: <code>sprintf</code>, <code>void</code> support.</span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                             <span className="text-blue-500">•</span>
-                                            <span><strong>Reliability</strong>: Fixed Regex collisions causing Kernel Panics in formatted IO.</span>
+                                            <span><strong>Reliability</strong>: Fixed formatted IO panics.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -123,71 +177,30 @@ export const Changelog = () => {
                     </div>
 
                     {/* v0.4.2 */}
-                    <div className="relative pl-8 border-l border-zinc-800 opacity-75">
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-50">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-zinc-400">v1.0.0</h2>
+                            <h2 className="text-2xl font-bold text-zinc-400">v0.4.2</h2>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
-                            <Calendar size={12} /> {new Date().toLocaleDateString()}
+                            <Calendar size={12} /> 2026-01-20
                         </div>
 
                         <div className="space-y-6">
                             <div>
                                 <h3 className="text-white font-bold mb-2 flex items-center gap-2">
                                     <GitCommit size={16} className="text-purple-500" />
-                                    SysCore Root Terminal & Admin Overhaul
+                                    Admin Overhaul
                                 </h3>
                                 <p className="text-zinc-400 text-sm leading-relaxed">
                                     Complete rewrite of the Admin Console. Introduced a dedicated, immersive terminal environment for system administrators.
                                 </p>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
-                                    <h4 className="text-white text-sm font-bold mb-3">New Features</h4>
-                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
-                                        <li className="flex items-start gap-2">
-                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Dynamic Versioning</strong>: Global config sync via Supabase.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Drag-and-Drop Ranking</strong>: Manual ordering for Featured Reviews.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>SQL God Mode</strong>: Secure, specialized console for raw DB queries.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
-                                            <span><strong>Command UX</strong>: Terminal-style input for confirm/delete actions.</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
-                                    <h4 className="text-white text-sm font-bold mb-3">System Improvements</h4>
-                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-blue-500">•</span>
-                                            <span>Moved SQL migrations to <code>/sql</code> directory.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-blue-500">•</span>
-                                            <span>Redesigned Architecture Blueprint page.</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-blue-500">•</span>
-                                            <span>Fixed "missing semicolon" build errors.</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     {/* v0.3.0 */}
-                    <div className="relative pl-8 border-l border-zinc-800">
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-25">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <h2 className="text-xl font-bold text-zinc-400 mb-2">v0.3.0</h2>
                         <div className="text-sm text-zinc-600 font-mono mb-4">January 2026</div>
@@ -196,14 +209,6 @@ export const Changelog = () => {
                             <li>Database Explorer (Read-Only)</li>
                             <li>Initial Admin Layout implementation</li>
                         </ul>
-                    </div>
-
-                    {/* v0.2.0 */}
-                    <div className="relative pl-8 border-l border-zinc-800 opacity-50">
-                        <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
-                        <h2 className="text-xl font-bold text-zinc-400 mb-2">v0.2.0</h2>
-                        <div className="text-sm text-zinc-600 font-mono mb-4">December 2025</div>
-                        <p className="text-sm text-zinc-500">Initial SysCore Visualizer Engine launch.</p>
                     </div>
 
                 </div>
