@@ -1,0 +1,156 @@
+name: SysCore CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  BINARY_NAME: syscore
+  DEPLOY_PATH: /opt/syscore
+  SERVICE_NAME: syscore
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Build release binary
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build Release Binary
+        run: |
+          cd syscore
+          cargo build --release
+        # Result: syscore/target/release/syscore
+
+      # 3. Generate deployment version
+      - name: Generate Version
+        id: version
+        run: |
+          # Format: YYYY-MM-DD-SHA_SHORT
+          VERSION=$(date +'%Y-%m-%d')-$(git rev-parse --short HEAD)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+
+      # 4. Package artifact
+      - name: Package Artifact
+        run: |
+          cd syscore/target/release
+          tar -czf ../../../${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz ${{ env.BINARY_NAME }}
+          cd ../../..
+          echo "Artifact created: ${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz"
+
+      # 5. Deploy to VM
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true # Stop script on error
+          envs: BINARY_NAME,DEPLOY_PATH,SERVICE_NAME
+          script: |
+            VERSION="${{ steps.version.outputs.VERSION }}"
+            ARTIFACT="${BINARY_NAME}-${VERSION}.tar.gz"
+            RELEASE_DIR="${DEPLOY_PATH}/releases/${VERSION}"
+            CURRENT_LINK="${DEPLOY_PATH}/current"
+            
+            echo "Starting deployment for version: $VERSION"
+
+            # ---------------------------------------------------------
+            # Identify Previous Version (for Rollback)
+            # ---------------------------------------------------------
+            PREV_RELEASE=$(readlink -f $CURRENT_LINK || echo "")
+            echo "Previous release was: $PREV_RELEASE"
+
+            # ---------------------------------------------------------
+            # Step 6: Install release
+            # ---------------------------------------------------------
+            # Ensure upload happened (Wait, ssh-action doesn't upload files. 
+            # I need to use scp-action first or just scp manually. 
+            # I will split this into two steps: SCP then SSH)
+
+      - name: Upload Artifact
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          source: "${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}.tar.gz"
+          target: "/tmp/"
+
+      - name: Activate and Restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script_stop: true
+          envs: BINARY_NAME,DEPLOY_PATH,SERVICE_NAME
+          script: |
+            VERSION="${{ steps.version.outputs.VERSION }}"
+            ARTIFACT="/tmp/${BINARY_NAME}-${VERSION}.tar.gz"
+            RELEASE_DIR="${DEPLOY_PATH}/releases/${VERSION}"
+            CURRENT_LINK="${DEPLOY_PATH}/current"
+            
+            echo "Deploying $VERSION..."
+
+            # 1. Capture previous version for rollback
+            if [ -L "$CURRENT_LINK" ]; then
+              PREV_LINK_TARGET=$(readlink "$CURRENT_LINK")
+            else
+              PREV_LINK_TARGET=""
+            fi
+            
+            # 2. Create directory and extract
+            sudo mkdir -p "$RELEASE_DIR"
+            sudo tar -xzf "$ARTIFACT" -C "$RELEASE_DIR"
+            sudo chmod +x "$RELEASE_DIR/$BINARY_NAME"
+            
+            # 3. Atomic Switch
+            echo "Switching symlink to $RELEASE_DIR..."
+            sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+            
+            # 4. Restart Service
+            echo "Restarting $SERVICE_NAME..."
+            if ! sudo systemctl restart $SERVICE_NAME; then
+               echo "❌ Service failed to restart."
+               # ROLLBACK
+               if [ -n "$PREV_LINK_TARGET" ]; then
+                 echo "🔄 Rolling back to $PREV_LINK_TARGET..."
+                 sudo ln -sfn "$PREV_LINK_TARGET" "$CURRENT_LINK"
+                 sudo systemctl restart $SERVICE_NAME
+                 echo "✅ Rollback complete."
+               fi
+               exit 1
+            fi
+            
+            # 5. Health Check
+            echo "Waiting for health check..."
+            sleep 3
+            
+            if ! curl -s --fail http://127.0.0.1:3001/health; then
+               echo "❌ Health check failed."
+               # ROLLBACK
+               if [ -n "$PREV_LINK_TARGET" ]; then
+                 echo "🔄 Rolling back to $PREV_LINK_TARGET..."
+                 sudo ln -sfn "$PREV_LINK_TARGET" "$CURRENT_LINK"
+                 sudo systemctl restart $SERVICE_NAME
+                 echo "✅ Rollback complete."
+               fi
+               exit 1
+            fi
+            
+            echo "✅ Deployment Successful: $VERSION"
+            rm "$ARTIFACT"
