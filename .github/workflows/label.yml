@@ -19,7 +19,7 @@ jobs:
         id: inference
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini
+          model: openai/gpt-4o-mini
           prompt: |
             You are an expert GitHub PR reviewer and labeler.
             

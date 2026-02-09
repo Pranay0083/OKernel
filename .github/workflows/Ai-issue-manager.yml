@@ -20,7 +20,7 @@ jobs:
         id: inference
         uses: actions/ai-inference@v1
         with:
-          model: gpt-4o-mini
+          model: openai/gpt-4o-mini
           prompt: |
             You are an advanced GitHub issue triage AI. Your goal is to deeply analyze the issue content to categorize it accurately and provide helpful initial triage.
 
