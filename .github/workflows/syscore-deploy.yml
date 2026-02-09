@@ -35,18 +35,18 @@ jobs:
       - name: Install musl-tools
         run: sudo apt-get install -y musl-tools
 
-      - name: Build Release Binary
-        run: |
-          cd syscore
-          # Inject version at build time using environment variable
-          SYSCORE_VERSION="${{ steps.version.outputs.VERSION }}" cargo build --release --target x86_64-unknown-linux-musl
-
       - name: Generate Version
         id: version
         run: |
           # Create a unique version ID
           VERSION=$(date +'%Y-%m-%d')-$(git rev-parse --short HEAD)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Release Binary
+        run: |
+          cd syscore
+          # Inject version at build time using environment variable
+          SYSCORE_VERSION="${{ steps.version.outputs.VERSION }}" cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Package Artifact
         run: |
