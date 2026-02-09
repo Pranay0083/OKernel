@@ -540,7 +540,7 @@ const VisualizerPage: React.FC = () => {
                             {/* Memory Chart */}
                             <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
                                 <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">Memory Usage</span>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={history.map((h, i) => ({
                                         time: i,
                                         usage: (h.memory_curr || 0) / 1024 / 1024,
@@ -562,7 +562,7 @@ const VisualizerPage: React.FC = () => {
                             {/* CPU Chart */}
                             <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
                                 <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">CPU Intensity</span>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={history.map((h, i) => ({
                                         time: i,
                                         usage: (h as FrameData).cpu_usage || 0
