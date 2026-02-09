@@ -16,7 +16,6 @@ bollard = "0.15"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-
 # Logging/Tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -28,6 +27,13 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 nix = { version = "0.27", features = ["signal"] }
 openssl = { version = "0.10", features = ["vendored"] }
 
-# HTTP Client
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+# Utilities
+futures = "0.3"
+tar = "0.4"
+flate2 = "1.0"
+bytes = "1.0"
+regex = "1.0"
 dotenv = "0.15"
+
+# HTTP Client (Static Linking Fix)
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
