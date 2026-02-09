@@ -20,33 +20,29 @@ jobs:
         id: inference
         uses: actions/ai-inference@v1
         with:
+          model: gpt-4o-mini
           prompt: |
-            You are an expert GitHub issue triage assistant.
+            You are an advanced GitHub issue triage AI. Your goal is to deeply analyze the issue content to categorize it accurately and provide helpful initial triage.
 
-            Respond ONLY with valid JSON.
-
-            Tasks:
-            - Determine if the issue is valid
-            - Suggest a solution
-            - Ask clarifying questions if needed
-            - Provide a checklist
-            - Assign labels
-
-            Allowed labels:
-            bug, ui, feature-request, low, medium, high, needs-info
-
-            Issue:
+            Analyze the following issue:
             Title: "${{ github.event.issue.title }}"
             Body: "${{ github.event.issue.body }}"
 
-            JSON format:
+            Tasks:
+            1. **Analyze**: Understand the core intent. Is it a bug report, a feature proposal, a question, or a documentation issue?
+            2. **Label**: Assign relevant labels. Use 'bug' for errors, 'feature-request' for new ideas, 'question' for inquiries, 'documentation' for docs. Add 'security' if it looks sensitive. Estimate severity: 'low', 'medium', 'high', 'critical'.
+            3. **Summarize**: Write a concise, technical summary of the issue.
+            4. **Solution/Advice**: Suggest a potential path forward, specific file checks, or immediate troubleshooting steps.
+            5. **Checklist**: specific actionable steps for the maintainer or contributor.
+
+            Respond ONLY with valid JSON matching this schema:
             {
-              "summary": "one paragraph summary",
-              "severity": "low | medium | high",
-              "labels": ["bug", "ui"],
-              "questions": ["question1"],
-              "solution": "suggested solution",
-              "checklist": ["step1", "step2"]
+              "summary": "concise technical summary",
+              "severity": "low|medium|high|critical",
+              "labels": ["label1", "label2"],
+              "solution": "technical advice or potential fix",
+              "questions": ["clarifying question 1 (if needed)"],
+              "checklist": ["action item 1", "action item 2"]
             }
 
       - name: Build AI comment
