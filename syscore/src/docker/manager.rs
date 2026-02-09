@@ -202,22 +202,39 @@ impl ContainerManager {
     pub async fn build_image(&self, lang: Language) -> Result<(), String> {
         use bollard::image::BuildImageOptions;
         
-        // Check local directories first
+        // Try to find the docker directory in several locations
         let path = match lang {
             Language::Python => "docker/python",
             Language::Cpp => "docker/cpp",
         };
         
-        let path_obj = std::path::Path::new(path);
-        let build_path = if path_obj.exists() {
-            path.to_string()
-        } else if std::path::Path::new("syscore").join(path).exists() {
-             format!("syscore/{}", path)
-        } else {
-            return Err(format!("Build directory for {:?} not found at {} or syscore/{}", lang, path, path));
-        };
+        let mut build_path = None;
+        
+        // 1. Check relative to current working directory
+        if std::path::Path::new(path).exists() {
+            build_path = Some(path.to_string());
+        } 
+        // 2. Check in syscore/ prefix (local dev)
+        else if std::path::Path::new("syscore").join(path).exists() {
+            build_path = Some(format!("syscore/{}", path));
+        }
+        // 3. Check relative to executable (production)
+        else if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let p = exe_dir.join(path);
+                if p.exists() {
+                    build_path = Some(p.to_string_lossy().to_string());
+                }
+            }
+        }
+
+        let build_path = build_path.ok_or_else(|| {
+            let cwd = std::env::current_dir().map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| "unknown".to_string());
+            format!("Build directory for {:?} not found. Looked for {} relative to CWD ({}) and executable.", lang, path, cwd)
+        })?;
         
         tracing::info!("Building image for {:?} from {}", lang, build_path);
+
 
         let output = std::process::Command::new("tar")
             .arg("-czf")

@@ -27,6 +27,7 @@ async fn main() {
         .init();
 
     tracing::info!("SysCore Engine v2.0 initializing...");
+    tracing::info!("CWD: {:?}", std::env::current_dir().ok());
 
     // Initialize Docker connection
     let container_manager = match ContainerManager::new() {
@@ -61,9 +62,20 @@ async fn main() {
         .route("/ws/stream", get(websocket_handler))
         .layer(
             tower_http::cors::CorsLayer::new()
-                .allow_origin(tower_http::cors::Any)
-                .allow_methods(tower_http::cors::Any)
-                .allow_headers(tower_http::cors::Any),
+                .allow_origin([
+                    "https://www.hackmist.tech".parse().unwrap(),
+                    "https://hackmist.tech".parse().unwrap(),
+                    "http://localhost:5173".parse().unwrap(),
+                ])
+                .allow_methods([
+                    axum::http::Method::GET,
+                    axum::http::Method::POST,
+                    axum::http::Method::OPTIONS,
+                ])
+                .allow_headers([
+                    axum::http::header::CONTENT_TYPE,
+                    axum::http::header::AUTHORIZATION,
+                ]),
         )
         .with_state(container_manager);
 
