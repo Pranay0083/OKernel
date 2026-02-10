@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { Play, RotateCcw, Split, Clock, Cpu, Server } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import { StatsView } from './components/StatsView';
 import { FlameGraph } from './components/FlameGraph';
 import { RecursionTree } from './components/RecursionTree';
 import { useSysCore } from '../../hooks/useSysCore';
+import { UserSession } from '../../services/persistence';
 
 const ComparePage: React.FC = () => {
+    // Session Settings
+    const { session } = useOutletContext<{ session: UserSession }>();
+
     // Dual Backend Instances
     const sysCoreA = useSysCore();
     const sysCoreB = useSysCore();
@@ -95,6 +100,12 @@ const ComparePage: React.FC = () => {
                             code={codeA}
                             onChange={setCodeA}
                             language={language}
+                            options={{
+                                readOnly: session?.editorConfig?.readOnly,
+                                minimap: { enabled: session?.editorConfig?.minimap },
+                                wordWrap: session?.editorConfig?.wordWrap ? 'on' : 'off',
+                                quickSuggestions: session?.editorConfig?.autoComplete,
+                            }}
                         />
                     </div>
                     {/* Right Pane */}
@@ -104,6 +115,12 @@ const ComparePage: React.FC = () => {
                             code={codeB}
                             onChange={setCodeB}
                             language={language}
+                            options={{
+                                readOnly: session?.editorConfig?.readOnly,
+                                minimap: { enabled: session?.editorConfig?.minimap },
+                                wordWrap: session?.editorConfig?.wordWrap ? 'on' : 'off',
+                                quickSuggestions: session?.editorConfig?.autoComplete,
+                            }}
                         />
                     </div>
                 </div>

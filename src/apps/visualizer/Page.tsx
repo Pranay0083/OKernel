@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Square, Activity, Database, Server, Clock, ChevronLeft, ChevronRight, Cpu, GitGraph } from 'lucide-react';
-import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams, useOutletContext } from 'react-router-dom';
 import CodeEditor from './components/CodeEditor';
 import HeapView from './components/HeapView';
 import StackView from './components/StackView';
@@ -11,7 +11,7 @@ import { RecursionTree } from './components/RecursionTree';
 
 
 import { useSysCore } from '../../hooks/useSysCore';
-import { Persistence } from '../../services/persistence';
+import { Persistence, UserSession } from '../../services/persistence';
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Xarrow, { Xwrapper, useXarrow } from 'react-xarrows';
 
@@ -51,9 +51,12 @@ interface HeapObject {
 
 const VisualizerPage: React.FC = () => {
     const { mode } = useParams<{ mode: string }>();
-    const { isConnected, isExecuting, logs, executeCode, jobId, history } = useSysCore();
+    const { isConnected, isExecuting, logs, executeCode, jobId, history, fetchTrace } = useSysCore();
     const updateXarrow = useXarrow();
     const navigate = useNavigate();
+    
+    // Get Session Context (Settings)
+    const { session } = useOutletContext<{ session: UserSession }>();
 
     // Parse View Mode from URL
     const viewMode = useMemo(() => {
@@ -73,24 +76,113 @@ const VisualizerPage: React.FC = () => {
     // Load Job from URL
     const [searchParams] = useSearchParams();
 
+    // Resizing State
+    const [leftPanelWidth, setLeftPanelWidth] = useState(40); // %
+    const [stackPanelWidth, setStackPanelWidth] = useState(33); // %
+    const [bottomPanelHeight, setBottomPanelHeight] = useState(352); // px (256 + 96)
+    
+    const resizingRef = useRef<{
+        active: boolean;
+        type: 'main-split' | 'stack-split' | 'bottom-split';
+        startPos: number;
+        startSize: number;
+    } | null>(null);
+
     // Initial State Logic
     const loadJobId = searchParams.get('loadJob');
     const autoRun = searchParams.get('autoRun') === 'true';
-    const existingJob = loadJobId ? Persistence.getJob(loadJobId) : null;
+    const existingJob = useMemo(() => loadJobId ? Persistence.getJob(loadJobId) : null, [loadJobId]);
 
-    const [code, setCode] = useState<string>(existingJob?.code || 'l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
-    const [input, setInput] = useState<string>(existingJob?.input || '');
-    const [showInput, setShowInput] = useState(!!existingJob?.input);
-    const [language, setLanguage] = useState<'python' | 'cpp'>(existingJob?.language || 'python');
+    const [code, setCode] = useState<string>('l = [1, 2, 3]\nimport gc\nprint("Address:", hex(id(l)))\nl = None\ngc.collect()');
+    const [input, setInput] = useState<string>('');
+    const [showInput, setShowInput] = useState(false);
+    const [language, setLanguage] = useState<'python' | 'cpp'>('python');
+
+    // Load existing job details into Editor state when job changes
+    useEffect(() => {
+        if (existingJob) {
+            setCode(existingJob.code);
+            setInput(existingJob.input || '');
+            setLanguage(existingJob.language);
+            setShowInput(!!existingJob.input);
+        }
+    }, [existingJob]);
+
+    // Handle AutoRun OR Just Loading History
+    // Using a ref to prevent double-execution/fetching on re-renders
+    const hasLoadedRef = useRef<string | null>(null);
 
     useEffect(() => {
-        if (existingJob && autoRun) {
-            // Slight delay to allow state to settle
-            setTimeout(() => {
-                executeCode(existingJob.language, existingJob.code, existingJob.input);
-            }, 100);
+        if (loadJobId && hasLoadedRef.current !== loadJobId) {
+            hasLoadedRef.current = loadJobId;
+
+            if (autoRun && existingJob) {
+                 // Run fresh execution
+                 // Slight delay to ensure state is ready
+                 setTimeout(() => {
+                    executeCode(existingJob.language, existingJob.code, existingJob.input);
+                 }, 100);
+            } else {
+                // Just load the trace history without re-running
+                fetchTrace(loadJobId);
+            }
         }
-    }, [existingJob, autoRun, executeCode]);
+    }, [loadJobId, autoRun, existingJob, executeCode, fetchTrace]);
+
+    // ... (rest of the file)
+    
+    // Resize Handlers (Moved down to fix scope)
+    const startResize = (e: React.MouseEvent, type: 'main-split' | 'stack-split' | 'bottom-split') => {
+        e.preventDefault();
+        const startPos = type === 'bottom-split' ? e.clientY : e.clientX;
+        const startSize = type === 'main-split' ? leftPanelWidth 
+            : type === 'stack-split' ? stackPanelWidth 
+            : bottomPanelHeight;
+
+        resizingRef.current = { active: true, type, startPos, startSize };
+        document.body.style.cursor = type === 'bottom-split' ? 'row-resize' : 'col-resize';
+        document.body.style.userSelect = 'none';
+    };
+
+    const onMouseMove = React.useCallback((e: MouseEvent) => {
+        if (!resizingRef.current?.active) return;
+        const { type, startPos, startSize } = resizingRef.current;
+
+        if (type === 'main-split') {
+            const delta = ((e.clientX - startPos) / window.innerWidth) * 100;
+            const newWidth = Math.min(80, Math.max(20, startSize + delta));
+            setLeftPanelWidth(newWidth);
+        } else if (type === 'stack-split') {
+            const rightPanelRatio = (100 - leftPanelWidth) / 100;
+            const delta = ((e.clientX - startPos) / (window.innerWidth * rightPanelRatio)) * 100;
+            const newWidth = Math.min(80, Math.max(20, startSize + delta));
+            setStackPanelWidth(newWidth);
+        } else if (type === 'bottom-split') {
+            const delta = startPos - e.clientY; 
+            const newHeight = Math.min(600, Math.max(100, startSize + delta));
+            setBottomPanelHeight(newHeight);
+        }
+        
+        updateXarrow(); 
+    }, [leftPanelWidth, updateXarrow]);
+
+    const onMouseUp = React.useCallback(() => {
+        if (resizingRef.current?.active) {
+            resizingRef.current = null;
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto';
+            updateXarrow();
+        }
+    }, [updateXarrow]);
+
+    useEffect(() => {
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+    }, [onMouseMove, onMouseUp]);
 
     // Force update arrows on scroll or resize
     useEffect(() => {
@@ -299,7 +391,7 @@ const VisualizerPage: React.FC = () => {
                         startAnchor="right"
                         endAnchor="left"
                         path="smooth"
-                        zIndex={50}
+                        zIndex={100}
                         animateDrawing={false}
                         labels={null}
                     />
@@ -313,9 +405,12 @@ const VisualizerPage: React.FC = () => {
     return (
         <Xwrapper>
             <div className="flex h-screen bg-zinc-950 text-gray-300 font-sans overflow-hidden">
-                {/* LEFT: Code Editor (40%) */}
-                <div className="w-2/5 flex flex-col border-r border-white/10 bg-zinc-950/50 backdrop-blur-sm relative z-10 transition-all duration-300">
-                    <div className="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-zinc-900/50">
+                {/* LEFT: Code Editor */}
+                <div 
+                    style={{ width: `${leftPanelWidth}%` }}
+                    className="flex flex-col border-r border-white/10 bg-zinc-950/50 backdrop-blur-sm relative z-10 transition-none"
+                >
+                    <div className="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-zinc-900/50 shrink-0">
                         <span className="font-mono font-bold tracking-wider text-sm text-green-400">CODE EDITOR</span>
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.6)]' : 'bg-red-500 animate-pulse'}`} />
@@ -330,6 +425,12 @@ const VisualizerPage: React.FC = () => {
                             language={language}
                             highlightLine={frameToRender ? frameToRender.line : undefined}
                             lineExecutionTimes={lineExecutionTimes}
+                            options={{
+                                readOnly: session?.editorConfig?.readOnly,
+                                minimap: { enabled: session?.editorConfig?.minimap },
+                                wordWrap: session?.editorConfig?.wordWrap ? 'on' : 'off',
+                                quickSuggestions: session?.editorConfig?.autoComplete,
+                            }}
                         />
 
                         <div className="absolute bottom-6 right-6 flex gap-3 z-10">
@@ -379,11 +480,22 @@ const VisualizerPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* RIGHT: Visualizations (60%) */}
-                <div className="w-3/5 flex flex-col bg-zinc-950 z-10">
+                {/* Main Splitter */}
+                <div
+                    onMouseDown={(e) => startResize(e, 'main-split')}
+                    className="w-1 bg-zinc-900 hover:bg-blue-500 cursor-col-resize transition-colors z-50 flex items-center justify-center"
+                >
+                    <div className="h-8 w-0.5 bg-zinc-700 rounded-full" />
+                </div>
+
+                {/* RIGHT: Visualizations */}
+                <div 
+                    style={{ width: `${100 - leftPanelWidth}%` }}
+                    className="flex flex-col bg-zinc-950 z-10"
+                >
 
                     {/* Header Bar */}
-                    <div className="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-zinc-900/50">
+                    <div className="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-zinc-900/50 shrink-0">
                         <div className="flex items-center gap-3">
                             <span className="font-mono font-bold tracking-wider text-sm text-blue-400">MEMORY MODEL</span>
 
@@ -499,23 +611,39 @@ const VisualizerPage: React.FC = () => {
 
                                 {/* Stack Frames Panel */}
                                 {viewMode === 'default' && (
-                                    <div className="w-1/3 border-r border-white/10 flex flex-col z-20 bg-zinc-950">
-                                        <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
-                                            <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">Stack Frames</span>
+                                    <>
+                                        <div 
+                                            style={{ width: `${stackPanelWidth}%` }}
+                                            className="flex flex-col z-20 bg-zinc-950"
+                                        >
+                                            <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
+                                                <span className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">Stack Frames</span>
+                                            </div>
+                                            <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
+                                                <StackView
+                                                    frames={stackFrames}
+                                                    onVariableHover={setHighlightedAddress}
+                                                    onVariableClick={(addr) => setHighlightedAddress(addr)}
+                                                    changedVars={changedVars}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={updateXarrow}>
-                                            <StackView
-                                                frames={stackFrames}
-                                                onVariableHover={setHighlightedAddress}
-                                                onVariableClick={(addr) => setHighlightedAddress(addr)}
-                                                changedVars={changedVars}
-                                            />
+
+                                        {/* Stack Splitter */}
+                                        <div
+                                            onMouseDown={(e) => startResize(e, 'stack-split')}
+                                            className="w-1 bg-zinc-900 hover:bg-blue-500 cursor-col-resize transition-colors z-50 flex items-center justify-center border-l border-r border-zinc-900"
+                                        >
+                                            <div className="h-6 w-0.5 bg-zinc-700 rounded-full" />
                                         </div>
-                                    </div>
+                                    </>
                                 )}
 
                                 {/* Heap Objects Panel */}
-                                <div className={`${viewMode === 'mem' ? 'w-full' : 'w-2/3'} flex flex-col z-20 bg-zinc-950`}>
+                                <div 
+                                    style={{ width: viewMode === 'mem' ? '100%' : `${100 - stackPanelWidth}%` }}
+                                    className="flex flex-col z-20 bg-zinc-950"
+                                >
                                     <div className="h-8 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
                                         <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Heap Objects</span>
                                         <span className="ml-auto text-[9px] text-zinc-600 font-mono">{heapObjects.length} objects</span>
@@ -533,94 +661,107 @@ const VisualizerPage: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Timeline & Controls */}
-                    <div className="h-64 border-t border-white/10 bg-zinc-900/50 p-3 flex flex-col gap-2 z-30">
-                        {/* Charts Container */}
-                        <div className="flex-1 flex gap-2 min-h-0">
-                            {/* Memory Chart */}
-                            <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
-                                <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">Memory Usage</span>
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                    <AreaChart data={history.map((h, i) => ({
-                                        time: i,
-                                        usage: (h.memory_curr || 0) / 1024 / 1024,
-                                        isGC: h.type === 'GC'
-                                    }))}>
-                                        <defs>
-                                            <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#4ade80" stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <Area type="monotone" dataKey="usage" stroke="#4ade80" fill="url(#colorMem)" strokeWidth={1.5} isAnimationActive={false} />
-                                        {/* Cursor Line */}
-                                        <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            {/* CPU Chart */}
-                            <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
-                                <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">CPU Intensity</span>
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                    <AreaChart data={history.map((h, i) => ({
-                                        time: i,
-                                        usage: (h as FrameData).cpu_usage || 0
-                                    }))}>
-                                        <defs>
-                                            <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <Area type="monotone" dataKey="usage" stroke="#f97316" fill="url(#colorCpu)" strokeWidth={1.5} isAnimationActive={false} />
-                                        {/* Cursor Line */}
-                                        <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* Playback Controls */}
-                        <div className="flex items-center gap-4 h-8 shrink-0">
-                            <div className="flex items-center gap-2">
-                                <ControlBtn onClick={() => stepMacro(-1)} icon={<ChevronLeft size={16} />} />
-                                <ControlBtn onClick={toggleReplay} active={isReplaying} icon={isReplaying ? <Square size={14} /> : <Play size={14} />} />
-                                <ControlBtn onClick={() => stepMacro(1)} icon={<ChevronRight size={16} />} />
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max={Math.max(0, macroHistory.length - 1)}
-                                value={macroIndex}
-                                onChange={(e) => {
-                                    setMacroIndex(Number(e.target.value));
-                                    setMicroIndex(-1);
-                                    setIsReplaying(false);
-                                }}
-                                className="flex-1 accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
-                            />
-                            <span className="text-[10px] font-mono text-zinc-500 w-16 text-right">
-                                {macroIndex + 1} / {macroHistory.length || 1}
-                            </span>
-                        </div>
+                    {/* Bottom Splitter */}
+                    <div
+                        onMouseDown={(e) => startResize(e, 'bottom-split')}
+                        className="h-1 bg-zinc-900 hover:bg-blue-500 cursor-row-resize transition-colors z-50 flex items-center justify-center border-t border-b border-zinc-900"
+                    >
+                         <div className="w-8 h-0.5 bg-zinc-700 rounded-full" />
                     </div>
 
-                    {/* Console Output */}
-                    <div className="h-24 border-t border-white/10 flex flex-col bg-black/50 z-30">
-                        <div className="h-6 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
-                            <span className="text-[10px] font-mono text-zinc-500 uppercase">System Output</span>
+                    {/* Timeline & Controls */}
+                    <div 
+                        style={{ height: `${bottomPanelHeight}px` }}
+                        className="flex flex-col bg-zinc-900/50 z-30 min-h-[100px] max-h-[80vh]"
+                    >
+                        <div className="flex-1 p-3 flex flex-col gap-2 min-h-0">
+                            {/* Charts Container */}
+                            <div className="flex-1 flex gap-2 min-h-0">
+                                {/* Memory Chart */}
+                                <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
+                                    <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">Memory Usage</span>
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                                        <AreaChart data={history.map((h, i) => ({
+                                            time: i,
+                                            usage: (h.memory_curr || 0) / 1024 / 1024,
+                                            isGC: h.type === 'GC'
+                                        }))}>
+                                            <defs>
+                                                <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.2} />
+                                                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Area type="monotone" dataKey="usage" stroke="#4ade80" fill="url(#colorMem)" strokeWidth={1.5} isAnimationActive={false} />
+                                            {/* Cursor Line */}
+                                            <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                {/* CPU Chart */}
+                                <div className="flex-1 bg-zinc-900/30 rounded border border-white/5 overflow-hidden relative flex flex-col">
+                                    <span className="absolute top-1 left-2 text-[9px] font-mono text-zinc-500 uppercase z-10">CPU Intensity</span>
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                                        <AreaChart data={history.map((h, i) => ({
+                                            time: i,
+                                            usage: (h as FrameData).cpu_usage || 0
+                                        }))}>
+                                            <defs>
+                                                <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
+                                                    <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Area type="monotone" dataKey="usage" stroke="#f97316" fill="url(#colorCpu)" strokeWidth={1.5} isAnimationActive={false} />
+                                            {/* Cursor Line */}
+                                            <ReferenceLine x={macroIndex} stroke="#ffffff" strokeOpacity={0.2} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Playback Controls */}
+                            <div className="flex items-center gap-4 h-8 shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <ControlBtn onClick={() => stepMacro(-1)} icon={<ChevronLeft size={16} />} />
+                                    <ControlBtn onClick={toggleReplay} active={isReplaying} icon={isReplaying ? <Square size={14} /> : <Play size={14} />} />
+                                    <ControlBtn onClick={() => stepMacro(1)} icon={<ChevronRight size={16} />} />
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={Math.max(0, macroHistory.length - 1)}
+                                    value={macroIndex}
+                                    onChange={(e) => {
+                                        setMacroIndex(Number(e.target.value));
+                                        setMicroIndex(-1);
+                                        setIsReplaying(false);
+                                    }}
+                                    className="flex-1 accent-blue-500 h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <span className="text-[10px] font-mono text-zinc-500 w-16 text-right">
+                                    {macroIndex + 1} / {macroHistory.length || 1}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-2 font-mono text-xs custom-scrollbar">
-                            {logs.length === 0 ? (
-                                <span className="text-zinc-600 italic">Awaiting execution...</span>
-                            ) : (
-                                logs.map((log, i) => (
-                                    <div key={i} className="text-zinc-300 pl-2 py-0.5 border-l-2 border-transparent hover:border-green-500">
-                                        {log}
-                                    </div>
-                                ))
-                            )}
+
+                        {/* Console Output */}
+                        <div className="h-24 border-t border-white/10 flex flex-col bg-black/50 z-30 shrink-0">
+                            <div className="h-6 border-b border-white/5 flex items-center px-3 bg-zinc-900/30">
+                                <span className="text-[10px] font-mono text-zinc-500 uppercase">System Output</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-2 font-mono text-xs custom-scrollbar">
+                                {logs.length === 0 ? (
+                                    <span className="text-zinc-600 italic">Awaiting execution...</span>
+                                ) : (
+                                    logs.map((log, i) => (
+                                        <div key={i} className="text-zinc-300 pl-2 py-0.5 border-l-2 border-transparent hover:border-green-500">
+                                            {log}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
