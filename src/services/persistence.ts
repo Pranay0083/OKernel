@@ -9,14 +9,34 @@ export interface JobRecord {
     input?: string;
 }
 
+export interface EditorConfig {
+    fontSize: number;
+    minimap: boolean;
+    wordWrap: boolean;
+    readOnly: boolean;
+    vimMode: boolean; // Future proofing
+    autoComplete: boolean;
+}
+
 export interface UserSession {
     userId: string;
+    email?: string; // Add email support
     theme: 'dark' | 'light';
     recentJobs: JobRecord[];
     favoriteJobs: string[]; // IDs
+    editorConfig: EditorConfig;
 }
 
 const STORAGE_KEY = 'okernel_user_session_v1';
+
+const DEFAULT_EDITOR_CONFIG: EditorConfig = {
+    fontSize: 14,
+    minimap: false,
+    wordWrap: false,
+    readOnly: false,
+    vimMode: false,
+    autoComplete: true
+};
 
 export const Persistence = {
     // Initialize or Load Session
@@ -25,57 +45,27 @@ export const Persistence = {
         if (raw) {
             try {
                 const session = JSON.parse(raw);
-                // MIGRATION: Inject seed data if empty (for demo purposes)
-                if (!session.recentJobs || session.recentJobs.length === 0) {
-                    session.recentJobs = [
-                        {
-                            id: 'seed_job_1',
-                            timestamp: Date.now() - 100000,
-                            code: 'print("Hello World")',
-                            language: 'python',
-                            status: 'success',
-                            duration: 120
-                        },
-                        {
-                            id: 'seed_job_2',
-                            timestamp: Date.now() - 500000,
-                            code: '# Memory Test\nx = [1] * 1000',
-                            language: 'python',
-                            status: 'failed',
-                            duration: 450
-                        }
-                    ];
-                    // Save the update
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+                
+                // MIGRATION: Add Editor Config if missing
+                if (!session.editorConfig) {
+                    session.editorConfig = { ...DEFAULT_EDITOR_CONFIG };
                 }
+
+                // Save the update (migrations)
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+                
                 return session;
             } catch (e) {
                 console.error('Failed to parse session', e);
             }
         }
 
-        // Default Session with Seed Data for visibility
+        // Default Session
         const newSession: UserSession = {
             userId: 'user_' + Math.random().toString(36).substring(2, 9),
             theme: 'dark',
-            recentJobs: [
-                {
-                    id: 'seed_job_1',
-                    timestamp: Date.now() - 100000,
-                    code: 'print("Hello World")',
-                    language: 'python',
-                    status: 'success',
-                    duration: 120
-                },
-                {
-                    id: 'seed_job_2',
-                    timestamp: Date.now() - 500000,
-                    code: '# Memory Test\nx = [1] * 1000',
-                    language: 'python',
-                    status: 'failed',
-                    duration: 450
-                }
-            ],
+            editorConfig: { ...DEFAULT_EDITOR_CONFIG },
+            recentJobs: [],
             favoriteJobs: []
         };
         Persistence.saveSession(newSession);
@@ -84,6 +74,14 @@ export const Persistence = {
 
     saveSession: (session: UserSession) => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        // Trigger event for cross-component updates
+        window.dispatchEvent(new Event('okernel-session-update'));
+    },
+
+    updateEditorConfig: (config: Partial<EditorConfig>) => {
+        const session = Persistence.getSession();
+        session.editorConfig = { ...session.editorConfig, ...config };
+        Persistence.saveSession(session);
     },
 
     addJob: (job: JobRecord) => {

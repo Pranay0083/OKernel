@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, History, Settings, Plus, Play } from 'lucide-react';
-import { Persistence, UserSession } from '../../../services/persistence';
+import { Layout, History, Settings, Plus, Play, X, Lock, Unlock, Type, Eye, EyeOff, Zap, FileCode } from 'lucide-react';
+import { Persistence, UserSession, EditorConfig } from '../../../services/persistence';
+import { supabase } from '../../../lib/supabase';
 
 export const AppLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [session, setSession] = useState<UserSession | null>(() => Persistence.getSession());
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [realUser, setRealUser] = useState<{ email?: string, id?: string } | null>(null);
 
     useEffect(() => {
         // Listen for storage events to update UI across tabs (or if updated elsewhere)
@@ -14,6 +18,15 @@ export const AppLayout = () => {
         window.addEventListener('storage', handleStorage);
         // Custom event for internal updates
         window.addEventListener('okernel-session-update', handleStorage);
+
+        // Fetch Real User
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                setRealUser({ email: user.email, id: user.id });
+                // Update session object with real ID if different (optional, just for display consistency)
+                setSession(prev => prev ? { ...prev, userId: user.id, email: user.email } : null);
+            }
+        });
 
         return () => {
             window.removeEventListener('storage', handleStorage);
@@ -23,16 +36,104 @@ export const AppLayout = () => {
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + ':');
 
+    const toggleSetting = (key: keyof EditorConfig) => {
+        if (!session) return;
+        Persistence.updateEditorConfig({ [key]: !session.editorConfig[key] });
+    };
+
+    const userDisplay = realUser ? realUser.email : session?.userId;
+    const userInitials = userDisplay ? userDisplay.substring(0, 2).toUpperCase() : 'GU';
+
     return (
-        <div className="h-screen w-screen bg-[#050505] text-zinc-300 flex overflow-hidden font-sans selection:bg-purple-500/30">
+        <div className="h-screen w-screen bg-[#050505] text-zinc-300 flex overflow-hidden font-sans selection:bg-purple-500/30 relative">
+            {/* Settings Modal Overlay */}
+            {isSettingsOpen && session && (
+                <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-white/10 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-zinc-900">
+                            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                                <Settings size={16} />
+                                EDITOR SETTINGS
+                            </h2>
+                            <button 
+                                onClick={() => setIsSettingsOpen(false)}
+                                className="p-1 rounded hover:bg-white/10 text-zinc-500 hover:text-white transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-2">
+                            <div className="space-y-1">
+                                <SettingItem 
+                                    label="Autocomplete (IntelliSense)" 
+                                    desc="Show suggestions while typing"
+                                    icon={<Zap size={16} className="text-yellow-400" />}
+                                    active={session.editorConfig.autoComplete}
+                                    onClick={() => toggleSetting('autoComplete')}
+                                />
+                                <SettingItem 
+                                    label="Read-Only Mode" 
+                                    desc="Lock editor to prevent changes"
+                                    icon={session.editorConfig.readOnly ? <Lock size={16} className="text-red-400" /> : <Unlock size={16} className="text-green-400" />}
+                                    active={session.editorConfig.readOnly}
+                                    onClick={() => toggleSetting('readOnly')}
+                                />
+                                <SettingItem 
+                                    label="Minimap" 
+                                    desc="Show code overview on the right"
+                                    icon={<FileCode size={16} className="text-blue-400" />}
+                                    active={session.editorConfig.minimap}
+                                    onClick={() => toggleSetting('minimap')}
+                                />
+                                <SettingItem 
+                                    label="Word Wrap" 
+                                    desc="Wrap long lines automatically"
+                                    icon={<Type size={16} className="text-purple-400" />}
+                                    active={session.editorConfig.wordWrap}
+                                    onClick={() => toggleSetting('wordWrap')}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-zinc-950/50 border-t border-white/5 text-xs text-zinc-500 text-center">
+                             Settings are automatically saved to your session.
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Sidebar Toggle Button (Visible when closed) */}
+            {!isSidebarOpen && (
+                <div className="absolute top-3 left-3 z-50">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-2 rounded-md bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors shadow-lg"
+                        title="Open Sidebar"
+                    >
+                        <Layout size={16} />
+                    </button>
+                </div>
+            )}
+
             {/* Sidebar Shell */}
-            <div className="w-64 flex flex-col border-r border-white/5 bg-[#0a0a0a]">
+            <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} flex flex-col border-r border-white/5 bg-[#0a0a0a] transition-all duration-300 overflow-hidden relative`}>
+                
+                {/* Close Sidebar Button (Inside) */}
+                <button
+                     onClick={() => setIsSidebarOpen(false)}
+                     className="absolute top-3 right-3 p-1 rounded hover:bg-white/5 text-zinc-600 hover:text-zinc-400 z-50"
+                     title="Collapse Sidebar"
+                >
+                    <Layout size={14} />
+                </button>
+
                 {/* OS Header */}
-                <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2 select-none">
+                <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2 select-none shrink-0">
                     <div
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/dashboard')}
                         className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50 cursor-pointer hover:bg-red-500 hover:shadow-[0_0_8px_rgba(239,68,68,0.6)] transition-all"
-                        title="Close Window"
+                        title="Close Window (Exit to Dashboard)"
                     ></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
@@ -107,13 +208,22 @@ export const AppLayout = () => {
                 {/* User Footer */}
                 <div className="h-12 border-t border-white/5 flex items-center px-4 gap-3 bg-zinc-900/10">
                     <div className="w-8 h-8 rounded bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-purple-900/20">
-                        {session?.userId.substr(5, 2).toUpperCase()}
+                        {userInitials}
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-medium text-bold text-zinc-300">User Session</span>
-                        <span className="text-[9px] text-zinc-600 font-mono">{session?.userId}</span>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-medium text-bold text-zinc-300 truncate">
+                            {realUser ? 'Logged In' : 'Guest Session'}
+                        </span>
+                        <span className="text-[9px] text-zinc-600 font-mono truncate max-w-[120px]" title={userDisplay}>
+                            {userDisplay}
+                        </span>
                     </div>
-                    <Settings size={14} className="ml-auto text-zinc-600 hover:text-zinc-400 cursor-pointer" />
+                    <button 
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="ml-auto p-1.5 rounded hover:bg-white/10 text-zinc-600 hover:text-zinc-400 cursor-pointer transition-colors"
+                    >
+                        <Settings size={14} />
+                    </button>
                 </div>
             </div>
 
@@ -149,6 +259,32 @@ const NavItem = ({ icon, label, active, onClick, badge }: NavItemProps) => (
             </span>
         )}
     </button>
+);
+
+interface SettingItemProps {
+    label: string;
+    desc: string;
+    icon: React.ReactNode;
+    active: boolean;
+    onClick: () => void;
+}
+
+const SettingItem = ({ label, desc, icon, active, onClick }: SettingItemProps) => (
+    <div 
+        onClick={onClick}
+        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer group transition-colors select-none"
+    >
+        <div className="w-8 h-8 rounded bg-black/50 border border-white/5 flex items-center justify-center shrink-0 group-hover:border-white/10">
+            {icon}
+        </div>
+        <div className="flex-1 flex flex-col">
+            <span className="text-xs font-bold text-zinc-300 group-hover:text-white">{label}</span>
+            <span className="text-[10px] text-zinc-500">{desc}</span>
+        </div>
+        <div className={`w-8 h-4 rounded-full relative transition-colors ${active ? 'bg-green-500/20' : 'bg-zinc-800'}`}>
+            <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${active ? 'left-4 bg-green-500' : 'left-0.5 bg-zinc-600'}`} />
+        </div>
+    </div>
 );
 
 export default AppLayout;

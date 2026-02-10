@@ -17,13 +17,19 @@ export const Home = () => {
     const [testimonials, setTestimonials] = useState<{ message: string; name: string; role?: string }[]>([]);
 
     React.useEffect(() => {
-        // Redirect if already logged in
+        // Redirect if already logged in, but only once per session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                navigate('/dashboard');
+                const hasRedirected = sessionStorage.getItem('dashboard_redirected');
+                if (!hasRedirected) {
+                    sessionStorage.setItem('dashboard_redirected', 'true');
+                    navigate('/dashboard');
+                }
             }
         });
+    }, [navigate]);
 
+    React.useEffect(() => {
         const fetchTestimonials = async () => {
             const { data } = await supabase
                 .from('featured_reviews')
@@ -37,7 +43,7 @@ export const Home = () => {
             }
         };
         fetchTestimonials();
-    }, [navigate]);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

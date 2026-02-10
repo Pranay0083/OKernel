@@ -7,9 +7,11 @@ interface CodeEditorProps {
     language: 'python' | 'cpp';
     highlightLine?: number;
     lineExecutionTimes?: Record<number, number>; // Line Number -> Duration (ns)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options?: any;
 }
 
-const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highlightLine, lineExecutionTimes }) => {
+const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highlightLine, lineExecutionTimes, options: customOptions }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editorRef = useRef<any>(null);
     const monaco = useMonaco();
@@ -96,6 +98,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
                 padding: { top: 16 },
                 fontFamily: 'JetBrains Mono, monospace',
                 glyphMargin: true,
+                ...customOptions
             }}
         />
     );

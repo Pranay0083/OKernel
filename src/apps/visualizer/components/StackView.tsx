@@ -30,7 +30,7 @@ const StackView: React.FC<StackViewProps> = ({ frames, onVariableHover, onVariab
     }
 
     return (
-        <div className="h-full overflow-auto p-2 custom-scrollbar flex flex-col-reverse gap-2">
+        <div className="p-2 flex flex-col-reverse gap-2 min-h-full">
             <AnimatePresence>
                 {frames.map((frame, _index) => (
                     <motion.div

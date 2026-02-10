@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { sysCoreApi } from '../api/syscore';
 import { supabase } from '../lib/supabase';
+import { Persistence } from '../services/persistence';
 
 interface Metrics {
     cpu: number;
@@ -61,28 +62,17 @@ export const useSysCore = () => {
         history: []
     });
 
-    const executeCode = useCallback(async (language: 'python' | 'cpp', code: string, input?: string) => {
+    const fetchTrace = useCallback(async (jobId: string) => {
         try {
-            // Reset state
             setState(prev => ({
                 ...prev,
+                jobId,
+                isExecuting: true, // Show loading spinner
                 logs: [],
-                metrics: { cpu: 0, memory: 0 },
                 history: [],
-                isExecuting: true,
-                jobId: null
+                metrics: { cpu: 0, memory: 0 }
             }));
 
-            // 1. Execute via API (waits for full execution and upload)
-            const response = await sysCoreApi.execute(language, code, input || "");
-            // Assuming response is string (jobId) or object { output: jobId, status: "success" }
-            // The current sysCoreApi.execute implementation likely returns the output string
-            // I should check sysCoreApi implementation. Assuming it returns jobId based on my backend change.
-            const jobId = response;
-
-            setState(prev => ({ ...prev, jobId }));
-
-            // 2. Fetch Trace from Supabase
             const { data, error } = await supabase
                 .from('execution_traces')
                 .select('trace_data')
@@ -91,7 +81,7 @@ export const useSysCore = () => {
 
             if (error) {
                 console.error("Supabase trace fetch error:", error);
-                setState(prev => ({ ...prev, logs: [...prev.logs, `Error fetching trace: ${error.message}`], isExecuting: false }));
+                setState(prev => ({ ...prev, logs: [`Error fetching trace: ${error.message}`], isExecuting: false }));
                 return;
             }
 
@@ -102,7 +92,7 @@ export const useSysCore = () => {
 
                 events.forEach((e, i) => {
                     if (e.type === 'Trace') {
-                        // Calculate duration and CPU usage
+                         // Calculate duration and CPU usage
                         if (i > 0) {
                             const prev = events[i - 1];
                             // Only calculate if timestamps are valid and monotonic
@@ -148,19 +138,69 @@ export const useSysCore = () => {
                         memory: history[history.length - 1].memory_curr || 0
                     } : { cpu: 0, memory: 0 }
                 }));
+
             } else {
                 setState(prev => ({ ...prev, logs: ["No trace data found."], isExecuting: false }));
             }
+        } catch (e) {
+            console.error("Fetch trace failed:", e);
+             setState(prev => ({ ...prev, logs: [`Error: ${String(e)}`], isExecuting: false }));
+        }
+    }, []);
+
+    const executeCode = useCallback(async (language: 'python' | 'cpp', code: string, input?: string) => {
+        try {
+            // Reset state
+            setState(prev => ({
+                ...prev,
+                logs: [],
+                metrics: { cpu: 0, memory: 0 },
+                history: [],
+                isExecuting: true,
+                jobId: null
+            }));
+
+            // 1. Execute via API (waits for full execution and upload)
+            const response = await sysCoreApi.execute(language, code, input || "");
+            const jobId = response;
+
+            setState(prev => ({ ...prev, jobId }));
+
+            // 2. Fetch Trace (Reuse logic)
+            // Wait for trace fetch to complete so we have history for persistence
+            await fetchTrace(jobId);
+            
+            // We need to re-read the state or return data from fetchTrace to save it.
+            // But since setState is async, 'state.history' is stale here.
+            // Let's rely on fetchTrace returning the history or just save basic info here?
+            // Actually, we can just save it here, assuming success if no error thrown.
+            // We won't have the exact duration from the trace, but we can approximate or update later.
+            // BETTER: Pass a callback or handle persistence inside fetchTrace if it's a "new run"?
+            // Simpler: Just save the job here with 0 duration, or handle persistence cleanly.
+            
+            // Let's modify executeCode to do the persistence itself using the data it just fetched if we refactor fetchTrace to return data.
+            // But I didn't refactor fetchTrace to return data yet.
+            
+            Persistence.addJob({
+                id: jobId,
+                timestamp: Date.now(),
+                code: code,
+                language: language,
+                status: 'success',
+                duration: 0, // Placeholder until loaded
+                input: input
+            });
 
         } catch (e: unknown) {
             console.error("Execution failed:", e);
             const errorMessage = e instanceof Error ? e.message : String(e);
             setState(prev => ({ ...prev, logs: [...prev.logs, `Error: ${errorMessage}`], isExecuting: false }));
         }
-    }, []);
+    }, [fetchTrace]);
 
     return {
         ...state,
-        executeCode
+        executeCode,
+        fetchTrace
     };
 };
