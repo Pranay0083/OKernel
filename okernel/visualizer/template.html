@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKernel Trace Visualizer</title>
+    <style>
+        :root {
+            --color-bg: #09090b;
+            --color-surface: #18181b;
+            --color-primary: #4ade80;
+            --color-accent: #60a5fa;
+            --color-warn: #facc15;
+            --color-error: #f87171;
+            --color-text: #e4e4e7;
+            --color-dim: #71717a;
+            --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+            --font-sans: system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-sans);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        header {
+            background-color: var(--color-surface);
+            border-bottom: 1px solid #333;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: var(--font-mono);
+            color: var(--color-primary);
+            font-size: 1.2rem;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: 1fr 200px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* Panels */
+        .panel {
+            border: 1px solid #27272a;
+            background: rgba(24, 24, 27, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: var(--color-surface);
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--color-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #27272a;
+        }
+
+        .panel-content {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Specific Areas */
+        #execution-view {
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        #variables-view {
+            grid-column: 2 / 3;
+            grid-row: 1 / 3;
+            border-left: 1px solid #333;
+        }
+
+        #console-view {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+            border-top: 1px solid #333;
+            background: #000;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            background: var(--color-surface);
+            border: 1px solid #3f3f46;
+            color: var(--color-text);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type=range] {
+            width: 200px;
+        }
+
+        /* Data Styling */
+        .variable-item {
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #27272a;
+        }
+        .var-name { color: var(--color-accent); font-weight: bold; }
+        .var-type { color: var(--color-dim); font-size: 0.8em; margin-left: 0.5rem; }
+        .var-value { color: var(--color-primary); display: block; margin-top: 0.2rem; word-break: break-all; }
+        .var-meta { font-size: 0.75em; color: #52525b; margin-top: 0.2rem; }
+
+        .log-entry { font-family: var(--font-mono); white-space: pre-wrap; margin-bottom: 2px; }
+        .log-stdout { color: var(--color-text); }
+        .log-stderr { color: var(--color-error); }
+        .log-error { color: var(--color-error); background: rgba(248, 113, 113, 0.1); padding: 0.5rem; }
+
+        .step-info {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--color-accent);
+        }
+
+        .hardware-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #27272a;
+            font-size: 0.8em;
+            color: var(--color-warn);
+            border: 1px solid #3f3f46;
+        }
+
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: #27272a;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+        .stat-label { color: var(--color-dim); margin-right: 4px; }
+        .stat-value { color: var(--color-primary); font-family: var(--font-mono); }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>OKernel Visualizer</h1>
+            <div style="margin-top: 0.5rem">
+                <span class="stat-pill"><span class="stat-label">Steps:</span><span class="stat-value" id="total-steps">0</span></span>
+                <span class="stat-pill"><span class="stat-label">Peak Mem:</span><span class="stat-value" id="peak-mem">0 B</span></span>
+                <span class="stat-pill"><span class="stat-label">Duration:</span><span class="stat-value" id="duration">0s</span></span>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="btn-start">|&lt;</button>
+            <button id="btn-prev">&lt;</button>
+            <span id="step-counter" style="font-family: var(--font-mono); min-width: 60px; text-align: center;">0 / 0</span>
+            <button id="btn-next">&gt;</button>
+            <button id="btn-end">&gt;|</button>
+            <input type="range" id="scrubber" min="0" max="0" value="0">
+        </div>
+    </header>
+
+    <main>
+        <div class="panel" id="execution-view">
+            <div class="panel-header">Execution State</div>
+            <div class="panel-content">
+                <div id="current-op" class="step-info">--</div>
+                <div id="instruction-detail" style="color: var(--color-dim)"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="variables-view">
+            <div class="panel-header">Local Variables</div>
+            <div class="panel-content" id="vars-container">
+                <!-- Vars go here -->
+            </div>
+        </div>
+
+        <div class="panel" id="console-view">
+            <div class="panel-header">Terminal Output</div>
+            <div class="panel-content" id="console-output">
+                <!-- Logs go here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Data Injection
+        const rawEvents = <!-- TRACE_DATA -->;
+        
+        // State
+        let currentIndex = 0;
+        const events = rawEvents.filter(e => e.type === "Trace" || e.type === "Stdout" || e.type === "Stderr" || e.type === "Error");
+        const steps = events.filter(e => e.type === "Trace" || e.type === "Error");
+        
+        // UI Elements
+        const elTotalSteps = document.getElementById('total-steps');
+        const elPeakMem = document.getElementById('peak-mem');
+        const elDuration = document.getElementById('duration');
+        const elStepCounter = document.getElementById('step-counter');
+        const elScrubber = document.getElementById('scrubber');
+        
+        const elCurrentOp = document.getElementById('current-op');
+        const elInstDetail = document.getElementById('instruction-detail');
+        const elVars = document.getElementById('vars-container');
+        const elConsole = document.getElementById('console-output');
+
+        const btnStart = document.getElementById('btn-start');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnEnd = document.getElementById('btn-end');
+
+        function init() {
+            // Stats
+            elTotalSteps.textContent = steps.length;
+            
+            let maxMem = 0;
+            let firstTs = null; 
+            let lastTs = null;
+            
+            events.forEach(e => {
+                if (e.memory_peak) maxMem = Math.max(maxMem, e.memory_peak);
+                if (e.timestamp) {
+                    if (!firstTs) firstTs = e.timestamp;
+                    lastTs = e.timestamp;
+                }
+            });
+            
+            elPeakMem.textContent = maxMem.toLocaleString() + ' B';
+            if (firstTs && lastTs) {
+                elDuration.textContent = ((lastTs - firstTs) / 1e9).toFixed(4) + 's';
+            }
+
+            // Controls
+            elScrubber.max = Math.max(0, steps.length - 1);
+            
+            btnStart.onclick = () => jumpTo(0);
+            btnPrev.onclick = () => jumpTo(currentIndex - 1);
+            btnNext.onclick = () => jumpTo(currentIndex + 1);
+            btnEnd.onclick = () => jumpTo(steps.length - 1);
+            elScrubber.oninput = (e) => jumpTo(parseInt(e.target.value));
+            
+            // Initial Render
+            jumpTo(0);
+        }
+
+        function jumpTo(index) {
+            if (steps.length === 0) return;
+            
+            index = Math.max(0, Math.min(index, steps.length - 1));
+            currentIndex = index;
+            
+            elScrubber.value = index;
+            elStepCounter.textContent = `${index + 1} / ${steps.length}`;
+            
+            renderStep(steps[index]);
+            renderConsole(steps[index]);
+        }
+
+        function renderStep(step) {
+            // 1. Execution View
+            if (step.type === "Error") {
+                elCurrentOp.innerHTML = '';
+                const span = document.createElement('span');
+                span.style.color = 'var(--color-error)';
+                span.textContent = step.class;
+                elCurrentOp.appendChild(span);
+                elInstDetail.textContent = step.message;
+            } else {
+                // Trace
+                const fn = step.function || '<module>';
+                const line = step.line;
+                elCurrentOp.innerHTML = '';
+                elCurrentOp.textContent = `${fn}() `;
+                
+                const span = document.createElement('span');
+                span.style.color = 'var(--color-dim)';
+                span.textContent = `Line ${line}`;
+                elCurrentOp.appendChild(span);
+                
+                let detail = `File: ${step.filename}`;
+                if (step.bytecode) {
+                    detail += `\nOpcode: ${step.bytecode.opcode} (Offset ${step.bytecode.offset})`;
+                }
+                if (step.hardware) {
+                     detail += `\nHW: ${step.hardware.type} (Cost: ${step.hardware.cost})`;
+                }
+                elInstDetail.innerText = detail;
+
+                // 2. Variables
+                elVars.innerHTML = '';
+                if (step.locals) {
+                    for (const [name, info] of Object.entries(step.locals)) {
+                        const div = document.createElement('div');
+                        div.className = 'variable-item';
+                        
+                        const header = document.createElement('div');
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'var-name';
+                        nameSpan.textContent = name;
+                        header.appendChild(nameSpan);
+                        
+                        const typeSpan = document.createElement('span');
+                        typeSpan.className = 'var-type';
+                        typeSpan.textContent = info.type;
+                        header.appendChild(typeSpan);
+                        
+                        div.appendChild(header);
+                        
+                        const valueSpan = document.createElement('span');
+                        valueSpan.className = 'var-value';
+                        valueSpan.textContent = info.value;
+                        div.appendChild(valueSpan);
+                        
+                        const metaDiv = document.createElement('div');
+                        metaDiv.className = 'var-meta';
+                        metaDiv.textContent = `Addr: ${info.address} | Size: ${info.size}B`;
+                        div.appendChild(metaDiv);
+                        
+                        elVars.appendChild(div);
+                    }
+                }
+            }
+        }
+
+        function renderConsole(currentStep) {
+            const stepIndexInRaw = rawEvents.indexOf(currentStep);
+            
+            const outputEvents = rawEvents.slice(0, stepIndexInRaw + 1).filter(e => 
+                e.type === "Stdout" || e.type === "Stderr" || e.type === "Error"
+            );
+            
+            elConsole.innerHTML = '';
+            outputEvents.forEach(e => {
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                
+                if (e.type === "Stdout") {
+                    div.classList.add('log-stdout');
+                    div.textContent = e.data;
+                } else if (e.type === "Stderr") {
+                    div.classList.add('log-stderr');
+                    div.textContent = e.data;
+                } else if (e.type === "Error") {
+                    div.classList.add('log-error');
+                    div.textContent = `${e.class}: ${e.message}\n${e.traceback}`;
+                }
+                elConsole.appendChild(div);
+            });
+            elConsole.scrollTop = elConsole.scrollHeight;
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
