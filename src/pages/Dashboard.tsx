@@ -191,8 +191,8 @@ const ToolBelt = () => {
     const modules = [
         { name: 'SCHEDULER', icon: Calendar, path: '/scheduler', color: 'text-purple-400' },
         { name: 'VISUALIZER', icon: Zap, path: '/platform/cpu', color: 'text-yellow-400' },
-        { name: 'DOCS', icon: BookOpen, path: '#', color: 'text-blue-400' },
-        { name: 'SETTINGS', icon: Settings, path: '#', color: 'text-zinc-400' },
+        { name: 'DOCS', icon: BookOpen, path: '/docs', color: 'text-blue-400' },
+        { name: 'SETTINGS', icon: Settings, path: '/settings', color: 'text-zinc-400' },
     ];
 
     return (
