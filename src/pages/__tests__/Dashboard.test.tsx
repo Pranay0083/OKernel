@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Dashboard } from '../Dashboard';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
@@ -63,8 +63,8 @@ describe('Dashboard Component', () => {
         expect(screen.getByText(/SYS_integrity/i)).toBeInTheDocument();
         
         // Check for Module links
-        expect(screen.getByText('SCHEDULER')).toBeInTheDocument();
-        expect(screen.getByText('VISUALIZER')).toBeInTheDocument();
+        expect(screen.getByText('CPU_SCHEDULER')).toBeInTheDocument();
+        expect(screen.getByText('CODE_TRACER')).toBeInTheDocument();
     });
 
     it('renders the file system table', async () => {

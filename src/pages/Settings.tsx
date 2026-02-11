@@ -42,6 +42,7 @@ export const Settings = () => {
   useEffect(() => {
     const savedTheme = localStorage.getItem('okernel_theme') as Theme;
     if (savedTheme && THEMES.some(t => t.id === savedTheme)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: hydrating state from localStorage once on mount
       setTheme(savedTheme);
     }
 

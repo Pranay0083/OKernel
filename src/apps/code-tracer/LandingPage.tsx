@@ -80,7 +80,7 @@ const SectionHeading = ({ children, subtitle }: { children: React.ReactNode; sub
     </div>
 );
 
-export const SympathyLanding = () => {
+export const CodeTracerLanding = () => {
     const navigate = useNavigate();
     const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage>('python');
     const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
@@ -155,7 +155,7 @@ export const SympathyLanding = () => {
                             >
                                 <Button
                                     size="lg"
-                                    onClick={() => navigate('/platform/execution')}
+                                    onClick={() => navigate('/code-tracer/execution')}
                                     className="h-14 px-8 bg-green-500/10 hover:bg-green-500/20 text-green-400 font-mono font-bold text-sm tracking-widest border border-green-500/50 shadow-[0_0_20px_rgba(74,222,128,0.15)] flex items-center gap-3 group transition-all rounded-none uppercase"
                                 >
                                     <Terminal size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -468,4 +468,4 @@ export const SympathyLanding = () => {
     );
 };
 
-export default SympathyLanding;
+export default CodeTracerLanding;

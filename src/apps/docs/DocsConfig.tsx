@@ -10,7 +10,7 @@ import { TraceEnginePage } from './pages/TraceEnginePage';
 import { SchedulerModulePage } from './pages/SchedulerModulePage';
 import { ShellMakerDocs } from './pages/ShellMakerDocs';
 import { PersistenceDocs } from './pages/PersistenceDocs';
-import { SympathyDocs } from './pages/SympathyDocs';
+import { CodeTracerDocs } from './pages/CodeTracerDocs';
 
 export type DocRoute = {
     id: string;
@@ -69,10 +69,10 @@ export const DOCS_NAVIGATION: DocSection[] = [
             },
             {
                 id: "arch-sympathy",
-                title: "Sympathy Engine",
+                title: "Code Tracer",
                 path: "/docs/architecture/sympathy",
                 icon: <Zap size={16} />,
-                component: <SympathyDocs />,
+                component: <CodeTracerDocs />,
                 description: "Machine Sympathy & Hardware Inspector"
             }
         ]

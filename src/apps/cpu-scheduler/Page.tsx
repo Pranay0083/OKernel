@@ -17,7 +17,7 @@ const BOOT_LOGS = [
     "> STARTING_VISUALIZER... OK"
 ];
 
-export const Visualizer = () => {
+export const CPUSchedulerPage = () => {
     const [booting, setBooting] = useState(true);
 
     const handleBootComplete = React.useCallback(() => {

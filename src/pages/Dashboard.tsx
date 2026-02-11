@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { config } from '../config';
-import { Terminal, Cpu, Calendar, BookOpen, Settings, LogOut, Activity, HardDrive, Play, Zap } from 'lucide-react';
+import { Terminal, Cpu, Calendar, BookOpen, Settings, Activity, HardDrive, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // --- Types ---
@@ -29,7 +29,12 @@ interface LogEntry {
 
 // --- Components ---
 
-const GlobalHUD = ({ user, handleLogout }: { user: any, handleLogout: () => void }) => {
+interface User {
+    email?: string;
+    id?: string;
+}
+
+const GlobalHUD = ({ user, handleLogout }: { user: User | null, handleLogout: () => void }) => {
     return (
         <div className="w-full h-10 border-b border-green-500/20 bg-zinc-950/90 backdrop-blur-md flex items-center justify-between px-4 font-mono text-xs select-none sticky top-0 z-40">
             <div className="flex items-center space-x-4 text-zinc-500">
@@ -76,7 +81,7 @@ const ShellPromptHero = () => {
             
             <div className="z-10 mt-8">
                 <Link 
-                    to="/shell" 
+                    to="/shell-maker" 
                     className="inline-flex items-center space-x-2 bg-zinc-100 text-black px-6 py-3 font-mono font-bold hover:bg-green-400 transition-colors duration-300"
                 >
                     <Terminal size={18} />
@@ -91,7 +96,7 @@ const ShellPromptHero = () => {
     );
 };
 
-const FileSystemTable = ({ snippets, navigate }: { snippets: Snippet[], navigate: any }) => {
+const FileSystemTable = ({ snippets, navigate }: { snippets: Snippet[], navigate: (path: string) => void }) => {
     return (
         <div className="rounded-sm border border-white/5 bg-zinc-900/40 backdrop-blur-md overflow-hidden flex flex-col h-full">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-zinc-900/60">
@@ -124,7 +129,7 @@ const FileSystemTable = ({ snippets, navigate }: { snippets: Snippet[], navigate
                             snippets.map((snippet) => (
                                 <tr 
                                     key={snippet.id} 
-                                    onClick={() => navigate(`/shell?id=${snippet.id}`)}
+                                    onClick={() => navigate(`/shell-maker?id=${snippet.id}`)}
                                     className="hover:bg-green-500/10 hover:text-green-400 cursor-pointer transition-colors group"
                                 >
                                     <td className="px-4 py-3 opacity-60 group-hover:opacity-100">{snippet.permissions || '-rw-r--r--'}</td>
@@ -189,8 +194,8 @@ const TelemetryPanel = () => {
 
 const ToolBelt = () => {
     const modules = [
-        { name: 'SCHEDULER', icon: Calendar, path: '/scheduler', color: 'text-purple-400' },
-        { name: 'VISUALIZER', icon: Zap, path: '/platform/cpu', color: 'text-yellow-400' },
+        { name: 'CPU_SCHEDULER', icon: Calendar, path: '/cpu-scheduler', color: 'text-purple-400' },
+        { name: 'CODE_TRACER', icon: Zap, path: '/code-tracer', color: 'text-yellow-400' },
         { name: 'DOCS', icon: BookOpen, path: '/docs', color: 'text-blue-400' },
         { name: 'SETTINGS', icon: Settings, path: '/settings', color: 'text-zinc-400' },
     ];
@@ -250,7 +255,7 @@ const SessionLog = () => {
                     <div key={log.id} className="flex gap-2 text-zinc-500">
                         <span className="opacity-50">[{log.timestamp}]</span>
                         <span className={log.type === 'success' ? 'text-green-500' : log.type === 'warning' ? 'text-yellow-500' : 'text-zinc-400'}>
-                            {log.type === 'success' ? '&gt;' : log.type === 'warning' ? '!' : '-'} {log.message}
+                            {log.type === 'success' ? '>' : log.type === 'warning' ? '!' : '-'} {log.message}
                         </span>
                     </div>
                 ))}

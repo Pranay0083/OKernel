@@ -1,14 +1,14 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { SympathyLanding } from './LandingPage';
+import { CodeTracerLanding } from './LandingPage';
 import { describe, it, expect } from 'vitest';
 
-describe('SympathyLanding', () => {
+describe('CodeTracerLanding', () => {
     it('should have the @keyframes scan definition in the style block', () => {
         const { container } = render(
             <MemoryRouter>
-                <SympathyLanding />
+                <CodeTracerLanding />
             </MemoryRouter>
         );
 
