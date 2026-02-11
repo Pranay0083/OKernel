@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, History, Settings, Plus, Play, X, Lock, Unlock, Type, Eye, EyeOff, Zap, FileCode } from 'lucide-react';
+import { Layout, History, Settings, Plus, Play, X, Lock, Unlock, Type, Zap, FileCode } from 'lucide-react';
 import { Persistence, UserSession, EditorConfig } from '../../../services/persistence';
 import { supabase } from '../../../lib/supabase';
 
@@ -145,15 +145,15 @@ export const AppLayout = () => {
                     <NavItem
                         icon={<Plus size={14} />}
                         label="New Experiment"
-                        active={isActive('/platform/execution') && !location.pathname.includes('compare')}
-                        onClick={() => navigate('/platform/execution')}
+                        active={isActive('/code-tracer/execution') && !location.pathname.includes('compare')}
+                        onClick={() => navigate('/code-tracer/execution')}
                     />
                     <NavItem
                         icon={<Layout size={14} />}
                         label="Comparison View"
-                        active={isActive('/platform/compare')}
+                        active={isActive('/code-tracer/compare')}
                         badge="v2.0"
-                        onClick={() => navigate('/platform/compare')}
+                        onClick={() => navigate('/code-tracer/compare')}
                     />
                 </div>
 
@@ -175,7 +175,7 @@ export const AppLayout = () => {
                             key={job.id}
                             className="group flex flex-col gap-1 p-2 rounded hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5"
                             onClick={() => {
-                                navigate(`/platform/execution?loadJob=${job.id}`);
+                                navigate(`/code-tracer/execution?loadJob=${job.id}`);
                             }}
                         >
                             <div className="flex items-center justify-between">
@@ -189,7 +189,7 @@ export const AppLayout = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(`/platform/execution?loadJob=${job.id}&autoRun=true`);
+                                            navigate(`/code-tracer/execution?loadJob=${job.id}&autoRun=true`);
                                         }}
                                         className="p-1 rounded bg-white/5 hover:bg-green-500/20 hover:text-green-400 transition-colors"
                                         title="Replay"

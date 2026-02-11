@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Visualizer } from '../Page';
+import { CPUSchedulerPage as Visualizer } from '../Page';
 import { useScheduler } from '../../../hooks/useScheduler';
 import { SimulationState } from '../../../core/types';
 import { ReactNode } from 'react';

@@ -2,7 +2,7 @@ import React from 'react';
 import { Cpu, Split, Zap, Activity, Terminal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const SympathyDocs: React.FC = () => {
+export const CodeTracerDocs: React.FC = () => {
     const navigate = useNavigate();
 
     return (
@@ -15,17 +15,17 @@ export const SympathyDocs: React.FC = () => {
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight text-white flex items-center gap-3">
                     <Zap size={32} className="text-yellow-400" />
-                    Sympathy Engine
+                    Code Tracer
                 </h1>
                 <p className="text-lg text-zinc-400 leading-relaxed">
                     "Machine Sympathy" is the ability to understand how hardware executes your code.
-                    The Sympathy Engine visualizes the low-level cost of high-level operations.
+                    The Code Tracer visualizes the low-level cost of high-level operations.
                 </p>
             </div>
 
             {/* Concept */}
             <div className="space-y-4" id="concept">
-                <h2 className="text-2xl font-bold text-white">Why "Sympathy"?</h2>
+                <h2 className="text-2xl font-bold text-white">Why "Code Tracer"?</h2>
                 <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
                     <p className="text-zinc-400 leading-relaxed mb-4">
                         Modern developers often treat the CPU as a black box. We write `a + b` and expect it to work.
@@ -33,7 +33,7 @@ export const SympathyDocs: React.FC = () => {
                         executing an ALU instruction, and writing back to memory.
                     </p>
                     <p className="text-zinc-400 leading-relaxed">
-                        OKernel's Sympathy mode exposes these hidden costs. It tracks every opcode and maps it to simulated hardware units
+                        OKernel's Code Tracer mode exposes these hidden costs. It tracks every opcode and maps it to simulated hardware units
                         (ALU, Control Unit, Memory Bus) so you can see <em>where</em> your program spends its energy.
                     </p>
                 </div>
@@ -122,7 +122,7 @@ export const SympathyDocs: React.FC = () => {
                             </li>
                         </ul>
                         <button
-                            onClick={() => navigate('/platform')}
+                            onClick={() => navigate('/code-tracer/compare')}
                             className="mt-4 px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors border border-zinc-700 text-sm font-bold flex items-center gap-2"
                         >
                             Open Benchmark Studio <Terminal size={14} />

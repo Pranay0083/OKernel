@@ -22,7 +22,7 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                     <div className="col-span-2 md:col-span-1 space-y-4">
                         <div className="flex items-center gap-2 text-white font-bold text-lg tracking-tight">
                             <Terminal size={20} className="text-green-500" />
-                            OKernel.<span className="text-green-500">Sympathy</span>
+                            OKernel.<span className="text-green-500">CodeTracer</span>
                         </div>
                         <p className="text-sm text-zinc-500 leading-relaxed max-w-xs">
                             An open-source interactive platform for mastering Operating System concepts.
@@ -38,10 +38,10 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                     <div>
                         <h4 className="font-bold mb-4 md:mb-6 text-white text-sm md:text-base uppercase tracking-wider">Platform</h4>
                         <ul className="space-y-2 md:space-y-3 text-sm text-zinc-400 font-mono">
-                            <li><Link to="/platform" className="hover:text-green-500 transition-colors text-white font-bold">Sympathy Engine</Link></li>
+                            <li><Link to="/code-tracer" className="hover:text-green-500 transition-colors text-white font-bold">Code Tracer</Link></li>
                             <li><a href="/" className="hover:text-green-500 transition-colors">Home</a></li>
                             <li><a href="/console" className="hover:text-green-500 transition-colors">Console [BASH]</a></li>
-                            <li><a href="/scheduler" className="hover:text-green-500 transition-colors">CPU Visualizer</a></li>
+                            <li><a href="/cpu-scheduler" className="hover:text-green-500 transition-colors">CPU Scheduler</a></li>
                             <li><a href="/roadmap" className="hover:text-green-500 transition-colors">Roadmap</a></li>
                             <li><a href="/changelog" className="hover:text-green-500 transition-colors">System Log</a></li>
                         </ul>

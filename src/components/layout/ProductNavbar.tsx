@@ -15,7 +15,7 @@ export const ProductNavbar = () => {
                         <Terminal size={16} className="text-zinc-400 group-hover:text-green-500 transition-colors" />
                     </div>
                     <span className="text-lg font-bold text-white tracking-tight">
-                        OKernel.<span className="text-green-500">Sympathy</span>
+                        OKernel.<span className="text-green-500">CodeTracer</span>
                     </span>
                 </Link>
 

@@ -6,7 +6,7 @@ import { Footer } from '../../components/layout/Footer';
 import { Button } from '../../components/ui/Button';
 import { ArrowRight, Terminal, Cpu, Zap, Layers, Database, Network, Lock } from 'lucide-react';
 
-export const SympathyLanding = () => {
+export const CodeTracerLanding = () => {
     const navigate = useNavigate();
 
     return (
@@ -37,7 +37,7 @@ export const SympathyLanding = () => {
                             <div className="flex flex-wrap gap-4">
                                 <Button
                                     size="lg"
-                                    onClick={() => navigate('/platform/execution')}
+                                    onClick={() => navigate('/code-tracer/execution')}
                                     className="h-12 px-6 bg-green-600 hover:bg-green-500 text-black font-bold text-sm tracking-wide rounded-none border border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)] flex items-center gap-2 group transition-all"
                                 >
                                     <Terminal size={16} className="fill-black group-hover:scale-110 transition-transform" />
@@ -159,7 +159,7 @@ export const SympathyLanding = () => {
                     <div className="mb-16">
                         <h2 className="text-3xl font-bold text-white mb-6 uppercase tracking-tight">Engineering Architecture</h2>
                         <p className="text-zinc-400 max-w-2xl leading-relaxed">
-                            Sympathy isn't just a UI wrapper. We built a custom execution environment to capture runtime state without significant performance overhead.
+                            Code Tracer isn't just a UI wrapper. We built a custom execution environment to capture runtime state without significant performance overhead.
                         </p>
                     </div>
 
@@ -232,7 +232,7 @@ export const SympathyLanding = () => {
 
                         <Button
                             size="lg"
-                            onClick={() => navigate('/platform')}
+                            onClick={() => navigate('/code-tracer')}
                             className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-bold rounded-none border-b-4 border-zinc-300 active:border-b-0 active:translate-y-1 transition-all"
                         >
                             <Zap className="mr-2 fill-black" size={16} /> AUTHENTICATE_USER
