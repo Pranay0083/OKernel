@@ -38,7 +38,7 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                     <div>
                         <h4 className="font-bold mb-4 md:mb-6 text-white text-sm md:text-base uppercase tracking-wider">Platform</h4>
                         <ul className="space-y-2 md:space-y-3 text-sm text-zinc-400 font-mono">
-                            <li><Link to="/platform" className="hover:text-green-500 transition-colors text-white font-bold">Sympathy Engine</Link></li>
+                            <li><Link to="/platform/sympathy" className="hover:text-green-500 transition-colors text-white font-bold">Sympathy Engine</Link></li>
                             <li><a href="/" className="hover:text-green-500 transition-colors">Home</a></li>
                             <li><a href="/console" className="hover:text-green-500 transition-colors">Console [BASH]</a></li>
                             <li><a href="/scheduler" className="hover:text-green-500 transition-colors">CPU Visualizer</a></li>

@@ -122,7 +122,7 @@ export const SympathyDocs: React.FC = () => {
                             </li>
                         </ul>
                         <button
-                            onClick={() => navigate('/platform')}
+                            onClick={() => navigate('/platform/sympathy')}
                             className="mt-4 px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 transition-colors border border-zinc-700 text-sm font-bold flex items-center gap-2"
                         >
                             Open Benchmark Studio <Terminal size={14} />

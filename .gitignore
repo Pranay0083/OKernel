@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Agent related 
+/agents
+WALKTHROUGH.md
+
 # admin only
 .env
 /sql

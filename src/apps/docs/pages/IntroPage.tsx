@@ -25,7 +25,7 @@ export const IntroPage = () => {
                         Get Started <ArrowRight size={16} />
                     </button>
                     <button 
-                        onClick={() => navigate('/platform')}
+                        onClick={() => navigate('/platform/sympathy')}
                         className="px-6 py-3 bg-zinc-800 text-white font-bold rounded hover:bg-zinc-700 transition-colors border border-zinc-700"
                     >
                         Open Visualizer

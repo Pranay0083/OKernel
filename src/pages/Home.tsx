@@ -93,7 +93,7 @@ export const Home = () => {
                         <span className="text-green-400 font-mono text-base block mt-4">Trace 100+ lines of code state without a debugger.</span>
                     </p>
                     <div className="flex justify-center gap-4">
-                        <Link to="/platform">
+                        <Link to="/platform/sympathy">
                             <Button size="lg" className="h-12 px-6 text-base bg-white text-black hover:bg-zinc-200 font-bold rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                                 Explore Sympathy &rarr;
                             </Button>

@@ -184,8 +184,8 @@ function App() {
       <Route path="/dev/bug-report" element={<Navigate to="/bug-report" replace />} />
       <Route path="/dev/feature-request" element={<Navigate to="/feature-request" replace />} />
       <Route path="/dev/contributing" element={<Navigate to="/contributing" replace />} />
-      <Route path="/dev/sympathy" element={<Navigate to="/platform" replace />} />
-      <Route path="/dev/sympathy/platform" element={<Navigate to="/platform" replace />} />
+      <Route path="/dev/sympathy" element={<Navigate to="/platform/sympathy" replace />} />
+      <Route path="/dev/sympathy/platform" element={<Navigate to="/platform/sympathy" replace />} />
       <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/platform/cpu" replace />} />
       <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/platform/mem" replace />} />
       <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/platform/compare" replace />} />
@@ -194,9 +194,10 @@ function App() {
 
       {/* Fallback for old Links */}
       <Route path="/visualizer" element={<Navigate to="/scheduler" replace />} />
+      <Route path="/platform" element={<Navigate to="/platform/sympathy" replace />} />
 
       {/* Public Landing Page - No Sidebar */}
-      <Route path="/platform" element={<SympathyLanding />} />
+      <Route path="/platform/sympathy" element={<SympathyLanding />} />
 
       {/* OKernel Visualizer Routes (Wrapped in App Shell) */}
       <Route element={<AppLayout />}>
