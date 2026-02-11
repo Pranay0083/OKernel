@@ -5,7 +5,7 @@ This package provides tools to trace Python code execution, track memory usage,
 and generate visualization reports.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.3"
 
 import json
 from typing import List, Dict, Any

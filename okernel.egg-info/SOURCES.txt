@@ -1,6 +1,7 @@
 LICENSE
 README.md
 pyproject.toml
+okernel/README.md
 okernel/__init__.py
 okernel.egg-info/PKG-INFO
 okernel.egg-info/SOURCES.txt
@@ -23,3 +24,4 @@ okernel/tests/test_trace.py
 okernel/tests/test_tracer.py
 okernel/visualizer/__init__.py
 okernel/visualizer/renderer.py
+okernel/visualizer/template.html

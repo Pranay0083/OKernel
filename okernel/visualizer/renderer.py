@@ -11,9 +11,10 @@ def render_html(events: List[Dict[str, Any]], output_path: str) -> None:
         events: List of trace events
         output_path: Path to write the HTML file
     """
+    from pathlib import Path
+
     # Locate template
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    template_path = os.path.join(current_dir, "template.html")
+    template_path = Path(__file__).parent / "template.html"
 
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
