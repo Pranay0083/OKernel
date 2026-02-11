@@ -37,6 +37,12 @@
     --ring: #d4d4d8;
 
     --radius: 0.3rem;
+    
+    /* Dashboard Spec Variables */
+    --terminal-bg: #09090b;
+    --terminal-fg: #d4d4d8;
+    --terminal-green: #4ade80;
+    --glass-border: rgba(255, 255, 255, 0.05);
   }
 
   body {

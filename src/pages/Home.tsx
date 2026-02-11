@@ -76,7 +76,7 @@ export const Home = () => {
 
     return (
         <Layout>
-            {/* NEW: OKernel.CodeTracer Banner */}
+            {/* NEW: OKernel.Sympathy Banner */}
             <section className="pt-20 pb-12 relative border-b border-green-500/20 bg-zinc-950/80 overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.15),transparent_70%)] pointer-events-none"></div>
                 <div className="container mx-auto px-4 text-center relative z-10">
@@ -377,7 +377,7 @@ int main() {
                     </div>
 
                     <div className="mt-12">
-                        <Link to="/shell-maker">
+                        <Link to="/shell">
                             <Button className="rounded-full px-8 bg-white text-black hover:bg-zinc-200 font-bold">
                                 Start Coding &rarr;
                             </Button>
@@ -407,7 +407,7 @@ int main() {
                             <p className="text-xs text-zinc-500">FCFS, Round Robin, SJF. Time quantum analysis.</p>
                         </Link>
 
-                        <Link to="/shell-maker" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-blue-500/50 transition-colors">
+                        <Link to="/shell" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-blue-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-blue-500/10">
                                 <Terminal className="text-zinc-400 group-hover:text-blue-500" size={20} />
                             </div>
@@ -499,7 +499,7 @@ int main() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* CPU Unit */}
-                    <Link to="/cpu-scheduler" className="group relative bg-zinc-950 border border-zinc-800 hover:border-green-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                    <Link to="/scheduler" className="group relative bg-zinc-950 border border-zinc-800 hover:border-green-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
@@ -523,7 +523,7 @@ int main() {
                     </Link>
 
                     {/* Shell Maker Unit */}
-                    <Link to="/shell-maker" className="group relative bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                    <Link to="/shell" className="group relative bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
@@ -730,24 +730,25 @@ int main() {
                         >
                             <div className="absolute -inset-1 bg-green-500 rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-200"></div>
                             <Button size="lg" className="relative h-14 px-8 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 !text-white border border-zinc-700 rounded-xl flex items-center gap-3">
-                                <Heart className="fill-pink-500 text-pink-500 animate-pulse" />
-                                Become a Sponsor
+                                <Heart className="text-red-500 fill-red-500 animate-pulse" size={20} />
+                                View Funding Goals
                             </Button>
                         </Link>
                     </div>
                 </div>
             </section>
-        </Layout>
+
+        </Layout >
     );
 };
 
 const Testimonial = ({ quote, author, role }: { quote: string, author: string, role: string }) => (
-    <div className="p-8 rounded-xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm relative">
-        <div className="absolute -top-3 -left-3 text-6xl text-zinc-800 font-serif opacity-50">"</div>
-        <p className="text-zinc-300 mb-6 italic leading-relaxed relative z-10">{quote}</p>
+    <div className="p-8 rounded bg-black border border-zinc-800 relative">
+        <div className="text-4xl text-zinc-800 absolute top-4 left-4 font-serif">"</div>
+        <p className="text-zinc-300 italic mb-6 relative z-10">{quote}</p>
         <div>
-            <div className="font-bold text-white">{author}</div>
-            <div className="text-xs text-green-500 font-mono mt-1">{role}</div>
+            <div className="font-bold text-white text-sm">{author}</div>
+            <div className="text-xs text-zinc-500">{role}</div>
         </div>
     </div>
 );

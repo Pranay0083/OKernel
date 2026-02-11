@@ -1,251 +1,471 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ProductNavbar } from '../../components/layout/ProductNavbar';
 import { Footer } from '../../components/layout/Footer';
 import { Button } from '../../components/ui/Button';
-import { ArrowRight, Terminal, Cpu, Zap, Layers, Database, Network, Lock } from 'lucide-react';
+import { 
+    ArrowRight, 
+    Terminal, 
+    Cpu, 
+    Zap, 
+    Layers, 
+    Database, 
+    Network, 
+    Lock, 
+    GitCompare, 
+    Activity,
+    Box,
+    ShieldCheck
+} from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * SympathyLanding - Multi-language execution visualizer landing page
+ * Redesigned for "Cyber-Physical Schematics" theme
+ */
+
+// --- Constants & Data ---
+
+type SupportedLanguage = 'python' | 'cpp';
+
+const CODE_EXAMPLES: Record<SupportedLanguage, { filename: string; lines: React.ReactNode[] }> = {
+    python: {
+        filename: './trace/heap_alloc.py',
+        lines: [
+            <><span className="text-green-400">def</span> <span className="text-blue-400">heap_alloc</span>(size: int):</>,
+            <>&nbsp;&nbsp;ptr = <span className="text-yellow-400">ctypes.malloc</span>(size)</>,
+            <>&nbsp;&nbsp;<span className="text-green-400">if</span> <span className="text-orange-400">not</span> ptr:</>,
+            <>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-red-400">raise</span> MemoryError()</>,
+            <>&nbsp;&nbsp;<span className="text-green-400">return</span> ptr</>,
+        ],
+    },
+    cpp: {
+        filename: './trace/heap_alloc.cpp',
+        lines: [
+            <><span className="text-blue-400">void</span>* <span className="text-yellow-400">heap_alloc</span>(<span className="text-blue-400">size_t</span> size) {'{'}</>,
+            <>&nbsp;&nbsp;<span className="text-blue-400">void</span>* ptr = <span className="text-yellow-400">malloc</span>(size);</>,
+            <>&nbsp;&nbsp;<span className="text-green-400">if</span> (!ptr) {'{'}</>,
+            <>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-red-400">throw</span> std::bad_alloc();</>,
+            <>&nbsp;&nbsp;{'}'} <span className="text-green-400">return</span> ptr; {'}'}</>,
+        ],
+    },
+};
+
+const LANGUAGE_META: Record<SupportedLanguage, { label: string; color: string }> = {
+    python: { label: 'Python', color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
+    cpp: { label: 'C++', color: 'text-blue-400 border-blue-400/30 bg-blue-400/10' },
+};
+
+// --- Components ---
+
+const GridBackground = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent"></div>
+    </div>
+);
+
+const SectionHeading = ({ children, subtitle }: { children: React.ReactNode; subtitle?: string }) => (
+    <div className="mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight font-display uppercase">
+            {children}
+        </h2>
+        {subtitle && (
+            <p className="text-zinc-400 font-sans max-w-2xl text-lg leading-relaxed">
+                {subtitle}
+            </p>
+        )}
+    </div>
+);
 
 export const CodeTracerLanding = () => {
     const navigate = useNavigate();
+    const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage>('python');
+    const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
+
+    const currentExample = CODE_EXAMPLES[activeLanguage];
 
     return (
-        <div className="bg-[#050505] min-h-screen text-zinc-300 font-mono overflow-x-hidden selection:bg-green-500/30">
+        <div className="bg-zinc-950 min-h-screen text-zinc-300 overflow-x-hidden selection:bg-green-500/30 selection:text-green-100">
+            {/* Font Injection */}
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@300;400;600;700;800&display=swap');
+                .font-display { font-family: 'Manrope', sans-serif; }
+                .font-mono { font-family: 'JetBrains Mono', monospace; }
+                .font-sans { font-family: 'Manrope', sans-serif; }
+                @keyframes scan {
+                  0% { top: 0%; opacity: 0; }
+                  50% { opacity: 1; }
+                  100% { top: 100%; opacity: 0; }
+                }
+            `}</style>
+
             <ProductNavbar />
 
-            {/* Hero Section */}
-            <section className="relative pt-32 pb-20 border-b border-white/10 px-6">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/50 to-transparent"></div>
-
-                <div className="max-w-6xl mx-auto relative z-10">
-                    <div className="flex flex-col lg:flex-row items-center gap-12">
-                        <div className="flex-1 text-left">
-                            <div className="inline-flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] tracking-widest uppercase mb-6 font-bold">
-                                <span className="w-1.5 h-1.5 bg-green-500 animate-pulse"></span>
+            {/* --- Hero Section --- */}
+            <section className="relative pt-32 pb-24 md:pt-48 md:pb-32 px-6 overflow-hidden">
+                <GridBackground />
+                
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+                        
+                        {/* Left: Copy (60%) */}
+                        <div className="flex-1 w-full lg:max-w-[60%] text-left">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="inline-flex items-center gap-3 px-3 py-1 bg-green-950/30 border border-green-500/20 text-green-400 text-xs font-mono tracking-widest uppercase mb-8"
+                            >
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
                                 System Online
-                            </div>
-                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight">
+                            </motion.div>
+
+                            <motion.h1 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.1 }}
+                                className="text-6xl md:text-8xl font-display font-extrabold tracking-tighter text-white mb-8 leading-[0.9]"
+                            >
                                 EXECUTE.<br />
-                                <span className="text-zinc-500">VISUALIZE.</span><br />
+                                <span className="text-zinc-600">VISUALIZE.</span><br />
                                 UNDERSTAND.
-                            </h1>
-                            <p className="text-lg text-zinc-400 mb-8 max-w-xl leading-relaxed">
-                                A cycle-accurate Python execution engine that visualizes memory allocation, stack frames, and object references in real-time.
-                                Stop guessing. See the heap.
-                            </p>
-                            <div className="flex flex-wrap gap-4">
+                            </motion.h1>
+
+                            <motion.p 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="text-xl text-zinc-400 mb-10 max-w-xl leading-relaxed font-sans font-light"
+                            >
+                                The first multi-language runtime x-ray. See the heap, stack, and threads in real-time. 
+                                <span className="text-white font-medium"> Stop guessing. See the memory.</span>
+                            </motion.p>
+
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                className="flex flex-wrap gap-4"
+                            >
                                 <Button
                                     size="lg"
                                     onClick={() => navigate('/code-tracer/execution')}
-                                    className="h-12 px-6 bg-green-600 hover:bg-green-500 text-black font-bold text-sm tracking-wide rounded-none border border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)] flex items-center gap-2 group transition-all"
+                                    className="h-14 px-8 bg-green-500/10 hover:bg-green-500/20 text-green-400 font-mono font-bold text-sm tracking-widest border border-green-500/50 shadow-[0_0_20px_rgba(74,222,128,0.15)] flex items-center gap-3 group transition-all rounded-none uppercase"
                                 >
-                                    <Terminal size={16} className="fill-black group-hover:scale-110 transition-transform" />
-                                    LAUNCH_CONSOLE
+                                    <Terminal size={18} className="group-hover:translate-x-1 transition-transform" />
+                                    Launch_Console
                                 </Button>
-                                <a href="#engineering" className="h-12 px-6 flex items-center gap-2 border border-zinc-700 hover:border-zinc-500 text-zinc-300 text-sm font-bold tracking-wide hover:bg-white/5 transition-colors">
-                                    SYSTEM_SPECS <ArrowRight size={14} />
+                                <a 
+                                    href="#engineering" 
+                                    className="h-14 px-8 flex items-center gap-2 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white font-mono text-sm font-bold tracking-widest hover:bg-zinc-900 transition-all uppercase"
+                                >
+                                    Sys_Specs <ArrowRight size={16} />
                                 </a>
-                            </div>
+                            </motion.div>
                         </div>
 
-                        {/* Technical Graphic / Code Preview */}
-                        <div className="flex-1 w-full max-w-xl">
-                            <div className="border border-zinc-800 bg-[#0A0A0A] p-1 font-mono text-xs shadow-2xl relative">
-                                <div className="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-green-500"></div>
-                                <div className="absolute -top-1 -right-1 w-2 h-2 border-t border-r border-green-500"></div>
-                                <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b border-l border-green-500"></div>
-                                <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-green-500"></div>
-
-                                <div className="bg-[#050505] p-4 border-b border-zinc-800 flex justify-between items-center text-zinc-500">
-                                    <span>./kernel/mem_trace.py</span>
+                        {/* Right: Interactive Code Preview (40%) - Tilted */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: 50, rotateY: -10, rotateX: 5 }}
+                            animate={{ opacity: 1, x: 0, rotateY: -10, rotateX: 5 }}
+                            transition={{ duration: 0.8, delay: 0.4 }}
+                            className="flex-1 w-full lg:max-w-[40%] perspective-[1000px] hidden md:block"
+                            style={{ transformStyle: 'preserve-3d', transform: 'perspective(1000px) rotateY(-12deg) rotateX(6deg)' }}
+                        >
+                            <div className="relative border border-white/10 bg-zinc-900/80 backdrop-blur-md shadow-2xl overflow-hidden rounded-sm group">
+                                {/* Window Controls */}
+                                <div className="h-10 bg-zinc-950 border-b border-white/5 flex items-center px-4 justify-between">
                                     <div className="flex gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-zinc-800"></div>
-                                        <div className="w-2 h-2 rounded-full bg-zinc-800"></div>
+                                        <div className="w-3 h-3 rounded-full bg-zinc-700"></div>
+                                        <div className="w-3 h-3 rounded-full bg-zinc-700"></div>
+                                        <div className="w-3 h-3 rounded-full bg-zinc-700"></div>
+                                    </div>
+                                    <div className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
+                                        read-only // 
+                                        <span className={activeLanguage === 'python' ? 'text-yellow-400' : 'text-blue-400'}>
+                                            {activeLanguage === 'python' ? '3.11.0' : 'clang++-17'}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="p-6 overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
-                                        <Cpu size={120} className="text-green-500" />
+
+                                {/* Tabs */}
+                                <div className="flex border-b border-white/5 bg-zinc-950/50">
+                                    {(['python', 'cpp'] as SupportedLanguage[]).map((lang) => (
+                                        <button
+                                            key={lang}
+                                            onClick={() => setActiveLanguage(lang)}
+                                            className={twMerge(
+                                                "px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-wider transition-colors border-r border-white/5",
+                                                activeLanguage === lang
+                                                    ? "bg-zinc-900 text-white border-b-2 border-b-green-500"
+                                                    : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900/50"
+                                            )}
+                                        >
+                                            {LANGUAGE_META[lang].label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Code Area */}
+                                <div className="p-6 font-mono text-xs relative min-h-[300px] bg-zinc-900/80">
+                                    {/* Scanline Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/5 to-transparent h-[100px] w-full animate-[scan_3s_ease-in-out_infinite] pointer-events-none z-20"></div>
+                                    
+                                    <div className="space-y-1.5 relative z-10">
+                                        {currentExample.lines.map((line, idx) => (
+                                            <div key={idx} className="flex group/line">
+                                                <span className={twMerge(
+                                                    "w-8 text-zinc-700 select-none text-right pr-4 border-r border-zinc-800 mr-4",
+                                                    idx === 0 && "text-green-500/80"
+                                                )}>
+                                                    {String(idx + 1).padStart(2, '0')}
+                                                </span>
+                                                <span className="opacity-90">{line}</span>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="space-y-1 text-zinc-400 relative z-10">
-                                        <div className="flex"><span className="text-purple-400 w-8">01</span> <span className="text-green-400">def</span> <span className="text-blue-400">heap_alloc</span>():</div>
-                                        <div className="flex"><span className="text-zinc-700 w-8">02</span> &nbsp;&nbsp;ptr = <span className="text-yellow-400">malloc</span>(0x100)</div>
-                                        <div className="flex"><span className="text-zinc-700 w-8">03</span> &nbsp;&nbsp;<span className="text-green-400">if</span> not ptr:</div>
-                                        <div className="flex"><span className="text-zinc-700 w-8">04</span> &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-red-400">raise</span> KernelPanic()</div>
-                                        <div className="flex"><span className="text-zinc-700 w-8">05</span> &nbsp;&nbsp;return ptr</div>
-                                        <div className="flex mt-4 text-green-500/50">
-                                            <span className="w-8">&gt;&gt;</span> Allocated 256 bytes at 0x7FF...A0
-                                        </div>
-                                        <div className="flex text-green-500/50">
-                                            <span className="w-8">&gt;&gt;</span> Stack frame pushed: heap_alloc
+
+                                    {/* Live Variable Sidebar (Mock) */}
+                                    <div className="absolute top-6 right-6 w-40 border border-white/5 bg-zinc-950/90 p-3 shadow-xl">
+                                        <div className="text-[9px] uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1 mb-2">Stack Frame</div>
+                                        <div className="space-y-2 font-mono text-[10px]">
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-400">ptr</span>
+                                                <span className="text-green-400">0x7FF...A0</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-400">size</span>
+                                                <span className="text-blue-400">256</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
-            {/* Features Bento Grid */}
-            <section className="py-24 px-6 border-b border-white/10 relative">
-                <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center gap-4 mb-12">
-                        <div className="h-px flex-1 bg-zinc-800"></div>
-                        <h2 className="text-sm font-bold tracking-widest text-zinc-500 uppercase">Core Modules</h2>
-                        <div className="h-px flex-1 bg-zinc-800"></div>
-                    </div>
+            {/* --- Bento Grid Features --- */}
+            <section className="py-32 px-6 border-t border-white/5 relative bg-zinc-900/30">
+                <div className="max-w-7xl mx-auto">
+                   <SectionHeading subtitle="Advanced instrumentation modules designed for deep inspection of runtime behavior.">
+                       Core Modules
+                   </SectionHeading>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Feature 1 */}
-                        <div className="md:col-span-2 p-8 border border-zinc-800 bg-[#0A0A0A] hover:border-zinc-600 transition-colors group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:16px_16px]"></div>
-                            <div className="relative z-10">
-                                <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-green-500">
-                                    <Database size={20} />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-2 font-sans">Heap Visualization</h3>
-                                <p className="text-zinc-400 text-sm max-w-sm">
-                                    Track every object allocation in real-time. Visualize references, garbage collection cycles, and memory fragmentation as code executes.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Feature 2 */}
-                        <div className="p-8 border border-zinc-800 bg-[#0A0A0A] hover:border-zinc-600 transition-colors group">
-                            <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-blue-500">
-                                <Layers size={20} />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2 font-sans">Stack Tracing</h3>
-                            <p className="text-zinc-400 text-sm">
-                                Visualize function calls, local variables, and return addresses. Debug recursion with a visual stack tree.
-                            </p>
-                        </div>
-
-                        {/* Feature 3 */}
-                        <div className="p-8 border border-zinc-800 bg-[#0A0A0A] hover:border-zinc-600 transition-colors group">
-                            <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-purple-500">
-                                <Cpu size={20} />
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2 font-sans">CPU Flame Graph</h3>
-                            <p className="text-zinc-400 text-sm">
-                                Analyze execution time per line. Identify bottlenecks with high-precision timestamping.
-                            </p>
-                        </div>
-
-                        {/* Feature 4 */}
-                        <div className="md:col-span-2 p-8 border border-zinc-800 bg-[#0A0A0A] hover:border-zinc-600 transition-colors group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[50px]"></div>
-                            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                                <div className="flex-1">
-                                    <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 text-yellow-500">
-                                        <Network size={20} />
+                    {/* Bento Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 grid-rows-auto md:grid-rows-[300px_300px] gap-4">
+                        
+                        {/* Cell 1: CPU Flame Graph (2x2) */}
+                        <div 
+                            className={twMerge(
+                                "col-span-1 md:col-span-2 md:row-span-2 relative group overflow-hidden border bg-zinc-900/50 backdrop-blur-sm transition-all duration-300",
+                                hoveredFeature && hoveredFeature !== 'flame' ? "opacity-40 border-zinc-800" : "opacity-100 border-zinc-700 hover:border-green-500/50"
+                            )}
+                            onMouseEnter={() => setHoveredFeature('flame')}
+                            onMouseLeave={() => setHoveredFeature(null)}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="p-8 h-full flex flex-col justify-between relative z-10">
+                                <div>
+                                    <div className="w-10 h-10 border border-zinc-700 bg-zinc-950 flex items-center justify-center mb-6 text-orange-400">
+                                        <Cpu size={20} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-2 font-sans">Graph-Based Object View</h3>
-                                    <p className="text-zinc-400 text-sm">
-                                        See data structures as they connect. Linked lists, trees, and graphs are rendered as node-link diagrams, not just lists of numbers.
+                                    <h3 className="text-2xl font-display font-bold text-white mb-2">CPU Flame Graph</h3>
+                                    <p className="text-zinc-400 font-sans text-sm max-w-sm">
+                                        Analyze execution time per instruction with high-precision timestamping. Identify bottlenecks instantly.
                                     </p>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Engineering Achievements - Section requested by user */}
-            <section id="engineering" className="py-24 px-6 relative bg-[#080808]">
-                <div className="max-w-5xl mx-auto">
-                    <div className="mb-16">
-                        <h2 className="text-3xl font-bold text-white mb-6 uppercase tracking-tight">Engineering Architecture</h2>
-                        <p className="text-zinc-400 max-w-2xl leading-relaxed">
-                            Code Tracer isn't just a UI wrapper. We built a custom execution environment to capture runtime state without significant performance overhead.
-                        </p>
-                    </div>
-
-                    <div className="space-y-12">
-                        {/* Achievement 1 */}
-                        <div className="flex flex-col md:flex-row gap-8 border-l border-zinc-800 pl-8 relative">
-                            <div className="absolute -left-1.5 top-0 w-3 h-3 bg-zinc-800 border border-zinc-600"></div>
-                            <div className="md:w-1/3">
-                                <h3 className="text-xl font-bold text-white mb-2">Cycle-Accurate Tracer</h3>
-                                <div className="inline-block px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] border border-blue-500/20 mb-4">CORE ENGINE</div>
-                            </div>
-                            <div className="md:w-2/3">
-                                <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-                                    We implemented a custom Python `sys.settrace` hook that intercepts every opcode execution. Unlike standard debuggers, we serialize the entire heap state at each step, employing structural sharing to minimize memory footprint.
-                                </p>
-                                <ul className="space-y-2 text-zinc-500 text-sm font-mono">
-                                    <li className="flex gap-2 items-center"><span className="text-green-500">OK</span> Captures variable mutations in-place</li>
-                                    <li className="flex gap-2 items-center"><span className="text-green-500">OK</span> Handles circular references via ID tracking</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        {/* Achievement 2 */}
-                        <div className="flex flex-col md:flex-row gap-8 border-l border-zinc-800 pl-8 relative">
-                            <div className="absolute -left-1.5 top-0 w-3 h-3 bg-zinc-800 border border-zinc-600"></div>
-                            <div className="md:w-1/3">
-                                <h3 className="text-xl font-bold text-white mb-2">Sandboxed Virtualization</h3>
-                                <div className="inline-block px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] border border-orange-500/20 mb-4">SECURITY</div>
-                            </div>
-                            <div className="md:w-2/3">
-                                <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-                                    User code executes within ephemeral Docker containers (SysCore). We use a custom gRPC stream to pipe stdout/stderr and state deltas back to the client in real-time, ensuring &lt; 50ms latency.
-                                </p>
-                                <div className="bg-zinc-900 border border-zinc-800 p-3 font-mono text-[10px] text-zinc-500">
-                                    client -&gt; gRPC -&gt; syscore_vm -&gt; python_trace -&gt; delta_stream -&gt; client
+                                <div className="w-full h-32 flex items-end gap-1 mt-8 opacity-50 group-hover:opacity-100 transition-opacity">
+                                    {[40, 70, 45, 90, 60, 30, 80, 50, 95, 20, 60, 80].map((h, i) => (
+                                        <div key={i} className="flex-1 bg-orange-500/20 border-t border-orange-500/50" style={{ height: `${h}%` }}></div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Achievement 3 */}
-                        <div className="flex flex-col md:flex-row gap-8 border-l border-zinc-800 pl-8 relative">
-                            <div className="absolute -left-1.5 top-0 w-3 h-3 bg-zinc-800 border border-zinc-600"></div>
-                            <div className="md:w-1/3">
-                                <h3 className="text-xl font-bold text-white mb-2">Deterministic Replay</h3>
-                                <div className="inline-block px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] border border-purple-500/20 mb-4">TIME TRAVEL</div>
+                        {/* Cell 2: Stack Tracing (1x2 - Vertical) */}
+                        <div 
+                            className={twMerge(
+                                "col-span-1 md:col-span-1 md:row-span-2 relative group overflow-hidden border bg-zinc-900/50 backdrop-blur-sm transition-all duration-300",
+                                hoveredFeature && hoveredFeature !== 'stack' ? "opacity-40 border-zinc-800" : "opacity-100 border-zinc-700 hover:border-blue-500/50"
+                            )}
+                            onMouseEnter={() => setHoveredFeature('stack')}
+                            onMouseLeave={() => setHoveredFeature(null)}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="p-8 h-full flex flex-col relative z-10">
+                                <div className="w-10 h-10 border border-zinc-700 bg-zinc-950 flex items-center justify-center mb-6 text-blue-400">
+                                    <Layers size={20} />
+                                </div>
+                                <h3 className="text-xl font-display font-bold text-white mb-2">Stack Tracer</h3>
+                                <p className="text-zinc-400 font-sans text-sm mb-8">
+                                    Visualize function calls, recursion, and return addresses vertically.
+                                </p>
+                                <div className="space-y-2 flex-1 overflow-hidden font-mono text-[10px] text-blue-300/70">
+                                    <div className="p-2 border border-blue-500/20 bg-blue-500/5">main()</div>
+                                    <div className="p-2 border border-blue-500/20 bg-blue-500/5 ml-2">process_data()</div>
+                                    <div className="p-2 border border-blue-500/20 bg-blue-500/5 ml-4">parse()</div>
+                                    <div className="p-2 border border-blue-500/40 bg-blue-500/10 ml-6 text-white">validate()</div>
+                                </div>
                             </div>
-                            <div className="md:w-2/3">
-                                <p className="text-zinc-400 text-sm leading-relaxed">
-                                    Because we capture the full state delta, "undo" is trivial. We enable time-travel debugging by simply traversing the state history array. No re-execution is required to step back.
+                        </div>
+
+                        {/* Cell 3: Heap Visualization (2x1) */}
+                        <div 
+                            className={twMerge(
+                                "col-span-1 md:col-span-2 md:col-start-3 md:row-start-3 relative group overflow-hidden border bg-zinc-900/50 backdrop-blur-sm transition-all duration-300 h-[250px]", // Explicit height for row-3 items if needed, or rely on grid
+                                hoveredFeature && hoveredFeature !== 'heap' ? "opacity-40 border-zinc-800" : "opacity-100 border-zinc-700 hover:border-green-500/50"
+                            )}
+                            style={{ gridColumn: "span 2" }} // Force span for visual consistency
+                            onMouseEnter={() => setHoveredFeature('heap')}
+                            onMouseLeave={() => setHoveredFeature(null)}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="p-8 h-full relative z-10 flex flex-col md:flex-row gap-8 items-start">
+                                <div className="flex-1">
+                                    <div className="w-10 h-10 border border-zinc-700 bg-zinc-950 flex items-center justify-center mb-6 text-green-400">
+                                        <Database size={20} />
+                                    </div>
+                                    <h3 className="text-xl font-display font-bold text-white mb-2">Heap Visualization</h3>
+                                    <p className="text-zinc-400 font-sans text-sm">
+                                        Track object allocations, references, and GC cycles in real-time.
+                                    </p>
+                                </div>
+                                <div className="flex-1 hidden md:flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
+                                     <Network className="text-green-500" size={64} />
+                                </div>
+                            </div>
+                        </div>
+                        
+                         {/* Cell 4: Comparison Mode (Rest of space) */}
+                         <div 
+                            className={twMerge(
+                                "col-span-1 md:col-span-1 md:col-start-1 md:row-start-3 relative group overflow-hidden border bg-zinc-900/50 backdrop-blur-sm transition-all duration-300",
+                                hoveredFeature && hoveredFeature !== 'compare' ? "opacity-40 border-zinc-800" : "opacity-100 border-zinc-700 hover:border-yellow-500/50"
+                            )}
+                            onMouseEnter={() => setHoveredFeature('compare')}
+                            onMouseLeave={() => setHoveredFeature(null)}
+                        >
+                             <div className="p-8 h-full relative z-10">
+                                <div className="w-10 h-10 border border-zinc-700 bg-zinc-950 flex items-center justify-center mb-6 text-yellow-400">
+                                    <GitCompare size={20} />
+                                </div>
+                                <h3 className="text-lg font-display font-bold text-white mb-2">Diff Mode</h3>
+                                <p className="text-zinc-400 font-sans text-xs">
+                                    Benchmark Python vs C++ execution side-by-side.
                                 </p>
                             </div>
                         </div>
+
+                         {/* Cell 5: SysCore Sandbox (Small) */}
+                         <div 
+                            className={twMerge(
+                                "col-span-1 md:col-span-1 md:col-start-2 md:row-start-3 relative group overflow-hidden border bg-zinc-900/50 backdrop-blur-sm transition-all duration-300",
+                                hoveredFeature && hoveredFeature !== 'syscore' ? "opacity-40 border-zinc-800" : "opacity-100 border-zinc-700 hover:border-red-500/50"
+                            )}
+                            onMouseEnter={() => setHoveredFeature('syscore')}
+                            onMouseLeave={() => setHoveredFeature(null)}
+                        >
+                            <div className="p-8 h-full relative z-10 flex flex-col justify-center items-center text-center">
+                                <ShieldCheck size={32} className="text-red-400 mb-4" />
+                                <h3 className="text-sm font-display font-bold text-white uppercase tracking-widest">SysCore Safe</h3>
+                                <div className="mt-2 text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5">
+                                    SANDBOX ACTIVE
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
 
-            {/* Auth CTA */}
-            <section className="py-24 border-t border-white/10 relative">
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:32px_32px]"></div>
-                <div className="container mx-auto px-6 text-center relative z-10">
-                    <div className="max-w-lg mx-auto bg-[#0A0A0A] border border-zinc-800 p-12 shadow-2xl relative">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-blue-500"></div>
+            {/* --- Engineering Section (Schematics) --- */}
+            <section id="engineering" className="py-24 px-6 relative bg-zinc-950 border-t border-white/5">
+                <div className="max-w-6xl mx-auto">
+                    <SectionHeading subtitle="Sympathy isn't a debugger wrapper. We built custom execution tracers for each supported language.">
+                        Engineering Architecture
+                    </SectionHeading>
 
-                        <Lock className="mx-auto text-zinc-600 mb-6" size={32} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16">
+                         {[
+                            {
+                                title: "Multi-Language Tracers",
+                                badge: "CORE ENGINE",
+                                colorClass: "bg-green-500",
+                                badgeClasses: "bg-green-500/10 text-green-400 border-green-500/20",
+                                icon: <Activity />,
+                                desc: "Language-specific instrumentation capturing every opcode. Python uses sys.settrace; C++ uses LLVM instrumentation."
+                            },
+                            {
+                                title: "SysCore Sandbox",
+                                badge: "SECURITY",
+                                colorClass: "bg-orange-500",
+                                badgeClasses: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+                                icon: <Box />,
+                                desc: "User code executes within ephemeral Docker containers. Custom gRPC streams ensure <50ms latency."
+                            },
+                            {
+                                title: "Time-Travel Debugging",
+                                badge: "REPLAY",
+                                colorClass: "bg-blue-500",
+                                badgeClasses: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+                                icon: <GitCompare />,
+                                desc: "Full state deltas enable instant 'undo'. Step backwards through execution history by traversing the immutable state array."
+                            }
+                        ].map((item, i) => (
+                            <div key={i} className="relative pl-8 border-l border-zinc-800 group hover:border-zinc-600 transition-colors">
+                                <div className={twMerge("absolute -left-[5px] top-0 w-2.5 h-2.5 ring-4 ring-zinc-950 group-hover:scale-125 transition-transform", item.colorClass)}></div>
+                                <div className="mb-4">
+                                    <h3 className="text-xl font-bold text-white mb-2 font-display">{item.title}</h3>
+                                    <span className={twMerge("inline-block px-2 py-0.5 text-[10px] border font-mono", item.badgeClasses)}>
+                                        {item.badge}
+                                    </span>
+                                </div>
+                                <p className="text-zinc-400 text-sm leading-relaxed font-sans">
+                                    {item.desc}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
-                        <h2 className="text-2xl font-bold text-white mb-4 font-sans">Initialize Session</h2>
-                        <p className="text-zinc-400 text-sm mb-8">
-                            Authentication required for runtime access. Your environment states are persisted encrypted at rest.
+            {/* --- Footer CTA --- */}
+            <section className="py-32 border-t border-white/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+                
+                <div className="container mx-auto px-6 relative z-10 text-center">
+                    <div className="max-w-2xl mx-auto">
+                        <Lock className="mx-auto text-green-500 mb-8 opacity-50" size={48} />
+                        
+                        <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">
+                            Ready to debug?
+                        </h2>
+                        <p className="text-zinc-400 mb-10 text-lg font-sans">
+                            Authentication required for runtime access. Traces are encrypted at rest.
                         </p>
 
                         <Button
                             size="lg"
-                            onClick={() => navigate('/code-tracer')}
-                            className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-bold rounded-none border-b-4 border-zinc-300 active:border-b-0 active:translate-y-1 transition-all"
+                            onClick={() => navigate('/auth')}
+                            className="w-full md:w-auto min-w-[300px] h-16 bg-green-500 hover:bg-green-400 text-black font-mono font-bold text-lg tracking-widest border border-green-400 shadow-[0_0_30px_rgba(74,222,128,0.3)] transition-all rounded-none uppercase flex items-center justify-center gap-3"
                         >
-                            <Zap className="mr-2 fill-black" size={16} /> AUTHENTICATE_USER
+                            <Zap size={20} /> Authenticate_User
                         </Button>
-                        <div className="mt-4 text-[10px] text-zinc-600 font-mono uppercase">
-                            Verified via Google OAuth 2.0
-                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Footer */}
             <Footer />
         </div>
     );
 };
+
+export default CodeTracerLanding;

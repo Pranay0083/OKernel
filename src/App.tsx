@@ -41,6 +41,7 @@ import { WIKI_NAVIGATION } from './pages/wiki/AlgoWikiConfig';
 import { ARCH_NAVIGATION } from './pages/os_arch/OSArchConfig';
 import ScrollToTop from './components/ScrollToTop';
 import { Dashboard } from './pages/Dashboard';
+import { Settings } from './pages/Settings';
 
 function App() {
   const navigate = useNavigate();
@@ -169,12 +170,20 @@ function App() {
           <Dashboard />
         </AuthGuard>
       } />
+      
+      <Route path="/settings" element={
+        <AuthGuard>
+          <Settings />
+        </AuthGuard>
+      } />
 
-      {/* Legacy Redirects */}
+      {/* Legacy Redirects - All old routes point to new ones */}
       <Route path="/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
       <Route path="/visualizer" element={<Navigate to="/cpu-scheduler" replace />} />
       <Route path="/shell" element={<Navigate to="/shell-maker" replace />} />
       <Route path="/platform" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/platform/sympathy" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/platform/:mode" element={<Navigate to="/code-tracer/:mode" replace />} />
       
       <Route path="/dev/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
       <Route path="/dev/about" element={<Navigate to="/about" replace />} />
@@ -191,9 +200,13 @@ function App() {
       <Route path="/dev/contributing" element={<Navigate to="/contributing" replace />} />
       <Route path="/dev/sympathy" element={<Navigate to="/code-tracer" replace />} />
       <Route path="/dev/sympathy/platform" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/code-tracer/cpu" replace />} />
+      <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/code-tracer/mem" replace />} />
+      <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/code-tracer/compare" replace />} />
+      <Route path="/dev/sympathy/platform:hardware" element={<Navigate to="/code-tracer/hardware" replace />} />
+      <Route path="/dev/sympathy/platform:recursion" element={<Navigate to="/code-tracer/recursion" replace />} />
       <Route path="/dev/cpu-scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
       <Route path="/dev/shell-maker" element={<Navigate to="/shell-maker" replace />} />
-
 
       {/* Public Landing Page - No Sidebar */}
       <Route path="/code-tracer" element={<CodeTracerLanding />} />

@@ -195,7 +195,7 @@ const TelemetryPanel = () => {
 const ToolBelt = () => {
     const modules = [
         { name: 'CPU_SCHEDULER', icon: Calendar, path: '/cpu-scheduler', color: 'text-purple-400' },
-        { name: 'CODE_TRACER', icon: Zap, path: '/code-tracer/cpu', color: 'text-yellow-400' },
+        { name: 'CODE_TRACER', icon: Zap, path: '/code-tracer', color: 'text-yellow-400' },
         { name: 'DOCS', icon: BookOpen, path: '/docs', color: 'text-blue-400' },
         { name: 'SETTINGS', icon: Settings, path: '/settings', color: 'text-zinc-400' },
     ];
@@ -255,7 +255,7 @@ const SessionLog = () => {
                     <div key={log.id} className="flex gap-2 text-zinc-500">
                         <span className="opacity-50">[{log.timestamp}]</span>
                         <span className={log.type === 'success' ? 'text-green-500' : log.type === 'warning' ? 'text-yellow-500' : 'text-zinc-400'}>
-                            {log.type === 'success' ? '&gt;' : log.type === 'warning' ? '!' : '-'} {log.message}
+                            {log.type === 'success' ? '>' : log.type === 'warning' ? '!' : '-'} {log.message}
                         </span>
                     </div>
                 ))}
