@@ -41,6 +41,7 @@ import { WIKI_NAVIGATION } from './pages/wiki/AlgoWikiConfig';
 import { ARCH_NAVIGATION } from './pages/os_arch/OSArchConfig';
 import ScrollToTop from './components/ScrollToTop';
 import { Dashboard } from './pages/Dashboard';
+import { Settings } from './pages/Settings';
 
 function App() {
   const navigate = useNavigate();
@@ -167,6 +168,12 @@ function App() {
       <Route path="/dashboard" element={
         <AuthGuard>
           <Dashboard />
+        </AuthGuard>
+      } />
+      
+      <Route path="/settings" element={
+        <AuthGuard>
+          <Settings />
         </AuthGuard>
       } />
 
