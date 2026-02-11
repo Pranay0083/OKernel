@@ -1,0 +1,74 @@
+# OKernel
+
+OKernel is a lightweight, zero-dependency Python tracing engine designed for education and visualization. It provides a way to inspect the internal execution of Python code, tracking line-by-line progression, function calls, stack depth, and simulated hardware costs.
+
+This package is intended for students and educators who want to understand how Python code interacts with memory and the CPU, or as a local, unlimited alternative to the OKernel web-based simulation.
+
+## Features
+
+*   Local Execution: Runs code entirely on your machine without external API calls or Docker.
+*   Zero Dependencies: Uses only the Python Standard Library.
+*   Bytecode Analysis: Maps Python opcodes to abstract hardware costs (ALU, Memory Read/Write, etc.).
+*   Memory Tracking: Monitors object sizes and peak memory usage during execution.
+*   Interactive Visualizer: Generates a self-contained HTML file with a step-through debugger interface.
+*   Schema Compatible: Produces JSON trace data compatible with the SysCore engine.
+
+## Installation
+
+```bash
+pip install okernel
+```
+
+For local development:
+
+```bash
+git clone https://github.com/Vaiditya2207/OKernel.git
+cd OKernel
+pip install -e .
+```
+
+## Quick Start
+
+```python
+import okernel
+
+code = """
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+result = fibonacci(5)
+print(f"Result: {result}")
+"""
+
+# Execute and trace
+trace = okernel.trace(code)
+
+# View text summary
+print(trace.summary())
+
+# Export to interactive HTML
+trace.to_html("trace_report.html")
+```
+
+## API Reference
+
+### okernel.trace(code: str) -> Trace
+Executes the provided Python string in an isolated namespace. Tracing includes bytecode opcodes, line numbers, and variable states.
+
+### Trace.summary() -> str
+Returns a formatted string containing total execution steps, peak memory consumption, and execution duration.
+
+### Trace.to_html(path: str)
+Generates a standalone HTML visualizer at the specified path. This file includes the step-through timeline, variable inspector, and console output.
+
+### Trace.to_json(path: str)
+Exports the raw execution event sequence as a JSON file for custom analysis.
+
+### Trace.events
+A property containing the list of raw event dictionaries. Each event follows the SysCore schema, including bytecode offsets and hardware cost estimations.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
