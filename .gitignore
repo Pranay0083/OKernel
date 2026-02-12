@@ -33,7 +33,7 @@ Thumbs.db
 
 # Build outputs
 apps/web/dist/
-packages/okernel/dist/
+packages/okernel/python/dist/
 
 # Logs
 *.log
@@ -48,3 +48,4 @@ coverage/
 
 # Project Specific
 WALKTHROUGH.md
+/agents

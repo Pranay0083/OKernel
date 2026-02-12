@@ -6,7 +6,7 @@ on:
     branches:
       - develop
     paths:
-      - 'packages/okernel/**'
+      - 'packages/okernel/python/**'
 
 jobs:
   test-pypi-publish:
@@ -16,7 +16,7 @@ jobs:
       contents: read
     defaults:
       run:
-        working-directory: packages/okernel
+        working-directory: packages/okernel/python
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
