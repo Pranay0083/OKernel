@@ -36,8 +36,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
                 range: new monaco.Range(highlightLine, 1, highlightLine, 1),
                 options: {
                     isWholeLine: true,
-                    className: 'bg-green-500/20 border-l-2 border-green-500',
-                    glyphMarginClassName: 'bg-green-500 w-2 h-2 rounded-full ml-1',
+                    className: 'monaco-active-line',
                 },
             });
         }
@@ -68,7 +67,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, language, highl
 
         const oldDecorations = editor.getDecorationsInRange(model.getFullModelRange())
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((d: any) => d.options.className?.includes('bg-green-500/20') || d.options.afterContentClassName?.includes('text-xs'))
+            .filter((d: any) => d.options.className?.includes('monaco-active-line') || d.options.afterContentClassName?.includes('text-xs'))
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((d: any) => d.id);
 

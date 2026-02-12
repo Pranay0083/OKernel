@@ -1,0 +1,19 @@
+# OKernel - https://hackmist.tech
+# Robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow admin/private areas
+Disallow: /root
+Disallow: /root/
+
+# Allow important resources
+Allow: /logo.png
+Allow: /og-image.png
+
+# Crawl-delay (be nice to servers)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://hackmist.tech/sitemap.xml

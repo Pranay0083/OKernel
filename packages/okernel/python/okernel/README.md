@@ -52,4 +52,4 @@ List of raw execution events (line changes, calls, returns, opcode costs).
 ## Links
 
 - PyPI: https://pypi.org/project/okernel/
-- Website: https://okernel.dev
+- Website: https://hackmist.tech

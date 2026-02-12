@@ -195,7 +195,7 @@ const TelemetryPanel = () => {
 const ToolBelt = () => {
     const modules = [
         { name: 'CPU_SCHEDULER', icon: Calendar, path: '/cpu-scheduler', color: 'text-purple-400' },
-        { name: 'CODE_TRACER', icon: Zap, path: '/code-tracer', color: 'text-yellow-400' },
+        { name: 'CODE_TRACER', icon: Zap, path: '/code-tracer/execution', color: 'text-yellow-400' },
         { name: 'DOCS', icon: BookOpen, path: '/docs', color: 'text-blue-400' },
         { name: 'SETTINGS', icon: Settings, path: '/settings', color: 'text-zinc-400' },
     ];

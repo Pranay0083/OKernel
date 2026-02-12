@@ -36,7 +36,7 @@ with check ( is_admin() );
 
 -- Seed Data (Check if exists first to avoid dupes without unique constraint)
 insert into public.sponsor_goals (title, description, current_amount, target_amount, rank)
-select 'Server & Domain Costs', 'Annual hosting and domain renewal for okernel.dev', 12, 50, 1
+select 'Server & Domain Costs', 'Annual hosting and domain renewal for hackmist.tech', 12, 50, 1
 where not exists (select 1 from public.sponsor_goals where title = 'Server & Domain Costs');
 
 insert into public.sponsor_goals (title, description, current_amount, target_amount, rank)
