@@ -171,3 +171,12 @@
     @apply bg-purple-500/30 text-white;
   }
 }
+
+/* ===========================================
+   Monaco Editor Active Line Decoration
+   Matches Python Template (template.html)
+   =========================================== */
+.monaco-active-line {
+  background-color: rgba(74, 222, 128, 0.1) !important;
+  border-left: 2px solid var(--terminal-green) !important;
+}
