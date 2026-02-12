@@ -5,11 +5,16 @@ on:
     branches:
       - main
       - 'releases/**'
+    paths:
+      - 'apps/web/**'
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
 
     steps:
       - name: Checkout code
@@ -20,6 +25,7 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies
         run: npm install # Will fix it with ci , but for now install will work 
