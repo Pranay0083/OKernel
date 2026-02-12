@@ -1,6 +1,7 @@
 import sys
 import time
 import dis
+import gc
 from types import FrameType
 from typing import Any, List, Dict, Optional, Set, Callable
 from .memory import MemoryTracker
@@ -32,6 +33,7 @@ class Tracer:
         self.memory_tracker.reset()
         self.stack_depth = 0
         sys.settrace(self._trace_func)
+        gc.callbacks.append(self._gc_callback)
 
     def stop(self) -> None:
         """
@@ -40,6 +42,27 @@ class Tracer:
         Unregisters the trace function from sys.settrace().
         """
         sys.settrace(None)
+        if self._gc_callback in gc.callbacks:
+            gc.callbacks.remove(self._gc_callback)
+
+    def _gc_callback(self, phase: str, info: Dict[str, Any]) -> None:
+        """
+        Callback for garbage collection events.
+        """
+        if phase == "stop":
+            timestamp: int = time.time_ns()
+            process_time: int = time.process_time_ns()
+
+            self.events.append(
+                {
+                    "type": "GC",
+                    "generation": info.get("generation"),
+                    "collected": info.get("collected"),
+                    "uncollectable": info.get("uncollectable"),
+                    "timestamp": timestamp,
+                    "process_time": process_time,
+                }
+            )
 
     def _trace_func(self, frame: FrameType, event: str, arg: Any) -> Optional[Callable]:
         """
@@ -72,8 +95,14 @@ class Tracer:
         local_vars: Dict[str, Dict[str, Any]] = {}
         for k, v in frame.f_locals.items():
             self.memory_tracker.track(v)
+
+            # Safe string conversion with truncation
+            val_str = str(v)
+            if len(val_str) > 100:
+                val_str = val_str[:100] + "..."
+
             local_vars[k] = {
-                "value": str(v),
+                "value": val_str,
                 "type": type(v).__name__,
                 "address": hex(id(v)),
                 "size": sys.getsizeof(v),

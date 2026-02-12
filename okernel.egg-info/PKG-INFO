@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: okernel
-Version: 0.1.3
+Version: 0.2.0
 Summary: Zero-dependency local Python tracer
 Author: OKernel Team
 Requires-Python: >=3.10
@@ -10,34 +10,13 @@ Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Dynamic: license-file
 
-# OKernel
+# okernel
 
-OKernel is a lightweight, zero-dependency Python tracing engine designed for education and visualization. It provides a way to inspect the internal execution of Python code, tracking line-by-line progression, function calls, stack depth, and simulated hardware costs.
-
-This package is intended for students and educators who want to understand how Python code interacts with memory and the CPU, or as a local, unlimited alternative to the OKernel web-based simulation.
-
-## Features
-
-*   Local Execution: Runs code entirely on your machine without external API calls or Docker.
-*   Zero Dependencies: Uses only the Python Standard Library.
-*   Bytecode Analysis: Maps Python opcodes to abstract hardware costs (ALU, Memory Read/Write, etc.).
-*   Memory Tracking: Monitors object sizes and peak memory usage during execution.
-*   Interactive Visualizer: Generates a self-contained HTML file with a step-through debugger interface.
-*   Schema Compatible: Produces JSON trace data compatible with the SysCore engine.
+Zero-dependency Python tracer with HTML visualization.
 
 ## Installation
 
-```bash
 pip install okernel
-```
-
-For local development:
-
-```bash
-git clone https://github.com/Vaiditya2207/OKernel.git
-cd OKernel
-pip install -e .
-```
 
 ## Quick Start
 
@@ -45,42 +24,44 @@ pip install -e .
 import okernel
 
 code = """
-def fibonacci(n):
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
+def factorial(n):
+    return 1 if n <= 1 else n * factorial(n-1)
 
-result = fibonacci(5)
-print(f"Result: {result}")
+print(factorial(5))
 """
 
-# Execute and trace
+# Generate trace and visualize
 trace = okernel.trace(code)
-
-# View text summary
-print(trace.summary())
-
-# Export to interactive HTML
-trace.to_html("trace_report.html")
+trace.to_html("trace.html")
+# Output: Generated trace.html with 24 steps
 ```
 
-## API Reference
+## Features
 
-### okernel.trace(code: str) -> Trace
-Executes the provided Python string in an isolated namespace. Tracing includes bytecode opcodes, line numbers, and variable states.
+- Zero external dependencies (Python stdlib only)
+- Rich trace events with memory, timing, hardware costs
+- 3-panel HTML visualizer:
+  - Code view with line highlighting
+  - Stack/Heap inspector
+  - Timeline with memory chart
+- Security: No innerHTML, programmatic DOM creation
+- Works offline - generates self-contained HTML files
 
-### Trace.summary() -> str
-Returns a formatted string containing total execution steps, peak memory consumption, and execution duration.
+## API
 
-### Trace.to_html(path: str)
-Generates a standalone HTML visualizer at the specified path. This file includes the step-through timeline, variable inspector, and console output.
+### `okernel.trace(code: str) -> Trace`
+Executes code string and returns a Trace object containing execution events, memory stats, and timing data.
 
-### Trace.to_json(path: str)
-Exports the raw execution event sequence as a JSON file for custom analysis.
+### `Trace.to_html(path: str)`
+Generates a self-contained HTML visualizer at the specified path.
 
-### Trace.events
-A property containing the list of raw event dictionaries. Each event follows the SysCore schema, including bytecode offsets and hardware cost estimations.
+### `Trace.summary() -> str`
+Returns a text summary of execution metrics (steps, peak memory, duration).
 
-## License
+### `Trace.events`
+List of raw execution events (line changes, calls, returns, opcode costs).
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+## Links
+
+- PyPI: https://pypi.org/project/okernel/
+- Website: https://okernel.dev

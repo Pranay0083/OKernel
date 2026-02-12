@@ -140,7 +140,7 @@ print(fact(3))
             content = f.read()
             self.assertIn("<!DOCTYPE html>", content)
             self.assertIn("const rawEvents =", content)
-            self.assertIn("OKernel Visualizer", content)
+            self.assertIn("OKernel Trace Visualizer", content)
             # We expect the renderer to inject json data.
             # Let's check if "fact" string is inside the file (in the JSON payload)
             self.assertIn("fact", content)

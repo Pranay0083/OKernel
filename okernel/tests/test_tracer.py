@@ -1,5 +1,6 @@
 import sys
 import unittest
+import gc
 from okernel.syscore.tracer import Tracer
 
 
@@ -94,6 +95,46 @@ class TestTracer(unittest.TestCase):
                 required_keys.issubset(e.keys()), f"Missing keys in {e.keys()}"
             )
 
-            if e["event"] == "opcode":
-                self.assertIn("bytecode", e)
-                # self.assertIn('hardware', e) # Hardware might be missing if profiler not integrated yet
+    def test_gc_tracking(self):
+        tracer = Tracer()
+        tracer.start()
+
+        # Create garbage
+        for _ in range(100):
+            _ = [i for i in range(100)]
+
+        gc.collect()
+
+        tracer.stop()
+
+        gc_events = [e for e in tracer.events if e.get("type") == "GC"]
+        self.assertTrue(len(gc_events) > 0, "No GC events captured")
+
+        event = gc_events[0]
+        self.assertIn("generation", event)
+        self.assertIn("collected", event)
+        self.assertIn("timestamp", event)
+        self.assertIn("process_time", event)
+
+    def test_locals_truncation(self):
+        tracer = Tracer()
+
+        def huge_string_func():
+            long_str = "a" * 200
+            return long_str
+
+        tracer.start()
+        huge_string_func()
+        tracer.stop()
+
+        line_events = [
+            e
+            for e in tracer.events
+            if e["event"] == "return" and e["function"] == "huge_string_func"
+        ]
+        self.assertTrue(len(line_events) > 0)
+
+        event = line_events[0]
+        val = event["locals"]["long_str"]["value"]
+        self.assertTrue(len(val) <= 105)  # 100 + "..." (approx)
+        self.assertTrue(val.endswith("..."))

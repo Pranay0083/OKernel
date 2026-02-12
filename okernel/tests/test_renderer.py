@@ -26,7 +26,7 @@ def test_render_html_basic():
 
         # Check for key markers
         assert "<!DOCTYPE html>" in content
-        assert "OKernel Visualizer" in content
+        assert "OKernel Trace Visualizer" in content
 
         # Check data injection
         assert "const rawEvents =" in content
@@ -56,7 +56,7 @@ def test_trace_integration():
         assert os.path.exists(output_path)
         with open(output_path, "r") as f:
             content = f.read()
-            assert "OKernel Visualizer" in content
+            assert "OKernel Trace Visualizer" in content
 
     except NotImplementedError:
         # Expected failure for now if not implemented, but we want the test to fail if it stays NotImplemented

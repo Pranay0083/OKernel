@@ -47,7 +47,7 @@ def test_trace_to_html(tmp_path):
     with open(output_file) as f:
         content = f.read()
         assert "<!DOCTYPE html>" in content
-        assert "OKernel Visualizer" in content
+        assert "OKernel Trace Visualizer" in content
 
 
 def test_trace_function():

@@ -5,7 +5,7 @@ This package provides tools to trace Python code execution, track memory usage,
 and generate visualization reports.
 """
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 import json
 from typing import List, Dict, Any
@@ -14,12 +14,17 @@ from .visualizer.renderer import render_html
 
 
 class Trace:
-    def __init__(self, events: List[Dict[str, Any]]):
+    def __init__(self, events: List[Dict[str, Any]], source: str = ""):
         self._events = events
+        self._source = source
 
     @property
     def events(self) -> List[Dict[str, Any]]:
         return self._events
+
+    @property
+    def source(self) -> str:
+        return self._source
 
     def summary(self) -> str:
         # Calculate stats
@@ -52,7 +57,7 @@ class Trace:
             json.dump(self._events, f, indent=2)
 
     def to_html(self, path: str) -> None:
-        render_html(self._events, path)
+        render_html(self._events, path, source=self._source)
 
 
 def trace(code: str) -> Trace:
@@ -60,7 +65,7 @@ def trace(code: str) -> Trace:
     Execute code and return a Trace object containing execution events.
     """
     events = run_code(code)
-    return Trace(events)
+    return Trace(events, source=code)
 
 
 __all__ = ["trace", "Trace", "__version__"]
