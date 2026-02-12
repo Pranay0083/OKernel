@@ -1,0 +1,19 @@
+# OKernel - https://okernel.dev
+# Robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow admin/private areas
+Disallow: /root
+Disallow: /root/
+
+# Allow important resources
+Allow: /logo.png
+Allow: /og-image.png
+
+# Crawl-delay (be nice to servers)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://okernel.dev/sitemap.xml
