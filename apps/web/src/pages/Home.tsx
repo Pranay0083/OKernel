@@ -3,9 +3,17 @@ import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { Zap, Layers, Clock, Terminal, ArrowRight, Cpu, Lock, Heart } from 'lucide-react';
+import { Zap, Layers, Clock, Terminal, ArrowRight, Cpu, Lock, Heart, BarChart3 } from 'lucide-react';
 
 import { useSystemConfig } from '../hooks/useSystemConfig';
+
+interface PollVotes {
+    javascript: number;
+    rust: number;
+    go: number;
+    java: number;
+    cpp: number;
+}
 
 export const Home = () => {
     const { config } = useSystemConfig();
@@ -15,6 +23,7 @@ export const Home = () => {
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [testimonials, setTestimonials] = useState<{ message: string; name: string; role?: string }[]>([]);
+    const [pollVotes, setPollVotes] = useState<PollVotes>({ javascript: 0, rust: 0, go: 0, java: 0, cpp: 0 });
 
     React.useEffect(() => {
         // Redirect if already logged in, but only once per session
@@ -43,6 +52,26 @@ export const Home = () => {
             }
         };
         fetchTestimonials();
+    }, []);
+
+    React.useEffect(() => {
+        const fetchPollVotes = async () => {
+            const { data, error } = await supabase
+                .from('language_poll')
+                .select('language, votes')
+                .order('language');
+
+            if (data && !error) {
+                const voteMap: PollVotes = { javascript: 0, rust: 0, go: 0, java: 0, cpp: 0 };
+                data.forEach((row: { language: string; votes: number }) => {
+                    if (row.language in voteMap) {
+                        voteMap[row.language as keyof PollVotes] = row.votes;
+                    }
+                });
+                setPollVotes(voteMap);
+            }
+        };
+        fetchPollVotes();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -814,6 +843,65 @@ int main() {
                                 View Funding Goals
                             </Button>
                         </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Language Poll Results Section */}
+            <section className="py-16 border-t border-zinc-800 bg-zinc-900/30">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
+                            <div>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-900/20 border border-blue-500/30 text-blue-400 text-xs font-mono rounded-full mb-3">
+                                    <BarChart3 size={12} />
+                                    COMMUNITY POLL
+                                </div>
+                                <h2 className="text-2xl font-bold text-white">
+                                    What language should OKernel support next?
+                                </h2>
+                            </div>
+                            <Link to="/packages">
+                                <Button variant="outline" className="whitespace-nowrap font-mono text-sm">
+                                    Vote Now <ArrowRight size={14} className="ml-2" />
+                                </Button>
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            {[
+                                { key: 'javascript', name: 'JS/TS', color: 'yellow' },
+                                { key: 'rust', name: 'Rust', color: 'orange' },
+                                { key: 'go', name: 'Go', color: 'cyan' },
+                                { key: 'java', name: 'Java', color: 'red' },
+                                { key: 'cpp', name: 'C++', color: 'blue' },
+                            ].map((lang) => {
+                                const totalVotes = Object.values(pollVotes).reduce((a, b) => a + b, 0);
+                                const voteCount = pollVotes[lang.key as keyof PollVotes];
+                                const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
+                                
+                                return (
+                                    <div
+                                        key={lang.key}
+                                        className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg text-center relative overflow-hidden"
+                                    >
+                                        <div
+                                            className="absolute bottom-0 left-0 right-0 bg-zinc-800/50 transition-all"
+                                            style={{ height: `${percentage}%` }}
+                                        />
+                                        <div className="relative z-10">
+                                            <div className="text-white font-bold mb-1">{lang.name}</div>
+                                            <div className="text-2xl font-mono text-zinc-300">{voteCount}</div>
+                                            <div className="text-xs text-zinc-500">{percentage.toFixed(0)}%</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        
+                        <p className="text-center text-zinc-600 text-xs mt-4 font-mono">
+                            {Object.values(pollVotes).reduce((a, b) => a + b, 0)} total votes
+                        </p>
                     </div>
                 </div>
             </section>

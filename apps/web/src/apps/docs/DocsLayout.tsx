@@ -147,10 +147,10 @@ export const DocsLayout = () => {
 
                 {/* Sidebar Navigation */}
                 <aside className={`
-                    fixed md:sticky top - 24 left - 0 h - [calc(100vh - 6rem)] w - 72 bg - [#050505] / 95 backdrop - blur border - r border - white / 5 
-                    transform transition - transform duration - 300 z - 40 overflow - y - auto custom - scrollbar
+                    fixed md:sticky top-24 left-0 h-[calc(100vh-6rem)] w-72 bg-[#050505] border-r border-white/5 
+                    transform transition-transform duration-300 z-40 overflow-y-auto custom-scrollbar
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-`}>
+                `}>
                     <div className="p-6 space-y-8">
                         {/* Search Input */}
                         <div className="relative group">
@@ -208,14 +208,14 @@ export const DocsLayout = () => {
                                                     end={item.path === '/docs'} // Only exact match for root
                                                     onClick={() => setSidebarOpen(false)}
                                                     className={({ isActive }) => `
-                                                        flex items - center gap - 3 px - 3 py - 2 rounded - md text - sm transition - all group relative
+                                                        flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all group relative
                                                         ${isActive
                                                             ? 'text-green-400 bg-green-500/5 font-medium'
                                                             : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
                                                         }
-`}
+                                                    `}
                                                 >
-                                                    <span className={`transition - colors ${location.pathname === item.path ? 'text-green-500' : 'text-zinc-600 group-hover:text-zinc-400'} `}>
+                                                    <span className={`transition-colors ${location.pathname === item.path ? 'text-green-500' : 'text-zinc-600 group-hover:text-zinc-400'}`}>
                                                         {item.icon}
                                                     </span>
                                                     {item.title}

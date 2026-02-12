@@ -1,49 +1,80 @@
 # OKernel
 
-OKernel is a monorepo containing the ecosystem for the OKernel OS simulation platform. It combines a Rust-based system core, a Python package for distribution, and a modern React frontend.
+A cycle-accurate execution visualization platform for learning Operating Systems concepts. OKernel combines real-time code tracing, CPU scheduling simulation, and a browser-based C shell environment.
 
-## Structure
+## What is OKernel?
 
-- **`apps/web/`**: React frontend application (Visualizer & Terminal UI)
-- **`packages/okernel/python/`**: Python package for PyPI distribution
-- **`syscore/`**: Rust backend engine handling core OS logic
-- **`database/`**: SQL migrations and database schema management
+OKernel transforms abstract OS theory into interactive visualizations:
+
+- **Code Tracer**: Trace Python/C++ execution with memory inspection, stack frames, and hardware cost analysis
+- **CPU Scheduler**: Simulate FCFS, Round Robin, SJF, SRTF, and Priority scheduling algorithms
+- **Shell Maker**: Write and execute C code in a sandboxed browser environment with live memory visualization
+
+## Repository Structure
+
+```
+OKernel/
+├── apps/web/              # React frontend (Vite + TypeScript + Tailwind)
+├── packages/okernel/
+│   └── python/            # Python package for local tracing (PyPI)
+├── syscore/               # Rust backend engine (Docker-based execution)
+└── database/migrations/   # SQL schema and migrations
+```
 
 ## Quick Start
 
-### `syscore` (Rust Engine)
-The core logic engine.
-```bash
-cd syscore
-cargo test
-cargo run
-```
+### Web Application
 
-### `apps/web` (Frontend)
-The interactive visualizer.
 ```bash
 cd apps/web
 npm install
 npm run dev
 ```
 
-### `packages/okernel/python` (Python Package)
-Python wrapper and tools.
+### Python Package
+
 ```bash
-cd packages/okernel/python
-pip install -e .
+pip install okernel
 ```
 
-### `database`
-Database management scripts.
+```python
+import okernel
+
+code = """
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(10))
+"""
+
+trace = okernel.trace(code)
+trace.to_html("fibonacci_trace.html")
+```
+
+### Rust Engine
+
 ```bash
-cd database
-# See internal README for migration scripts
+cd syscore
+cargo build
+cargo run
 ```
 
 ## Documentation
 
-For detailed documentation, please refer to the README files within each directory:
-- [Web App README](./apps/web/README.md)
-- [SysCore README](./syscore/README.md)
-- [Python Package README](./packages/okernel/python/README.md)
+| Resource | Description |
+|----------|-------------|
+| [Web App](./apps/web/README.md) | Frontend development guide |
+| [Python Package](./packages/okernel/python/README.md) | okernel PyPI package docs |
+| [Rust Engine](./syscore/README.md) | SysCore backend architecture |
+
+## Links
+
+- Website: [okernel.dev](https://okernel.dev)
+- PyPI: [pypi.org/project/okernel](https://pypi.org/project/okernel/)
+- Docs: [okernel.dev/docs](https://okernel.dev/docs)
+
+## License
+
+MIT

@@ -42,6 +42,7 @@ import { ARCH_NAVIGATION } from './pages/os_arch/OSArchConfig';
 import ScrollToTop from './components/ScrollToTop';
 import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
+import { Packages } from './pages/Packages';
 
 function App() {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ function App() {
       <Route path="/roadmap" element={<Roadmap />} />
       <Route path="/shell-maker" element={<ShellMakerPage />} />
       <Route path="/changelog" element={<Changelog />} />
+      <Route path="/packages" element={<Packages />} />
 
       {/* Documentation Hub */}
       <Route path="/docs" element={<DocsLayout />}>

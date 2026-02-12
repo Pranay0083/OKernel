@@ -1,5 +1,5 @@
 import React from 'react';
-import { Book, Cpu, Terminal, Layers, Code, Zap, Globe, Database } from 'lucide-react';
+import { Book, Cpu, Terminal, Layers, Code, Zap, Globe, Database, Package, Map } from 'lucide-react';
 
 // Import Pages
 import { IntroPage } from './pages/IntroPage';
@@ -11,6 +11,8 @@ import { SchedulerModulePage } from './pages/SchedulerModulePage';
 import { ShellMakerDocs } from './pages/ShellMakerDocs';
 import { PersistenceDocs } from './pages/PersistenceDocs';
 import { CodeTracerDocs } from './pages/CodeTracerDocs';
+import { PackagesDocs } from './pages/PackagesDocs';
+import { SitemapPage } from './pages/SitemapPage';
 
 export type DocRoute = {
     id: string;
@@ -45,6 +47,22 @@ export const DOCS_NAVIGATION: DocSection[] = [
                 icon: <Zap size={16} />,
                 component: <QuickStartPage />,
                 description: "Get up and running in 5 minutes"
+            },
+            {
+                id: "packages",
+                title: "Packages",
+                path: "/docs/packages",
+                icon: <Package size={16} />,
+                component: <PackagesDocs />,
+                description: "Install OKernel CLI tools locally"
+            },
+            {
+                id: "sitemap",
+                title: "Sitemap",
+                path: "/docs/sitemap",
+                icon: <Map size={16} />,
+                component: <SitemapPage />,
+                description: "Complete website navigation map"
             }
         ]
     },
