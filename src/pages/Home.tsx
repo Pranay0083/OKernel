@@ -707,6 +707,86 @@ int main() {
                 </div>
             </section>
 
+            {/* OKernel Marketing Section */}
+            <section className="py-24 bg-zinc-950 border-t border-zinc-800 relative overflow-hidden">
+                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-green-500/5 blur-[100px] rounded-full pointer-events-none"></div>
+                
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row gap-16 items-center">
+                        {/* Left: Content */}
+                        <div className="lg:w-1/2 space-y-8">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-full">
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                CLI TOOL
+                            </div>
+                            
+                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
+                                Local <span className="text-green-500">Python Tracing</span>
+                            </h2>
+                            
+                            <p className="text-xl text-zinc-400 leading-relaxed">
+                                Zero dependencies. Full visualization. One command.
+                                <br />
+                                <span className="text-sm text-zinc-500 mt-2 block">Generate a self-contained HTML report of your code's execution flow.</span>
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                <div className="group relative">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-green-600 rounded-lg blur opacity-20 group-hover:opacity-50 transition duration-200"></div>
+                                    <div className="relative flex items-center bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 font-mono text-sm text-zinc-300">
+                                        <span className="text-green-500 mr-2">$</span>
+                                        pip install okernel
+                                    </div>
+                                </div>
+                                
+                                <a 
+                                    href="https://pypi.org/project/okernel/" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-6 py-3 bg-zinc-100 hover:bg-white text-zinc-900 font-bold rounded-lg transition-colors"
+                                >
+                                    View on PyPI <ArrowRight size={16} />
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Right: Code Example */}
+                        <div className="lg:w-1/2 w-full">
+                            <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 overflow-hidden shadow-2xl relative group">
+                                <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                
+                                {/* Window Header */}
+                                <div className="bg-zinc-900/80 backdrop-blur px-4 py-3 flex items-center gap-2 border-b border-zinc-800">
+                                    <div className="flex gap-1.5">
+                                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                                    </div>
+                                    <div className="ml-4 text-xs font-mono text-zinc-500">main.py</div>
+                                </div>
+
+                                {/* Code Content */}
+                                <div className="p-6 overflow-x-auto">
+                                    <pre className="font-mono text-sm leading-relaxed">
+                                        <code className="block">
+                                            <span className="text-purple-400">from</span> <span className="text-white">okernel</span> <span className="text-purple-400">import</span> <span className="text-yellow-200">trace</span>
+                                            <br /><br />
+                                            <span className="text-zinc-500"># 1. Trace your code</span>
+                                            <br />
+                                            <span className="text-blue-400">result</span> = <span className="text-yellow-200">trace</span>(<span className="text-green-300">"x = [1, 2, 3]\nprint(sum(x))"</span>)
+                                            <br /><br />
+                                            <span className="text-zinc-500"># 2. Export visualization</span>
+                                            <br />
+                                            <span className="text-blue-400">result</span>.<span className="text-yellow-200">to_html</span>(<span className="text-green-300">"trace.html"</span>)
+                                        </code>
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Sponsor / Goals Link Section */}
             <section className="py-24 border-t border-zinc-800 bg-zinc-950 relative overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-[200%] bg-green-500/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>

@@ -3,30 +3,37 @@ import os
 from typing import List, Dict, Any
 
 
-def render_html(events: List[Dict[str, Any]], output_path: str) -> None:
+def render_html(
+    events: List[Dict[str, Any]], output_path: str, source: str = ""
+) -> None:
     """
     Render trace events to a self-contained HTML visualizer.
 
     Args:
         events: List of trace events
         output_path: Path to write the HTML file
+        source: Source code of the traced program
     """
+    from pathlib import Path
+    import json
+
     # Locate template
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    template_path = os.path.join(current_dir, "template.html")
+    template_path = Path(__file__).parent / "template.html"
 
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
     # Serialize data
-    # Ensure json is safe for embedding in HTML <script>
-    json_data = json.dumps(events)
-    # Prevent script injection by escaping the closing script tag
-    json_data = json_data.replace("</script>", "<\\/script>")
+    json_events = json.dumps(events)
+    json_source = json.dumps(source)
+
+    # Prevent script injection
+    json_events = json_events.replace("</script>", "<\\/script>")
+    json_source = json_source.replace("</script>", "<\\/script>")
 
     # Injection
-    # We replace the comment placeholder
-    html_content = template.replace("<!-- TRACE_DATA -->", json_data)
+    html_content = template.replace("<!-- TRACE_DATA -->", json_events)
+    html_content = html_content.replace("<!-- SOURCE_DATA -->", json_source)
 
     # Write output
     with open(output_path, "w", encoding="utf-8") as f:

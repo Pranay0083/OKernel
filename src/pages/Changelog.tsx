@@ -16,11 +16,64 @@ export const Changelog = () => {
 
                 <div className="space-y-16">
 
-                    {/* v1.1.0 (New Latest) */}
-                    <div className="relative pl-8 border-l border-zinc-800">
-                        <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-                        <div className="flex items-center gap-4 mb-4">
-                            <h2 className="text-2xl font-bold text-white">v1.1.0</h2>
+                {/* v0.2.0 (New Latest) */}
+                <div className="relative pl-8 border-l border-zinc-800">
+                    <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <h2 className="text-2xl font-bold text-white">v0.2.0</h2>
+                        <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">RELEASE</span>
+                    </div>
+                    <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
+                        <Calendar size={12} /> 2026-02-12
+                    </div>
+
+                    <div className="space-y-6">
+                        <div>
+                            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                <Cpu size={16} className="text-green-500" />
+                                OKernel Package - Production Visualizer
+                            </h3>
+                            <p className="text-zinc-400 text-sm leading-relaxed">
+                                Local Python tracing with zero dependencies, new 3-panel HTML visualizer
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                <h4 className="text-white text-sm font-bold mb-3">Highlights</h4>
+                                <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>Zero dependencies</strong>: Stdlib only.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>3-panel visualizer</strong>: Code, Stack/Heap, Timeline.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                <h4 className="text-white text-sm font-bold mb-3">Installation & Security</h4>
+                                <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>Security</strong>: No innerHTML, programmatic DOM.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                        <span><strong>PyPI</strong>: <code>pip install okernel</code></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* v1.1.0 */}
+                <div className="relative pl-8 border-l border-zinc-800 opacity-75">
+                    <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <h2 className="text-2xl font-bold text-zinc-400">v1.1.0</h2>
                             <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 text-xs font-mono border border-purple-500/20">RELEASE</span>
                         </div>
                         <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
