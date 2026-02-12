@@ -71,9 +71,9 @@ cargo run
 
 ## Links
 
-- Website: [okernel.dev](https://okernel.dev)
+- Website: [hackmist.tech](https://hackmist.tech)
 - PyPI: [pypi.org/project/okernel](https://pypi.org/project/okernel/)
-- Docs: [okernel.dev/docs](https://okernel.dev/docs)
+- Docs: [hackmist.tech/docs](https://hackmist.tech/docs)
 
 ## License
 
