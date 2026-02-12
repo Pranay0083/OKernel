@@ -9,9 +9,9 @@ export const ArchitecturePage = () => {
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                     System Design
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight text-white">Sympathy Architecture</h1>
+                <h1 className="text-4xl font-bold tracking-tight text-white">Code Tracer Architecture</h1>
                 <p className="text-lg text-zinc-400 leading-relaxed">
-                    The Sympathy Engine bridges the gap between client-side visualization and server-side execution. It uses a custom gRPC protocol to stream state deltas from an ephemeral container.
+                    The Code Tracer bridges the gap between client-side visualization and server-side execution. It uses a custom gRPC protocol to stream state deltas from an ephemeral container.
                 </p>
             </div>
 

@@ -73,7 +73,7 @@ export const AuthPage = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-white tracking-tight mb-1">System Access</h1>
-                            <p className="text-zinc-500 text-sm">Sympathy.dev // Development Environment</p>
+                            <p className="text-zinc-500 text-sm">CodeTracer.dev // Development Environment</p>
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
-import { Visualizer } from './apps/cpu_scheduler/Page';
+import { CPUSchedulerPage } from './apps/cpu-scheduler/Page';
 import { About } from './pages/About';
 import { Architecture } from './pages/Architecture';
 import { Console } from './pages/Console';
@@ -16,8 +16,8 @@ import { SystemConfig } from './pages/admin/SystemConfig';
 
 import { Roadmap } from './pages/Roadmap';
 import { Changelog } from './pages/Changelog';
-import { ShellMakerPage } from './apps/shell_maker/Page';
-import SysCoreVisualizer from './apps/visualizer/Page';
+import { ShellMakerPage } from './apps/shell-maker/Page';
+import CodeTracerPage from './apps/code-tracer/Page';
 import { OSConcepts } from './pages/OSConcepts';
 import { AlgoWiki } from './pages/AlgoWiki';
 import { ReportBug, RequestFeature, Contributing } from './pages/CommunityPages';
@@ -30,17 +30,18 @@ import { Sponsor } from './pages/Sponsor';
 import { NotFound } from './pages/NotFound';
 import { Maintenance } from './pages/Maintenance';
 import { useSystemConfig } from './hooks/useSystemConfig';
-import AppLayout from './apps/visualizer/components/AppLayout';
-import ComparePage from './apps/visualizer/ComparePage';
+import AppLayout from './apps/code-tracer/components/AppLayout';
+import ComparePage from './apps/code-tracer/ComparePage';
 import { AuthPage } from './pages/auth/AuthPage';
 import { AuthGuard } from './components/auth/AuthGuard';
-import { SympathyLanding } from './apps/visualizer/LandingPage';
+import { CodeTracerLanding } from './apps/code-tracer/LandingPage';
 import { DocsLayout } from './apps/docs/DocsLayout';
 import { DOCS_NAVIGATION } from './apps/docs/DocsConfig';
 import { WIKI_NAVIGATION } from './pages/wiki/AlgoWikiConfig';
 import { ARCH_NAVIGATION } from './pages/os_arch/OSArchConfig';
 import ScrollToTop from './components/ScrollToTop';
 import { Dashboard } from './pages/Dashboard';
+import { Settings } from './pages/Settings';
 
 function App() {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ function App() {
       <Routes>
   
         <Route path="/" element={<Home />} /> {/* Landing Page */}
-      <Route path="/scheduler" element={<Visualizer />} />
+      <Route path="/cpu-scheduler" element={<CPUSchedulerPage />} />
       <Route path="/about" element={<About />} />
       <Route path="/architecture" element={<Architecture />} />
       <Route path="/console" element={<Console />} />
@@ -102,7 +103,7 @@ function App() {
       </Route>
 
       <Route path="/roadmap" element={<Roadmap />} />
-      <Route path="/shell" element={<ShellMakerPage />} />
+      <Route path="/shell-maker" element={<ShellMakerPage />} />
       <Route path="/changelog" element={<Changelog />} />
 
       {/* Documentation Hub */}
@@ -169,14 +170,27 @@ function App() {
           <Dashboard />
         </AuthGuard>
       } />
+      
+      <Route path="/settings" element={
+        <AuthGuard>
+          <Settings />
+        </AuthGuard>
+      } />
 
-      {/* Legacy Redirects */}
-      <Route path="/dev/scheduler" element={<Navigate to="/scheduler" replace />} />
+      {/* Legacy Redirects - All old routes point to new ones */}
+      <Route path="/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
+      <Route path="/visualizer" element={<Navigate to="/cpu-scheduler" replace />} />
+      <Route path="/shell" element={<Navigate to="/shell-maker" replace />} />
+      <Route path="/platform" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/platform/sympathy" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/platform/:mode" element={<Navigate to="/code-tracer/:mode" replace />} />
+      
+      <Route path="/dev/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
       <Route path="/dev/about" element={<Navigate to="/about" replace />} />
       <Route path="/dev/architecture" element={<Navigate to="/architecture" replace />} />
       <Route path="/dev/console" element={<Navigate to="/console" replace />} />
       <Route path="/dev/roadmap" element={<Navigate to="/roadmap" replace />} />
-      <Route path="/dev/shell" element={<Navigate to="/shell" replace />} />
+      <Route path="/dev/shell" element={<Navigate to="/shell-maker" replace />} />
       <Route path="/dev/changelog" element={<Navigate to="/changelog" replace />} />
       <Route path="/dev/docs" element={<Navigate to="/docs" replace />} />
       <Route path="/dev/os-concepts" element={<Navigate to="/os-concepts" replace />} />
@@ -184,31 +198,30 @@ function App() {
       <Route path="/dev/bug-report" element={<Navigate to="/bug-report" replace />} />
       <Route path="/dev/feature-request" element={<Navigate to="/feature-request" replace />} />
       <Route path="/dev/contributing" element={<Navigate to="/contributing" replace />} />
-      <Route path="/dev/sympathy" element={<Navigate to="/platform" replace />} />
-      <Route path="/dev/sympathy/platform" element={<Navigate to="/platform" replace />} />
-      <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/platform/cpu" replace />} />
-      <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/platform/mem" replace />} />
-      <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/platform/compare" replace />} />
-      <Route path="/dev/sympathy/platform:hardware" element={<Navigate to="/platform/hardware" replace />} />
-      <Route path="/dev/sympathy/platform:recursion" element={<Navigate to="/platform/recursion" replace />} />
-
-      {/* Fallback for old Links */}
-      <Route path="/visualizer" element={<Navigate to="/scheduler" replace />} />
+      <Route path="/dev/sympathy" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/dev/sympathy/platform" element={<Navigate to="/code-tracer" replace />} />
+      <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/code-tracer/cpu" replace />} />
+      <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/code-tracer/mem" replace />} />
+      <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/code-tracer/compare" replace />} />
+      <Route path="/dev/sympathy/platform:hardware" element={<Navigate to="/code-tracer/hardware" replace />} />
+      <Route path="/dev/sympathy/platform:recursion" element={<Navigate to="/code-tracer/recursion" replace />} />
+      <Route path="/dev/cpu-scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
+      <Route path="/dev/shell-maker" element={<Navigate to="/shell-maker" replace />} />
 
       {/* Public Landing Page - No Sidebar */}
-      <Route path="/platform" element={<SympathyLanding />} />
+      <Route path="/code-tracer" element={<CodeTracerLanding />} />
 
       {/* OKernel Visualizer Routes (Wrapped in App Shell) */}
       <Route element={<AppLayout />}>
         {/* Protected Visualizer */}
-        <Route path="/platform/compare" element={
+        <Route path="/code-tracer/compare" element={
           <AuthGuard>
             <ComparePage />
           </AuthGuard>
         } />
-        <Route path="/platform/:mode" element={
+        <Route path="/code-tracer/:mode" element={
           <AuthGuard>
-            <SysCoreVisualizer />
+            <CodeTracerPage />
           </AuthGuard>
         } />
       </Route>

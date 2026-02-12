@@ -9,7 +9,7 @@ export const About = () => {
 
     return (
         <Layout>
-            <div className="container mx-auto px-6 pt-32 pb-24 max-w-5xl bg-[#050505] min-h-screen text-zinc-300">
+            <div className="container mx-auto px-6 pt-32 pb-24 max-w-5xl text-zinc-300">
 
                 {/* Header */}
                 <div className="mb-20 border-b border-zinc-800 pb-8 flex flex-col md:flex-row justify-between items-end gap-6">
@@ -62,7 +62,7 @@ export const About = () => {
                             </div>
                         </section>
 
-                        <div className="p-8 bg-[#0A0A0A] border border-zinc-800 relative overflow-hidden group">
+                        <div className="p-8 bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 blur-[50px] group-hover:bg-green-500/10 transition-colors"></div>
                             <h3 className="text-white font-bold mb-2 flex items-center gap-2"><Globe size={16} /> Open Source</h3>
                             <p className="text-zinc-400 text-xs mb-6 max-w-lg leading-relaxed">
@@ -85,7 +85,7 @@ export const About = () => {
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-green-500 border border-black shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                                     <div className="text-white font-bold mb-1">v1.1.0 - Hard Tech</div>
-                                    <p className="text-zinc-500 text-xs">Sympathy Landing Page. C++ Support. UI Overhaul.</p>
+                                    <p className="text-zinc-500 text-xs">Code Tracer Landing Page. C++ Support. UI Overhaul.</p>
                                 </div>
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-zinc-800 border border-zinc-600"></div>
@@ -105,7 +105,7 @@ export const About = () => {
                             </div>
                         </section>
 
-                        <div className="p-6 bg-[#0A0A0A] border border-zinc-800 font-mono text-[10px]">
+                        <div className="p-6 bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 font-mono text-[10px]">
                             <div className="flex items-center gap-2 mb-4 border-b border-zinc-800 pb-2">
                                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                                 <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
@@ -148,7 +148,7 @@ export const About = () => {
 };
 
 const TeamMember = ({ name, role, github }: { name: string, role: string, github: string }) => (
-    <div className="flex items-center justify-between p-4 bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-600 transition-colors group">
+    <div className="flex items-center justify-between p-4 bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 hover:border-zinc-600 transition-colors group">
         <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500 group-hover:text-white transition-colors">
                 {name.substring(0, 2).toUpperCase()}

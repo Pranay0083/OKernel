@@ -94,7 +94,7 @@ export const Navbar = () => {
                         )}
 
 
-                        {location.pathname.startsWith('/platform') || location.pathname === '/scheduler' ? (
+                        {location.pathname.startsWith('/code-tracer') || location.pathname === '/cpu-scheduler' ? (
                             <Link to="/">
                                 <Button size="sm" variant="outline" className="rounded-full px-6 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300">
                                     Exit Visualizer
@@ -151,7 +151,7 @@ export const Navbar = () => {
                         </Link>
                     )}
 
-                    <Link to="/scheduler" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link to="/cpu-scheduler" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button className="w-full">Launch App</Button>
                     </Link>
                 </div>

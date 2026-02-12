@@ -85,7 +85,7 @@ export const Home = () => {
                         NEW PRODUCT RELEASE
                     </div>
                     <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-4">
-                        OKernel.<span className="text-green-500">Sympathy</span>
+                        OKernel.<span className="text-green-500">CodeTracer</span>
                     </h1>
                     <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto mb-8 leading-relaxed font-light">
                         A cycle-accurate execution engine for <span className="text-white font-medium">Python & C++</span>.
@@ -93,9 +93,9 @@ export const Home = () => {
                         <span className="text-green-400 font-mono text-base block mt-4">Trace 100+ lines of code state without a debugger.</span>
                     </p>
                     <div className="flex justify-center gap-4">
-                        <Link to="/platform">
+                        <Link to="/code-tracer">
                             <Button size="lg" className="h-12 px-6 text-base bg-white text-black hover:bg-zinc-200 font-bold rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                                Explore Sympathy &rarr;
+                                Explore Code Tracer &rarr;
                             </Button>
                         </Link>
                     </div>
@@ -133,14 +133,14 @@ export const Home = () => {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 items-start pt-4 animate-in delay-300">
-                            <Link to="/shell">
+                            <Link to="/shell-maker">
                                 <Button size="lg" className="rounded-full px-10 text-lg h-16 bg-green-500 hover:bg-green-400 text-black font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-all">
                                     <Terminal className="mr-2" /> Launch Shell Maker
                                 </Button>
                             </Link>
-                            <Link to="/scheduler">
+                            <Link to="/cpu-scheduler">
                                 <Button size="lg" variant="outline" className="rounded-full px-8 h-16 border-zinc-700 hover:bg-white/5">
-                                    <Cpu className="mr-2 size-4" /> Boot Scheduler
+                                    <Cpu className="mr-2 size-4" /> Launch CPU Scheduler
                                 </Button>
                             </Link>
                         </div>

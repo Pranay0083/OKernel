@@ -49,7 +49,7 @@ interface HeapObject {
     size: number;
 }
 
-const VisualizerPage: React.FC = () => {
+const CodeTracerPage: React.FC = () => {
     const { mode } = useParams<{ mode: string }>();
     const { isConnected, isExecuting, logs, executeCode, jobId, history, fetchTrace } = useSysCore();
     const updateXarrow = useXarrow();
@@ -68,9 +68,9 @@ const VisualizerPage: React.FC = () => {
     }, [mode]);
 
     const setViewMode = (newMode: 'default' | 'cpu' | 'mem' | 'compare' | 'hardware' | 'recursion') => {
-        if (newMode === 'default') navigate('/platform/execution');
-        else if (newMode === 'compare') navigate('/platform/compare');
-        else navigate(`/platform/${newMode}`);
+        if (newMode === 'default') navigate('/code-tracer/execution');
+        else if (newMode === 'compare') navigate('/code-tracer/compare');
+        else navigate(`/code-tracer/${newMode}`);
     };
 
     // Load Job from URL
@@ -101,6 +101,7 @@ const VisualizerPage: React.FC = () => {
     // Load existing job details into Editor state when job changes
     useEffect(() => {
         if (existingJob) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCode(existingJob.code);
             setInput(existingJob.input || '');
             setLanguage(existingJob.language);
@@ -782,4 +783,4 @@ const ControlBtn = ({ icon, onClick, active }: ControlBtnProps) => (
     </button>
 );
 
-export default VisualizerPage;
+export default CodeTracerPage;
