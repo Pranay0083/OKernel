@@ -78,8 +78,8 @@ cargo run
 
 ## Special Thanks 
 
-From (Vaiditya Tanwar) - Thanks to everyone who have ever commited a single line to the repo for helping me creating this tool , that may revolutionize Software Education.
-This project Aims to educate software engineers that takes their Silicon for-granted.
+From (Vaiditya Tanwar) - Thanks to everyone who have ever committed a single line to the repo for helping me create this tool, that may revolutionize Software Education.
+This project aims to educate software engineers who take their Silicon for-granted.
 
 ## License
 
