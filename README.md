@@ -72,8 +72,14 @@ cargo run
 ## Links
 
 - Website: [hackmist.tech](https://hackmist.tech)
+- SiteMap: [Site Map Okernel](https://hackmist.tech/docs/sitemap)
 - PyPI: [pypi.org/project/okernel](https://pypi.org/project/okernel/)
 - Docs: [hackmist.tech/docs](https://hackmist.tech/docs)
+
+## Special Thanks 
+
+From (Vaiditya Tanwar) - Thanks to everyone who have ever commited a single line to the repo for helping me creating this tool , that may revolutionize Software Education.
+This project Aims to educate software engineers that takes their Silicon for-granted.
 
 ## License
 
