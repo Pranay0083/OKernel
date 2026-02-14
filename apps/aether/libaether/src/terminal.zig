@@ -1082,6 +1082,11 @@ pub const Terminal = struct {
         try self.grid.resize(rows, cols);
         try self.inactive_grid.resize(rows, cols); // Also resize the backup/alt grid
         
+        // Sync cursor from grid (Smart Reflow updated it)
+        self.cursor_row = self.grid.cursor_row;
+        self.cursor_col = self.grid.cursor_col;
+        
+        // Safety clamp (should be handled by grid, but good to be sure)
         if (self.cursor_row >= rows) self.cursor_row = rows - 1;
         if (self.cursor_col >= cols) self.cursor_col = cols - 1;
         

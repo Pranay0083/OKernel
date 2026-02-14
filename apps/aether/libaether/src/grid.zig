@@ -365,9 +365,16 @@ pub const Grid = struct {
         }
         
         // Copy existing content with reflow
+        // Copy existing content with reflow
         if (new_cols != self.cols) {
             // Reflow: rewrap lines based on new column count
-            try self.reflowContent(new_active, new_cols);
+            const res = try self.reflowContent(new_active, new_cols);
+            // Update cursor position from reflow result
+            // (We assign to self.cursor_row later, but need to store it to avoid overwrite by clamp?)
+            // Actually, we assign self.rows = new_rows later.
+            // Let's store result and apply it after swapping active.
+            self.cursor_row = res.cursor_row;
+            self.cursor_col = res.cursor_col;
         } else {
             // Same width: just copy rows
             const copy_rows = @min(self.rows, new_rows);
@@ -399,53 +406,192 @@ pub const Grid = struct {
         self.dirty = true;
     }
 
-    fn reflowContent(self: *Grid, new_active: []Row, new_cols: u32) !void {
-        // Collect all text content as logical lines
-        var logical_lines = std.ArrayList([]Cell){};
+    pub const ReflowResult = struct {
+        cursor_row: u32,
+        cursor_col: u32,
+    };
+
+    fn reflowContent(self: *Grid, new_active: []Row, new_cols: u32) !ReflowResult {
+        // 1. Collect all text content as logical lines
+        var logical_lines = std.ArrayListUnmanaged([]Cell){};
         defer {
             for (logical_lines.items) |line| self.allocator.free(line);
             logical_lines.deinit(self.allocator);
         }
         
+        // Logical cursor tracking
+        var cursor_logic_line_idx: ?usize = null;
+        var cursor_logic_offset: usize = 0;
+        var current_logic_line_idx: usize = 0;
+        
         // Build logical lines by combining wrapped rows
-        var current_line = std.ArrayList(Cell){};
+        var current_line = std.ArrayListUnmanaged(Cell){};
         defer current_line.deinit(self.allocator);
         
+        // Helper to track cursor position during collection
+        // Cursor is at (self.cursor_row, self.cursor_col)
+        var row_idx: u32 = 0;
+
         for (self.active) |*row| {
+            // Check if cursor is on this row
+            if (row_idx == self.cursor_row) {
+                cursor_logic_line_idx = current_logic_line_idx;
+                cursor_logic_offset = current_line.items.len + self.cursor_col;
+            }
+            
             try current_line.appendSlice(self.allocator, row.cells);
+            
             if (!row.wrapped) {
                 // End of logical line
                 try logical_lines.append(self.allocator, try current_line.toOwnedSlice(self.allocator));
-                current_line.clearRetainingCapacity();
+                // current_line is now empty but capacity transferred. Re-init? 
+                // toOwnedSlice returns slice owned by caller. ArrayList is defunct?
+                // No, toOwnedSlice resets list to empty but invalidates previous pointer?
+                // Wait, toOwnedSlice makes the list empty and capacity 0.
+                // We need a fresh list or re-init?
+                // current_line = std.ArrayList(Cell).init(self.allocator); 
+                // But `defer deinit` runs on scope exit.
+                // Modifying deferred variable is dangerous.
+                // Better pattern: use new list each iteration or reinit.
+                // std.ArrayList doesn't have `clearRetainingCapacity` after toOwnedSlice.
+                // We must re-init.
+                current_line = std.ArrayListUnmanaged(Cell){};
+                current_logic_line_idx += 1;
             }
+            row_idx += 1;
         }
+        
+        // Handle trailing wrapped line (shouldn't happen if last row is not wrapped usually, but safe)
         if (current_line.items.len > 0) {
+            // If cursor was on last row and it was wrapped (incomplete logical line at end of buffer)
+            // But active buffer usually ends with non-wrapped empty lines unless text fills it.
+            // If cursor was here:
+             if (row_idx == self.cursor_row) { // row_idx is now past end? No, loop finished.
+                 // This case is tricky if cursor was beyond last active row? No, cursor is clamped.
+             }
+             // Wait, if self.cursor_row was past last row (shouldn't be), we missed it.
+             // If cursor was on the very last processed row, we captured it inside loop.
+             
             try logical_lines.append(self.allocator, try current_line.toOwnedSlice(self.allocator));
         }
         
-        // Rewrap into new active area
-        var dst_row: usize = 0;
+        // If cursor wasn't found (e.g. cursor at bottom empty area where no logical line exists yet?)
+        // The loop covers all `active` rows.
+        // If `active` rows are empty, they form empty logical lines.
+        // So cursor should be found. 
+        // Except if cursor_row >= active.len.
+        
+        // 2. Calculate newly needed rows
+        var total_needed_rows: usize = 0;
+        var cursor_final_row: u32 = 0;
+        var cursor_final_col: u32 = 0;
+        
+        // Pre-calculate layout to find overflow
+        // We need to know where each logical line STARTS in the new layout.
+        var line_start_rows = std.ArrayListUnmanaged(usize){};
+        defer line_start_rows.deinit(self.allocator);
+        
         for (logical_lines.items) |line| {
-            var col: usize = 0;
-            // Iterate until we consume the whole logical line or run out of rows
-            // Loop at least once to ensure empty lines are preserved
-            while (col < line.len or (col == 0 and line.len == 0)) {
-                 if (dst_row >= new_active.len) break;
-
-                const chunk_len = @min(new_cols, line.len - col);
+            try line_start_rows.append(self.allocator, total_needed_rows);
+            // Number of rows this line takes
+            var rows_for_line: usize = 0;
+            if (line.len == 0) {
+                rows_for_line = 1;
+            } else {
+                rows_for_line = (line.len + new_cols - 1) / new_cols;
+            }
+            total_needed_rows += rows_for_line;
+        }
+        
+        // 3. Determine Skip (Overflow handling)
+        // If we have more rows than fit, we align to BOTTOM.
+        // i.e., we skip the top (total - new_rows).
+        var skip_rows: usize = 0;
+        if (total_needed_rows > new_active.len) {
+            skip_rows = total_needed_rows - new_active.len;
+            
+            // Should we push skipped rows to scrollback?
+            // Yes, if we want to preserve history.
+            // But we can't easily execute "scrollUp" here without modifying `active`.
+            // We can manually push to `self.scrollback`.
+            // But we need to construct Rows.
+            // Complex. For now, let's just drop them (standard resize behavior often drops top).
+            // Better: Just drop.
+        }
+        
+        // 4. Fill New Active Rows
+        // 4. Fill New Active Rows
+        // unused variable removed
+        // Actually, we iterate logical lines and place them.
+        // Virtual row index from 0 to total_needed_rows.
+        
+        var virtual_row: usize = 0;
+        
+        for (logical_lines.items, 0..) |line, l_idx| {
+            var col_idx: usize = 0;
+            
+            // Loop for each physical row of this logical line
+            while (col_idx < line.len or (col_idx == 0 and line.len == 0)) {
+                
+                const chunk_len = @min(@as(usize, new_cols), line.len - col_idx);
+                
+                // Visible check
+                if (virtual_row >= skip_rows and (virtual_row - skip_rows) < new_active.len) {
+                    const dst_r = virtual_row - skip_rows;
+                    var row = &new_active[dst_r];
+                    
+                    if (chunk_len > 0) {
+                         @memcpy(row.cells[0..chunk_len], line[col_idx..col_idx+chunk_len]);
+                    }
+                    
+                    // Logic for wrapped flag
+                    // If this isn't the last chunk of the logical line, it's wrapped.
+                    if (col_idx + chunk_len < line.len) {
+                        row.wrapped = true;
+                    }
+                    // Else dirty=true (default)
+                }
+                
+                // Track Cursor
+                if (cursor_logic_line_idx) |c_idx| {
+                    if (c_idx == l_idx) {
+                        // Cursor is on this logical line.
+                        // Is it in this chunk?
+                        // Cursor offset: cursor_logic_offset
+                        // Chunk range: [col_idx, col_idx + new_cols)
+                        if (cursor_logic_offset >= col_idx and cursor_logic_offset < col_idx + new_cols) {
+                            // Found it!
+                            // Calculate where it lands
+                            if (virtual_row >= skip_rows) {
+                                cursor_final_row = @intCast(virtual_row - skip_rows);
+                                cursor_final_col = @intCast(cursor_logic_offset - col_idx);
+                            } else {
+                                // Cursor scrolled off top?
+                                // Clamp to top?
+                                cursor_final_row = 0;
+                                cursor_final_col = @intCast(cursor_logic_offset - col_idx);
+                            }
+                        }
+                    }
+                }
+                
                 if (chunk_len > 0) {
-                     @memcpy(new_active[dst_row].cells[0..chunk_len], line[col..col + chunk_len]);
+                    col_idx += chunk_len;
+                } else {
+                    col_idx += 1; // consume empty line
                 }
                 
-                col += chunk_len;
-                if (col < line.len) {
-                    new_active[dst_row].wrapped = true;
-                }
-                dst_row += 1;
+                virtual_row += 1;
                 
-                if (col >= line.len) break;
+                if (col_idx >= line.len and line.len > 0) break;
             }
         }
+        
+        // If cursor was beyond end (e.g. at end of line), clamp
+        if (cursor_final_col >= new_cols) cursor_final_col = new_cols - 1;
+        if (cursor_final_row >= new_active.len) cursor_final_row = @intCast(new_active.len - 1);
+        
+        return ReflowResult{ .cursor_row = cursor_final_row, .cursor_col = cursor_final_col };
     }
     
     pub fn isDirty(self: *const Grid) bool {
