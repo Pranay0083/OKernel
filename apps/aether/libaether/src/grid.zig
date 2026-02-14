@@ -1,0 +1,466 @@
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+
+pub const CellFlags = packed struct(u16) {
+    bold: bool = false,
+    italic: bool = false,
+    underline: bool = false,
+    strikethrough: bool = false,
+    dim: bool = false,
+    hidden: bool = false,
+    reverse: bool = false,
+    wide: bool = false,         // Wide character (takes 2 cells)
+    wide_spacer: bool = false,  // Placeholder for wide char
+    _padding: u7 = 0,
+};
+
+pub const Cell = extern struct {
+    codepoint: u32 = ' ',       // Unicode codepoint (space default)
+    fg_color: u32 = 0xFFFFFFFF, // Foreground ARGB (white default)
+    bg_color: u32 = 0xFF000000, // Background ARGB (black default)  
+    flags: CellFlags = .{},     // Packed attributes
+    semantic_id: u16 = 0,       // For shell integration
+};
+
+pub const Row = struct {
+    cells: []Cell,
+    dirty: bool = true,
+    wrapped: bool = false,  // Line was wrapped from previous
+    semantic_prompt: bool = false,  // OSC 133 prompt marker
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator, cols: u32) !Row {
+        const cells = try allocator.alloc(Cell, cols);
+        for (cells) |*c| {
+            c.* = Cell{};
+        }
+        return Row{
+            .cells = cells,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *Row) void {
+        self.allocator.free(self.cells);
+    }
+    
+    pub fn resize(self: *Row, new_cols: u32) !void {
+        if (new_cols == self.cells.len) return;
+        
+        const old_cells = self.cells;
+        const new_cells = try self.allocator.alloc(Cell, new_cols);
+        
+        const copy_len = @min(old_cells.len, new_cols);
+        @memcpy(new_cells[0..copy_len], old_cells[0..copy_len]);
+        
+        // Initialize new cells if expanding
+        if (new_cols > old_cells.len) {
+            for (new_cells[old_cells.len..]) |*c| {
+                c.* = Cell{};
+            }
+        }
+        
+        self.allocator.free(old_cells);
+        self.cells = new_cells;
+        self.dirty = true;
+    }
+};
+
+pub fn RingBuffer(comptime T: type) type {
+    return struct {
+        data: []T,
+        head: usize = 0, // Write index
+        tail: usize = 0, // Read index (oldest)
+        len: usize = 0,
+        allocator: Allocator,
+
+        const Self = @This();
+
+        pub fn init(allocator: Allocator, capacity_val: u32) !Self {
+            const data = try allocator.alloc(T, capacity_val);
+            return Self{
+                .data = data,
+                .allocator = allocator,
+            };
+        }
+
+        pub fn deinit(self: *Self) void {
+            self.allocator.free(self.data);
+        }
+
+        pub fn push(self: *Self, item: T) ?T {
+            if (self.data.len == 0) return item; // No capacity
+
+            var evicted: ?T = null;
+            if (self.len == self.data.len) {
+                // Buffer full, overwrite head (which is same as tail)
+                evicted = self.data[self.head];
+                self.data[self.head] = item;
+                self.head = (self.head + 1) % self.data.len;
+                self.tail = (self.tail + 1) % self.data.len;
+            } else {
+                self.data[self.head] = item;
+                self.head = (self.head + 1) % self.data.len;
+                self.len += 1;
+            }
+            return evicted;
+        }
+
+        pub fn get(self: *Self, index: usize) ?*T {
+            if (index >= self.len) return null;
+            const physical_index = (self.tail + index) % self.data.len;
+            return &self.data[physical_index];
+        }
+
+        pub fn capacity(self: *Self) usize {
+            return self.data.len;
+        }
+    };
+}
+
+pub const ClearMode = enum { to_end, to_start, all };
+
+
+pub const GridCursorState = struct {
+    row: u32 = 0,
+    col: u32 = 0,
+    fg_color: u32 = 0xFFFFFFFF,
+    bg_color: u32 = 0xFF000000,
+    flags: CellFlags = .{},
+    origin_mode: bool = false,
+    auto_wrap: bool = true,
+};
+
+pub const Grid = struct {
+    allocator: std.mem.Allocator,
+    rows: u32,
+    cols: u32,
+    
+    // Active screen (visible area)
+    active: []Row,
+    
+    // Scrollback ring buffer
+    scrollback: RingBuffer(Row),
+    scrollback_capacity: u32,
+    
+    // Cursor state
+    cursor_row: u32 = 0,
+    cursor_col: u32 = 0,
+    
+    // Saved Cursor state (for Alt Buffer switching)
+    saved_cursor: GridCursorState = .{},
+    
+    // Dirty tracking
+    dirty: bool = true,
+    dirty_rows: std.DynamicBitSet,
+    
+    pub fn init(allocator: Allocator, rows: u32, cols: u32, scrollback: u32) !Grid {
+        var active_rows = try allocator.alloc(Row, rows);
+        errdefer allocator.free(active_rows);
+        
+        var initialized_rows: usize = 0;
+        errdefer {
+             for (active_rows[0..initialized_rows]) |*r| r.deinit();
+        }
+
+        for (active_rows) |*row| {
+            row.* = try Row.init(allocator, cols);
+            initialized_rows += 1;
+        }
+        
+        var sb = try RingBuffer(Row).init(allocator, scrollback);
+        errdefer sb.deinit();
+        
+        var dirty_bitset = try std.DynamicBitSet.initEmpty(allocator, rows);
+        dirty_bitset.setRangeValue(.{ .start = 0, .end = rows }, true);
+
+        return Grid{
+            .allocator = allocator,
+            .rows = rows,
+            .cols = cols,
+            .active = active_rows,
+            .scrollback = sb,
+            .scrollback_capacity = scrollback,
+            .dirty_rows = dirty_bitset,
+        };
+    }
+    
+    pub fn deinit(self: *Grid) void {
+        for (self.active) |*row| {
+            row.deinit();
+        }
+        self.allocator.free(self.active);
+        
+        var i: usize = 0;
+        while (i < self.scrollback.len) : (i += 1) {
+            if (self.scrollback.get(i)) |row| {
+                row.deinit();
+            }
+        }
+        self.scrollback.deinit();
+        self.dirty_rows.deinit();
+    }
+    
+    pub fn getCell(self: *Grid, row: u32, col: u32) ?*Cell {
+        if (row >= self.rows or col >= self.cols) return null;
+        return &self.active[row].cells[col];
+    }
+    
+    pub fn getCellConst(self: *const Grid, row: u32, col: u32) ?*const Cell {
+        if (row >= self.rows or col >= self.cols) return null;
+        return &self.active[row].cells[col];
+    }
+    
+    pub fn putChar(self: *Grid, char: u32) void {
+        if (self.cursor_col >= self.cols) {
+            self.active[self.cursor_row].wrapped = true;
+            self.newLine();
+            self.cursor_col = 0;
+        }
+        
+        if (self.getCell(self.cursor_row, self.cursor_col)) |cell| {
+            cell.codepoint = char;
+            self.markRowDirty(self.cursor_row);
+        }
+        
+        self.cursor_col += 1;
+    }
+    
+    pub fn newLine(self: *Grid) void {
+        self.cursor_row += 1;
+        if (self.cursor_row >= self.rows) {
+            self.scrollUp(1);
+            self.cursor_row = self.rows - 1;
+        }
+    }
+    
+    pub fn carriageReturn(self: *Grid) void {
+        self.cursor_col = 0;
+    }
+    
+    pub fn moveCursor(self: *Grid, row: u32, col: u32) void {
+        self.cursor_row = @min(row, self.rows - 1);
+        self.cursor_col = @min(col, self.cols - 1);
+    }
+    
+    pub fn moveCursorRel(self: *Grid, d_row: i32, d_col: i32) void {
+        const new_row = @as(i64, self.cursor_row) + d_row;
+        const new_col = @as(i64, self.cursor_col) + d_col;
+        
+        self.cursor_row = @intCast(std.math.clamp(new_row, 0, self.rows - 1));
+        self.cursor_col = @intCast(std.math.clamp(new_col, 0, self.cols - 1));
+    }
+    
+    pub fn getScrollbackRow(self: *const Grid, offset: usize) ?*const Row {
+        if (offset >= self.scrollback.len) return null;
+        // RingBuffer.get takes *Self, need to check if we can make it const or access data directly
+        // RingBuffer logic:
+        // physical_index = (self.tail + index) % self.data.len;
+        // return &self.data[physical_index];
+        // All members are accessible.
+        
+        // Wait, RingBuffer.get in grid.zig line 109 takes *Self.
+        // I should probably access RingBuffer internals directly here or update RingBuffer.get to be const.
+        // Let's update RingBuffer.get first?
+        // RingBuffer is generic inside grid.zig.
+        
+        // Actually, let's look at RingBuffer implementation in grid.zig
+        return self.scrollback_get_const(offset);
+    }
+
+    fn scrollback_get_const(self: *const Grid, offset: usize) ?*const Row {
+         // Re-implement get logic for const access to avoid changing RingBuffer everywhere if used mutably
+         // or just cast away const if I'm lazy (unsafe).
+         // Better: implement getConst in RingBuffer.
+         // But RingBuffer is a type returned by function.
+         
+         const sb = &self.scrollback;
+         if (offset >= sb.len) return null;
+         const index = sb.len - 1 - offset;
+         const p_idx = (sb.tail + index) % sb.data.len;
+         return &sb.data[p_idx];
+    }
+
+    
+    pub fn scrollUp(self: *Grid, lines: u32) void {
+        var i: u32 = 0;
+        while (i < lines) : (i += 1) {
+            const top_row = self.active[0];
+            
+            if (self.scrollback.push(top_row)) |evicted_row| {
+                // Reuse evicted row structure for new line
+                var recycled_row = evicted_row;
+                // Reset content
+                for (recycled_row.cells) |*c| c.* = Cell{};
+                recycled_row.dirty = true;
+                recycled_row.wrapped = false;
+                
+                // Shift active rows
+                std.mem.copyForwards(Row, self.active[0..self.rows-1], self.active[1..self.rows]);
+                
+                self.active[self.rows - 1] = recycled_row;
+            } else {
+                // No eviction, just shift and create new
+                std.mem.copyForwards(Row, self.active[0..self.rows-1], self.active[1..self.rows]);
+                // Panic if allocation fails is acceptable for this constrained task
+                self.active[self.rows - 1] = Row.init(self.allocator, self.cols) catch unreachable;
+            }
+        }
+        
+        self.dirty = true;
+        self.dirty_rows.setRangeValue(.{ .start = 0, .end = self.rows }, true);
+    }
+    
+    pub fn scrollDown(self: *Grid, lines: u32) void {
+        _ = self;
+        _ = lines;
+        // Placeholder as discussed
+    }
+    
+    pub fn clearScreen(self: *Grid) void {
+        for (self.active) |*row| {
+            for (row.cells) |*c| c.* = Cell{};
+            row.dirty = true;
+        }
+        self.dirty = true;
+        self.dirty_rows.setRangeValue(.{ .start = 0, .end = self.rows }, true);
+        self.cursor_row = 0;
+        self.cursor_col = 0;
+    }
+    
+    pub fn clearLine(self: *Grid, mode: ClearMode) void {
+        if (self.cursor_row >= self.rows) return;
+        var row = &self.active[self.cursor_row];
+        
+        const start = switch (mode) {
+            .to_end => self.cursor_col,
+            .to_start => 0,
+            .all => 0,
+        };
+        
+        const end = switch (mode) {
+            .to_end => self.cols,
+            .to_start => self.cursor_col + 1,
+            .all => self.cols,
+        };
+        
+        for (row.cells[start..end]) |*c| {
+            c.* = Cell{};
+        }
+        row.dirty = true;
+        self.markRowDirty(self.cursor_row);
+    }
+    
+    pub fn clearToEndOfLine(self: *Grid) void {
+        self.clearLine(.to_end);
+    }
+    
+    pub fn resize(self: *Grid, new_rows: u32, new_cols: u32) !void {
+        if (new_rows == self.rows and new_cols == self.cols) return;
+        
+        // Create new active area
+        var new_active = try self.allocator.alloc(Row, new_rows);
+        for (new_active) |*row| {
+            row.* = try Row.init(self.allocator, new_cols);
+        }
+        
+        // Copy existing content with reflow
+        if (new_cols != self.cols) {
+            // Reflow: rewrap lines based on new column count
+            try self.reflowContent(new_active, new_cols);
+        } else {
+            // Same width: just copy rows
+            const copy_rows = @min(self.rows, new_rows);
+            for (0..copy_rows) |i| {
+                const src = &self.active[i];
+                const dst = &new_active[i];
+                const copy_cols = @min(self.cols, new_cols);
+                @memcpy(dst.cells[0..copy_cols], src.cells[0..copy_cols]);
+                dst.dirty = true;
+                dst.wrapped = src.wrapped;
+            }
+        }
+        
+        // Free old active area
+        for (self.active) |*row| row.deinit();
+        self.allocator.free(self.active);
+        
+        self.active = new_active;
+        self.rows = new_rows;
+        self.cols = new_cols;
+        
+        // Clamp cursor
+        self.cursor_row = @min(self.cursor_row, new_rows - 1);
+        self.cursor_col = @min(self.cursor_col, new_cols - 1);
+        
+        self.dirty_rows.deinit();
+        self.dirty_rows = try std.DynamicBitSet.initEmpty(self.allocator, new_rows);
+        self.dirty_rows.setRangeValue(.{ .start = 0, .end = new_rows }, true);
+        self.dirty = true;
+    }
+
+    fn reflowContent(self: *Grid, new_active: []Row, new_cols: u32) !void {
+        // Collect all text content as logical lines
+        var logical_lines = std.ArrayList([]Cell){};
+        defer {
+            for (logical_lines.items) |line| self.allocator.free(line);
+            logical_lines.deinit(self.allocator);
+        }
+        
+        // Build logical lines by combining wrapped rows
+        var current_line = std.ArrayList(Cell){};
+        defer current_line.deinit(self.allocator);
+        
+        for (self.active) |*row| {
+            try current_line.appendSlice(self.allocator, row.cells);
+            if (!row.wrapped) {
+                // End of logical line
+                try logical_lines.append(self.allocator, try current_line.toOwnedSlice(self.allocator));
+                current_line.clearRetainingCapacity();
+            }
+        }
+        if (current_line.items.len > 0) {
+            try logical_lines.append(self.allocator, try current_line.toOwnedSlice(self.allocator));
+        }
+        
+        // Rewrap into new active area
+        var dst_row: usize = 0;
+        for (logical_lines.items) |line| {
+            var col: usize = 0;
+            // Iterate until we consume the whole logical line or run out of rows
+            // Loop at least once to ensure empty lines are preserved
+            while (col < line.len or (col == 0 and line.len == 0)) {
+                 if (dst_row >= new_active.len) break;
+
+                const chunk_len = @min(new_cols, line.len - col);
+                if (chunk_len > 0) {
+                     @memcpy(new_active[dst_row].cells[0..chunk_len], line[col..col + chunk_len]);
+                }
+                
+                col += chunk_len;
+                if (col < line.len) {
+                    new_active[dst_row].wrapped = true;
+                }
+                dst_row += 1;
+                
+                if (col >= line.len) break;
+            }
+        }
+    }
+    
+    pub fn isDirty(self: *const Grid) bool {
+        return self.dirty;
+    }
+    
+    pub fn markClean(self: *Grid) void {
+        self.dirty = false;
+        self.dirty_rows.setRangeValue(.{ .start = 0, .end = self.rows }, false);
+    }
+    
+    pub fn markRowDirty(self: *Grid, row: u32) void {
+        if (row < self.rows) {
+            self.dirty_rows.set(row);
+            self.dirty = true;
+        }
+    }
+};

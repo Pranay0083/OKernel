@@ -1,0 +1,4 @@
+module CAether {
+    header "aether.h"
+    export *
+}

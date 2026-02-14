@@ -1,0 +1,92 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "AetherApp-arm64-apple-macosx26.0-debug.exe": ["<AetherApp-arm64-apple-macosx26.0-debug.exe>"]
+  "AetherApp-arm64-apple-macosx26.0-debug.module": ["<AetherApp-arm64-apple-macosx26.0-debug.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<AetherApp-arm64-apple-macosx26.0-debug.exe>","<AetherApp-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<AetherApp-arm64-apple-macosx26.0-debug.exe>","<AetherApp-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp":
+    is-mutated: true
+commands:
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp-entitlement.plist"]
+    description: "Write auxiliary file /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp-entitlement.plist"
+
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/AetherApp.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/AppDelegate.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Bridge/AetherBridge.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/ConfigManager.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/FontAtlas.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Renderer.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Types.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalView.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalWindow.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/DerivedSources/resource_bundle_accessor.swift"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/sources"]
+    description: "Write auxiliary file /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/sources"
+
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherApp.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherBridge.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AppDelegate.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalWindow.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/resource_bundle_accessor.swift.o"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.product/Objects.LinkFileList"
+
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp_AetherApp.bundle/Shaders.metal":
+    tool: copy-tool
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Shaders.metal"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp_AetherApp.bundle/Shaders.metal"]
+    description: "Copying /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Shaders.metal"
+
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<AetherApp-arm64-apple-macosx26.0-debug.exe>":
+    tool: phony
+    inputs: ["<AetherApp-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    outputs: ["<AetherApp-arm64-apple-macosx26.0-debug.exe>"]
+
+  "<AetherApp-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherApp.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AppDelegate.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherBridge.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalWindow.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/resource_bundle_accessor.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/Modules/AetherApp.swiftmodule"]
+    outputs: ["<AetherApp-arm64-apple-macosx26.0-debug.module>"]
+
+  "AetherApp-arm64-apple-macosx26.0-debug.module-resources":
+    tool: phony
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp_AetherApp.bundle/Shaders.metal"]
+    outputs: ["<AetherApp-arm64-apple-macosx26.0-debug.module-resources>"]
+
+  "C.AetherApp-arm64-apple-macosx26.0-debug.exe":
+    tool: shell
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherApp.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherBridge.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AppDelegate.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalWindow.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/resource_bundle_accessor.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.product/Objects.LinkFileList"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/AetherApp"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug","-o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp","-module-name","AetherApp","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_AetherApp_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Library/Developer/CommandLineTools/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx13.0","-laether","-L","../libaether/zig-out/lib","-Xlinker","-add_ast_path","-Xlinker","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/Modules/AetherApp.swiftmodule","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.AetherApp-arm64-apple-macosx26.0-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp-entitlement.plist"]
+    outputs: ["<AetherApp-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/AetherApp"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp-entitlement.plist","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp"]
+
+  "C.AetherApp-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/AetherApp.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/AppDelegate.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Bridge/AetherBridge.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/ConfigManager.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/FontAtlas.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Renderer.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Types.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalView.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalWindow.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/DerivedSources/resource_bundle_accessor.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","<AetherApp-arm64-apple-macosx26.0-debug.module-resources>","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/sources"]
+    outputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherApp.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AppDelegate.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/AetherBridge.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalWindow.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/resource_bundle_accessor.swift.o","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/Modules/AetherApp.swiftmodule"]
+    description: "Compiling Swift Module 'AetherApp' (10 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","AetherApp","-emit-dependencies","-emit-module","-emit-module-path","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/Modules/AetherApp.swiftmodule","-output-file-map","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/output-file-map.json","-incremental","-c","@/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/sources","-I","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx13.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE","-module-cache-path","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","AetherApp_main","-color-diagnostics","-swift-version","5","-I","Sources/AetherApp/Bridge","-Xcc","-fmodule-map-file=Sources/AetherApp/Bridge/module.modulemap","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","aetherapp"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Package.swift","/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

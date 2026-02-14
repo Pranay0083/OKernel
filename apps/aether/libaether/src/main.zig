@@ -1,0 +1,200 @@
+const std = @import("std");
+pub const Terminal = @import("terminal.zig").Terminal;
+const terminal_mod = @import("terminal.zig");
+pub const Grid = @import("grid.zig").Grid;
+pub const Cell = @import("grid.zig").Cell;
+pub const Pty = @import("pty.zig").Pty;
+pub const Config = @import("config.zig").Config;
+pub const TomlParser = @import("config.zig").TomlParser;
+pub const parseHexColor = @import("config.zig").parseHexColor;
+
+// Use a global allocator for C API
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+// Callback registration functions (called from Swift)
+pub export fn aether_set_title_callback(cb: ?*const fn ([*]const u8, usize) callconv(.c) void) void {
+    terminal_mod.cb_set_title = cb;
+}
+
+pub export fn aether_set_clipboard_callback(cb: ?*const fn ([*]const u8, usize) callconv(.c) void) void {
+    terminal_mod.cb_set_clipboard = cb;
+}
+
+pub export fn aether_set_get_clipboard_callback(cb: ?*const fn () callconv(.c) ?[*:0]const u8) void {
+    terminal_mod.cb_get_clipboard = cb;
+}
+pub export fn aether_terminal_new(rows: u32, cols: u32) ?*Terminal {
+    const term = gpa.allocator().create(Terminal) catch return null;
+    term.* = Terminal.init(gpa.allocator(), rows, cols) catch {
+        gpa.allocator().destroy(term);
+        return null;
+    };
+    return term;
+}
+
+pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const u8) ?*Terminal {
+    const term = gpa.allocator().create(Terminal) catch return null;
+    term.* = Terminal.initWithPty(gpa.allocator(), rows, cols, shell) catch {
+        gpa.allocator().destroy(term);
+        return null;
+    };
+    return term;
+}
+
+pub export fn aether_terminal_free(term: ?*Terminal) void {
+    if (term) |t| {
+        t.deinit();
+        gpa.allocator().destroy(t);
+    }
+}
+
+pub export fn aether_write_input(term: ?*Terminal, data: [*]const u8, len: usize) i32 {
+    if (term) |t| {
+        t.writeInput(data[0..len]) catch return -1;
+        return @intCast(len);
+    }
+    return -1;
+}
+
+pub export fn aether_process_output(term: ?*Terminal) void {
+    if (term) |t| {
+        t.processOutput() catch {};
+    }
+}
+
+
+pub export fn aether_get_cell(term: ?*const Terminal, row: u32, col: u32) ?*const Cell {
+    if (term) |t| {
+        return t.getRenderCell(row, col);
+    }
+    return null;
+}
+
+pub export fn aether_scroll_view(term: ?*Terminal, delta: i32) void {
+    if (term) |t| {
+        t.scrollView(delta);
+    }
+}
+
+pub export fn aether_scroll_to_bottom(term: ?*Terminal) void {
+    if (term) |t| {
+        t.scrollToBottom();
+    }
+}
+
+pub export fn aether_selection_start(term: ?*Terminal, row: u32, col: u32) void {
+    if (term) |t| {
+        t.selection.active = true;
+        t.selection.start_row = row;
+        t.selection.start_col = col;
+        t.selection.end_row = row;
+        t.selection.end_col = col;
+        t.dirty = true;
+    }
+}
+
+pub export fn aether_selection_drag(term: ?*Terminal, row: u32, col: u32) void {
+    if (term) |t| {
+        if (t.selection.active) {
+            t.selection.end_row = row;
+            t.selection.end_col = col;
+            t.dirty = true;
+        }
+    }
+}
+
+pub export fn aether_selection_end(term: ?*Terminal, row: u32, col: u32) void {
+    if (term) |t| {
+        if (t.selection.active) {
+             t.selection.end_row = row;
+             t.selection.end_col = col;
+             t.dirty = true;
+             // Ensure we are normalized or not?
+             // Struct keeps raw values. contains/getText normalizes.
+        }
+    }
+}
+
+pub export fn aether_selection_clear(term: ?*Terminal) void {
+    if (term) |t| {
+        t.selection.active = false;
+        t.dirty = true;
+    }
+}
+
+pub export fn aether_selection_is_active(term: ?*Terminal) bool {
+    if (term) |t| return t.selection.active;
+    return false;
+}
+
+pub export fn aether_selection_contains(term: ?*Terminal, row: u32, col: u32) bool {
+    if (term) |t| {
+        return t.selection.contains(row, col);
+    }
+    return false;
+}
+
+pub export fn aether_get_selection(term: ?*Terminal) ?[*:0]u8 {
+    if (term) |t| {
+        const text = t.getSelectionText(gpa.allocator()) catch return null;
+        // Append null terminator? toOwnedSlice returns slice.
+        // We need a null-terminated string for C.
+        // Reallocate or just append null?
+        // Zig slices are not null terminated by default unless Sentinel is used.
+        // But getSelectionText returns []u8.
+        
+        // Let's create a null-terminated copy.
+        const c_str = gpa.allocator().allocSentinel(u8, text.len, 0) catch {
+            gpa.allocator().free(text);
+            return null;
+        };
+        @memcpy(c_str, text);
+        gpa.allocator().free(text);
+        return c_str;
+    }
+    return null;
+}
+
+pub export fn aether_free_string(str: ?[*:0]u8) void {
+    if (str) |s| {
+        gpa.allocator().free(std.mem.span(s));
+    }
+}
+
+pub export fn aether_get_cursor(term: ?*const Terminal) extern struct { row: u32, col: u32, visible: bool, style: u8 } {
+    if (term) |t| {
+        const c = t.getCursor();
+        return .{ .row = c.row, .col = c.col, .visible = c.visible, .style = @intFromEnum(c.style) };
+    }
+    return .{ .row = 0, .col = 0, .visible = false, .style = 0 };
+}
+
+pub export fn aether_resize(term: ?*Terminal, rows: u32, cols: u32) bool {
+    if (term) |t| {
+        t.resize(rows, cols) catch return false;
+        return true;
+    }
+    return false;
+}
+
+
+
+pub export fn aether_mouse_event(term: ?*Terminal, button: u8, pressed: bool, row: u32, col: u32, dragging: bool) bool {
+    if (term) |t| {
+        return t.sendMouseEvent(button, pressed, row, col, dragging);
+    }
+    return false;
+}
+
+pub export fn aether_is_dirty(term: ?*const Terminal) bool {
+    if (term) |t| return t.isDirty();
+    return false;
+}
+
+pub export fn aether_mark_clean(term: ?*Terminal) void {
+    if (term) |t| t.markClean();
+}
+
+pub export fn aether_version() [*:0]const u8 {
+    return "0.1.0";
+}
