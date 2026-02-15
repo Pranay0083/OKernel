@@ -126,9 +126,21 @@ class AetherBridge {
         aether_scroll_view(term, delta)
     }
     
+    func scrollTo(offset: UInt32) {
+        guard let term = terminal else { return }
+        aether_scroll_to(term, offset)
+    }
+    
     func scrollToBottom() {
         guard let term = terminal else { return }
         aether_scroll_to_bottom(term)
+    }
+    
+    func getScrollInfo() -> AetherScrollInfo {
+        guard let term = terminal else {
+            return AetherScrollInfo(total_rows: 0, visible_rows: 0, scrollback_rows: 0, viewport_offset: 0)
+        }
+        return aether_get_scroll_info(term)
     }
     
     // Selection

@@ -20,6 +20,15 @@ pub const Cell = extern struct {
     bg_color: u32 = 0xFF000000, // Background ARGB (black default)  
     flags: CellFlags = .{},     // Packed attributes
     semantic_id: u16 = 0,       // For shell integration
+    
+    pub fn init(codepoint: u32, fg: u32, bg: u32) Cell {
+        return .{
+            .codepoint = codepoint,
+            .fg_color = fg,
+            .bg_color = bg,
+            .flags = .{}, 
+        };
+    }
 };
 
 pub const Row = struct {

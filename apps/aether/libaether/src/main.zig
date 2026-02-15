@@ -161,12 +161,44 @@ pub export fn aether_free_string(str: ?[*:0]u8) void {
     }
 }
 
+pub export fn aether_set_cursor_style(term: ?*Terminal, style: u8) void {
+    if (term) |t| {
+        if (style > 2) return;
+        t.setCursorStyle(@enumFromInt(style));
+    }
+}
+
 pub export fn aether_get_cursor(term: ?*const Terminal) extern struct { row: u32, col: u32, visible: bool, style: u8 } {
     if (term) |t| {
         const c = t.getCursor();
         return .{ .row = c.row, .col = c.col, .visible = c.visible, .style = @intFromEnum(c.style) };
     }
     return .{ .row = 0, .col = 0, .visible = false, .style = 0 };
+}
+
+pub const AetherScrollInfo = extern struct {
+    total_rows: u32,
+    visible_rows: u32,
+    scrollback_rows: u32,
+    viewport_offset: u32,
+};
+
+pub export fn aether_get_scroll_info(term: ?*Terminal) AetherScrollInfo {
+    if (term) |t| {
+        return AetherScrollInfo{
+            .total_rows = t.grid.rows + @as(u32, @intCast(t.grid.scrollback.len)),
+            .visible_rows = t.grid.rows,
+            .scrollback_rows = @as(u32, @intCast(t.grid.scrollback.len)),
+            .viewport_offset = t.scroll_offset,
+        };
+    }
+    return AetherScrollInfo{ .total_rows = 0, .visible_rows = 0, .scrollback_rows = 0, .viewport_offset = 0 };
+}
+
+pub export fn aether_scroll_to(term: ?*Terminal, offset: u32) void {
+    if (term) |t| {
+        t.scrollTo(offset);
+    }
 }
 
 pub export fn aether_resize(term: ?*Terminal, rows: u32, cols: u32) bool {

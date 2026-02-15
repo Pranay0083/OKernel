@@ -171,15 +171,23 @@ pub const Parser = struct {
             if (self.param_count < 15) {
                 self.param_count += 1; // Now at index 1
             }
+        } else if (byte >= 0x20 and byte <= 0x2F) {
+            // Intermediate bytes
+            if (self.intermediate_count < 4) {
+                self.intermediates[self.intermediate_count] = byte;
+                self.intermediate_count += 1;
+            }
+            self.state = .csi_intermediate;
         } else if (byte >= 0x30 and byte <= 0x3F) {
             // Parameters and separators handled above (0-9, ;)
             // But 0x3A-0x3F are also parameter bytes (:, <, =, >, ?)
+             // ... [logic for ?, >, <] ...
             if (byte == '?' or byte == '>' or byte == '<') {
                 if (self.intermediate_count < 4) {
                     self.intermediates[self.intermediate_count] = byte;
                     self.intermediate_count += 1;
                 }
-                self.state = .csi_param; // Actually these are 'parameter' bytes in state machine but usually prefixes
+                self.state = .csi_param; 
             } else {
                  self.state = .csi_param;
             }
@@ -203,6 +211,13 @@ pub const Parser = struct {
         } else if (byte == ';') {
              if (self.param_count == 0) self.param_count = 1; // First was 0
              if (self.param_count < 16) self.param_count += 1;
+        } else if (byte >= 0x20 and byte <= 0x2F) {
+            // Intermediate inside param state -> switch to intermediate
+            if (self.intermediate_count < 4) {
+                self.intermediates[self.intermediate_count] = byte;
+                self.intermediate_count += 1;
+            }
+            self.state = .csi_intermediate;
         } else if (byte >= 0x40 and byte <= 0x7E) {
             if (self.param_count == 0) self.param_count = 1; // Default 0
             self.dispatchCsi(terminal, byte);
@@ -213,15 +228,20 @@ pub const Parser = struct {
     }
     
     fn handleCsiIntermediate(self: *Parser, terminal: *Terminal, byte: u8) void {
-        _ = terminal;
         if (byte >= 0x40 and byte <= 0x7E) {
             // Dispatch with intermediates
-            // We ignored intermediates for now in dispatchCsi but stored them
+            self.dispatchCsi(terminal, byte);
              self.state = .ground;
-        } else if (byte < 0x30) {
+        } else if (byte >= 0x20 and byte <= 0x2F) {
+            // Another intermediate
+            if (self.intermediate_count < 4) {
+                self.intermediates[self.intermediate_count] = byte;
+                self.intermediate_count += 1;
+            }
+        } else if (byte < 0x20) {
             // C0/C1 - handled in advance
         } else {
-            self.state = .csi_ignore;
+             self.state = .csi_ignore;
         }
     }
     
@@ -304,12 +324,32 @@ pub const Parser = struct {
             'H', 'f' => terminal.setCursorPos(getParam(params, 0, 1), getParam(params, 1, 1)),
             'J' => terminal.eraseDisplay(getParam(params, 0, 0)),
             'K' => terminal.eraseLine(getParam(params, 0, 0)),
+            'L' => terminal.insertLines(getParam(params, 0, 1)),
+            'M' => terminal.deleteLines(getParam(params, 0, 1)),
+            'P' => terminal.deleteChars(getParam(params, 0, 1)),
+            'X' => terminal.eraseChars(getParam(params, 0, 1)),
+            '@' => terminal.insertChars(getParam(params, 0, 1)),
             'm' => self.handleSgr(terminal, params),
             'h' => if (private) terminal.setPrivateMode(getParam(params, 0, 0), true),
             'l' => if (private) terminal.setPrivateMode(getParam(params, 0, 0), false),
             's' => terminal.saveCursor(),
             'u' => terminal.restoreCursor(),
             'r' => terminal.setScrollRegion(getParam(params, 0, 0), getParam(params, 1, 0)),
+            'q' => {
+                 // DECSCUSR: CSI Ps SP q
+                 if (self.intermediate_count > 0 and self.intermediates[0] == ' ') {
+                     const style = getParam(params, 0, 1); // Default 1 (Blink Block)
+                     switch (style) {
+                         0, 1 => terminal.setCursorStyle(.block), // Blink Block
+                         2 => terminal.setCursorStyle(.block),    // Steady Block (TODO: separate blink state?)
+                         3 => terminal.setCursorStyle(.underline), // Blink Underline
+                         4 => terminal.setCursorStyle(.underline), // Steady Underline
+                         5 => terminal.setCursorStyle(.bar),       // Blink Bar
+                         6 => terminal.setCursorStyle(.bar),       // Steady Bar
+                         else => {},
+                     }
+                 }
+            },
             else => {},
         }
     }

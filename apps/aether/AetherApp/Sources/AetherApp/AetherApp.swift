@@ -3,21 +3,36 @@ import SwiftUI
 @main
 struct AetherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject var scrollState = TerminalScrollState()
+    @ObservedObject var configManager = ConfigManager.shared
     
     var body: some Scene {
         WindowGroup("Aether") {
             ZStack(alignment: .top) {
-                // Main Window Background (Sidebar Material)
-                BackgroundView()
+                // Main Window Background
+                BackgroundView(material: configManager.config.window.blurType.material)
                     .ignoresSafeArea()
                 
-                // Terminal Content
-                GeometryReader { geometry in
-                    TerminalViewRepresentable(frame: geometry.frame(in: .local))
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+                HStack(spacing: 0) {
+                    // Terminal Content
+                    TerminalViewRepresentable(scrollState: scrollState, config: configManager.config)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .layoutPriority(1) // Ensures it takes space first
+                        .padding(.top, 28)
+                        .ignoresSafeArea()
+                    
+                    // ScrollBar
+                    if configManager.config.ui.scrollbar.visible {
+                        CustomScrollBar(scrollState: scrollState) { t in
+                            scrollState.userScrollRequest.send(t)
+                        }
+                        .frame(width: configManager.config.ui.scrollbar.width)
+                        .padding(.top, configManager.config.ui.scrollbar.padding.top)
+                        .padding(.bottom, configManager.config.ui.scrollbar.padding.bottom)
+                        .layoutPriority(0)
+                        .background(Color.black.opacity(0.1))
+                    }
                 }
-                .padding(.top, 28)
-                .ignoresSafeArea()
                 
                 // Unified Title Bar Background ("Navbar")
                 // A visual strip at the top to back the traffic lights and title
@@ -61,15 +76,19 @@ struct HeaderView: View {
 }
 
 struct BackgroundView: NSViewRepresentable {
+    var material: NSVisualEffectView.Material = .sidebar
+
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .sidebar
+        view.material = material
         view.blendingMode = .behindWindow
         view.state = .active
         return view
     }
     
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) { }
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+    }
 }
 
 struct VisualEffectView: NSViewRepresentable {
@@ -91,17 +110,24 @@ struct VisualEffectView: NSViewRepresentable {
 }
 
 struct TerminalViewRepresentable: NSViewRepresentable {
-    var frame: CGRect
+    @ObservedObject var scrollState: TerminalScrollState
+    var config: AetherConfig // Pass config
 
     func makeNSView(context: Context) -> TerminalView {
-        let view = TerminalView(frame: frame)
+        let view = TerminalView(frame: .zero, device: MTLCreateSystemDefaultDevice(), scrollState: scrollState)
         view.autoresizingMask = [.width, .height]
+        // Apply initial config
+        view.updateConfig(config)
         return view
     }
     
     func updateNSView(_ nsView: TerminalView, context: Context) {
-        if nsView.frame != frame {
-            nsView.frame = frame
-        }
+        nsView.updateConfig(config)
+    }
+    
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: TerminalView, context: Context) -> CGSize {
+        let width = proposal.width ?? 800
+        let height = proposal.height ?? 600
+        return CGSize(width: width, height: height)
     }
 }

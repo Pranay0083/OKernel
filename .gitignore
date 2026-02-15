@@ -49,3 +49,23 @@ coverage/
 # Project Specific
 WALKTHROUGH.md
 /agents
+
+
+
+# Aether
+/apps/aether/.build
+/apps/aether/AetherApp/.build
+/apps/aether/libaether/.build
+.build
+
+# Zig
+**/.zig-cache/
+**/*.zig.cache
+**/zig-out/
+
+# Agentic Files
+task.md
+implementation_plan.md
+walkthrough.md
+.gemini/
+brain/

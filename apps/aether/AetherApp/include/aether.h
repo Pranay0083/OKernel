@@ -22,8 +22,10 @@ typedef struct {
     uint32_t row;
     uint32_t col;
     bool visible;
-    uint8_t style; // 0=block, 1=underline, 2=bar
+    uint8_t style; // 0=Block, 1=Underline, 2=Bar
 } AetherCursor;
+
+void aether_set_cursor_style(AetherTerminal* term, uint8_t style);
 
 // Lifecycle
 AetherTerminal* aether_terminal_new(uint32_t rows, uint32_t cols);

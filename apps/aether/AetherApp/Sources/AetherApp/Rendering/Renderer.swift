@@ -10,7 +10,10 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     let pipelineState: MTLRenderPipelineState
-    let fontAtlas: FontAtlas
+    var fontAtlas: FontAtlas
+    let scrollState: TerminalScrollState
+    
+    private var lastInputTime: TimeInterval = 0
     
     private var instanceBuffer: MTLBuffer?
     private var viewportSize: SIMD2<Float> = .zero
@@ -22,7 +25,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     var rows: Int = 24
     var cols: Int = 80
     
-    init(metalView: MTKView) throws {
+    init(metalView: MTKView, scrollState: TerminalScrollState) throws {
+        self.scrollState = scrollState
         guard let device = metalView.device else {
             throw NSError(domain: "AetherApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Metal view has no device"])
         }
@@ -70,13 +74,53 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         
         // Initialize FontAtlas with proper scale
         let scale = metalView.window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
-        self.fontAtlas = try FontAtlas(device: device, fontName: "Menlo", fontSize: 14.0, scale: scale)
+        let fontConfig = ConfigManager.shared.config.font
+        self.fontAtlas = try FontAtlas(device: device, fontName: fontConfig.family, fontSize: CGFloat(fontConfig.size), scale: scale)
         self.scaleFactor = Float(scale)
         
         super.init()
         
         // Apply initial theme from config
-        applyTheme(ConfigManager.shared.config.theme)
+        applyTheme(ConfigManager.shared.config.colors.resolveTheme())
+        
+        // Apply initial cursor style to LibAether
+        let style = ConfigManager.shared.config.cursor.style
+        var zigStyle: UInt8 = 0 // Block
+        switch style {
+        case .block: zigStyle = 0
+        case .underline: zigStyle = 1
+        case .beam: zigStyle = 2
+        }
+        if let terminal = terminal {
+            aether_set_cursor_style(terminal, zigStyle)
+        }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleFontLoaded), name: NSNotification.Name("AetherFontLoaded"), object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    @objc private func handleFontLoaded() {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        do {
+            let fontConfig = ConfigManager.shared.config.font
+            let scale = CGFloat(scaleFactor)
+            self.fontAtlas = try FontAtlas(device: device, fontName: fontConfig.family, fontSize: CGFloat(fontConfig.size), scale: scale)
+            forceNextFrame = true
+            print("Renderer: Font reloaded - \(fontConfig.family)")
+        } catch {
+            print("Renderer: Failed to reload font: \(error)")
+        }
+    }
+    
+    func updateLastInputTime(_ time: TimeInterval) {
+        self.lastInputTime = time
+        // Force redraw to ensure cursor state updates immediately (e.g. stops blinking)
+        self.forceNextFrame = true
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -105,10 +149,27 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         
         guard let terminal = terminal,
               let drawable = view.currentDrawable,
-              let descriptor = view.currentRenderPassDescriptor else { return }
+              let descriptor = view.currentRenderPassDescriptor else {
+            print("DEBUG: draw skipped - terminal: \(terminal != nil), drawable: \(view.currentDrawable != nil), descriptor: \(view.currentRenderPassDescriptor != nil)")
+            return
+        }
         
         // Process any pending PTY output
         aether_process_output(terminal)
+        
+        // Update scroll state for UI
+        let scrollInfo = aether_get_scroll_info(terminal)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            // Only update if changed to avoid excessive view updates
+            if self.scrollState.viewportOffset != scrollInfo.viewport_offset ||
+               self.scrollState.totalRows != scrollInfo.total_rows {
+                self.scrollState.totalRows = scrollInfo.total_rows
+                self.scrollState.visibleRows = scrollInfo.visible_rows
+                self.scrollState.scrollbackRows = scrollInfo.scrollback_rows
+                self.scrollState.viewportOffset = scrollInfo.viewport_offset
+            }
+        }
         
         // Always redraw at 30fps for smooth cursor blink.
         // The isDirty check was skipping frames when idle, preventing cursor animation.
@@ -147,23 +208,46 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         
         let cursor = aether_get_cursor(terminal)
         let now = CACurrentMediaTime()
-        let blinkRate = max(0.1, min(10.0, ConfigManager.shared.config.cursorBlinkRate ?? 2.0))
+        let blinkRate = max(0.1, min(10.0, ConfigManager.shared.config.cursor.blinkRate))
         let blinkPeriod = 1.0 / Float(blinkRate) // seconds per full blink cycle
-        let cursorPhase = fmod(Float(now), blinkPeriod)
-        let isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
+        
+        // Smart Blink Logic
+        var isCursorBlinkOn = false
+        if ConfigManager.shared.config.cursor.smartBlink {
+            let timeSinceInput = now - lastInputTime
+            if timeSinceInput < 0.5 {
+                // Typing -> Solid
+                isCursorBlinkOn = true
+            } else {
+                // Idle -> Blink
+                let cursorPhase = fmod(Float(now), blinkPeriod)
+                isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
+            }
+        } else {
+            // Standard Blink
+            let cursorPhase = fmod(Float(now), blinkPeriod)
+            isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
+        }
+        
+        if !ConfigManager.shared.config.cursor.blink {
+            isCursorBlinkOn = cursor.visible
+        }
         
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let cw = Float(fontAtlas.cellWidth) * ratio
         let ch = Float(fontAtlas.cellHeight) * ratio
-        let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.lineSpacing ?? 1.2))
+        let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.font.lineHeight))
         let rowHeight = ch * lineSpacing // Extra vertical space between lines
         let ascentScaled = Float(fontAtlas.ascent) * ratio
         let solidRect = fontAtlas.getSolidRect()
         
-        let padPx = PADDING * scaleFactor
+        // Cursor Config
+        let cursorLimit = ConfigManager.shared.config.cursor
+        let style = cursorLimit.style
+        let isBlock = (style == .block)
         
-        // Selection highlight color from config (or default semi-transparent blue)
-        let selHex = ConfigManager.shared.config.theme.selectionColor ?? "#5A3399FF"
+        // Selection Highlight Color
+        let selHex = ConfigManager.shared.config.colors.selection ?? "#5A3399FF"
         let selRaw = ConfigManager.shared.parseColor(selHex)
         let selA = Float((selRaw >> 24) & 0xFF) / 255.0
         let selR = Float((selRaw >> 16) & 0xFF) / 255.0
@@ -171,9 +255,19 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let selB = Float(selRaw & 0xFF) / 255.0
         let selectionBG = SIMD4<Float>(selR, selG, selB, selA)
         
+        let padPx = PADDING * scaleFactor
+        
         // Pass 1: Backgrounds
+        let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
+        
         for r in 0..<UInt32(rows) {
             for c in 0..<UInt32(cols) {
+                // If this is the cursor and it's a BLOCK, SKIP background drawing in Pass 1.
+                // We will draw the inverted block in Pass 2.
+                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    continue
+                }
+                
                 guard let cellPtr = aether_get_cell(terminal, r, c) else { continue }
                 let cell = cellPtr.pointee
                 
@@ -242,12 +336,66 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 let y = Float(r) * rowHeight + padPx
                 
                 let fgColorVal = cell.fg_color
+                var fg = colorFromARGB(fgColorVal)
+                var bg = SIMD4<Float>(0, 0, 0, 0) // Default transparent
                 
-                let fg = colorFromARGB(fgColorVal)
-                // Glyph background must be transparent — backgrounds are handled in Pass 1
-                let cellBG = SIMD4<Float>(0, 0, 0, 0)
+                // Cursor Rendering Logic
+                // 1. Only draw/invert cursor if we are at the bottom of the history (offset 0)
+                //    This prevents the cursor from "floating" over history when scrolling up.
+                let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
                 
-                // Glyph Rendering
+                // Determine effective cursor style
+                // Priority: LibAether state (dynamic) -> Config (default)
+                // But LibAether default is 0 (Block).
+                // Let's use LibAether style mapping: 0=Block, 1=Underline, 2=Bar
+                var effectiveStyle = ConfigManager.shared.config.cursor.style
+                
+                // Map dynamic style from Zig
+                switch cursor.style {
+                case 1: effectiveStyle = .underline
+                case 2: effectiveStyle = .beam
+                default: break // 0 is Block, or fallback
+                }
+                
+                let currentStyle = effectiveStyle // derived from state
+                let isBlock = (currentStyle == .block)
+
+                // Handle Block Cursor Inversion
+                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    // Invert:
+                    // New FG = Effective BG (default to black if valid)
+                    // New BG = Effective FG
+                    
+                    let bgVal = cell.bg_color
+                    let effectiveBG = (bgVal == 0xFF000000) ? colorFromARGB(0xFF000000) : colorFromARGB(bgVal)
+                    let effectiveFG = fg
+                    
+                    var newFG = effectiveBG
+                    let newBG = effectiveFG
+                    
+                    // Fix for "Transparent Lens": If newFG (Old BG) is transparent, text becomes invisible.
+                    // Force newFG to be opaque contrast color.
+                    // Also ensure the cursor block itself (newBG) is opaque.
+                    
+                    var safeNewBG = newBG
+                    if safeNewBG.w < 1.0 {
+                        // If cell background was transparent, cursor block should be text color or opaque equivalent
+                        safeNewBG.w = 1.0 
+                    }
+                    
+                    if newFG.w < 0.1 || (safeNewBG.w > 0.9 && distance(newFG, safeNewBG) < 0.1) {
+                        let lum = 0.299 * newBG.x + 0.587 * newBG.y + 0.114 * newBG.z
+                        if lum > 0.5 {
+                            newFG = SIMD4<Float>(0, 0, 0, 1) // Black Text on Light Block
+                        } else {
+                            newFG = SIMD4<Float>(1, 1, 1, 1) // White Text on Dark Block
+                        }
+                    }
+                    
+                    fg = newFG
+                    bg = newBG
+                }
+                
                 if cell.codepoint != 0 && cell.codepoint != 32 {
                      let isPowerline = (cell.codepoint >= 0xE0B0 && cell.codepoint <= 0xE0B3)
                      var shaderFlags: UInt32 = UInt32(flags)
@@ -267,7 +415,7 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                              texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
                              texSize: SIMD2<Float>(solidRect.width, solidRect.height),
                              fgColor: fg,
-                             bgColor: cellBG,
+                             bgColor: bg,
                              flags: shaderFlags
                          )
                          instances.append(plInst)
@@ -289,38 +437,64 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                              texCoord: SIMD2<Float>(glyph.u, glyph.v),
                              texSize: SIMD2<Float>(glyph.width, glyph.height),
                              fgColor: fg,
-                             bgColor: cellBG,
+                             bgColor: bg,
                              flags: shaderFlags
                          )
                          instances.append(fgInst)
                      }
-                }
-                
-                // Cursor Rendering (Beam)
-                // Draw AFTER glyph (on top)
-                if isCursorBlinkOn && r == cursor.row && c == cursor.col {
-                    let cursorColor = colorFromARGB(0xFFFFFFFF) // White beam
-                    let beamWidth: Float = 2.0 // Fixed 2 points
+                } else if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    // Empty cell block cursor
+                    // Center the block vertically to match font size (ch) instead of rowHeight
+                    let offsetY = (rowHeight - ch) / 2.0
                     
-                    let cursorInst = GlyphInstance(
-                        position: SIMD2<Float>(x, y), // Left edge
-                        size: SIMD2<Float>(beamWidth, rowHeight),
+                    let blockInst = GlyphInstance(
+                        position: SIMD2<Float>(x, y + offsetY),
+                        size: SIMD2<Float>(cw, ch),
                         texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
                         texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                        fgColor: cursorColor,
-                        bgColor: cursorColor,
+                        fgColor: bg, // Use the 'bg' (which is the effective FG aka cursor color) as color
+                        bgColor: bg,
                         flags: 0
                     )
-                    instances.append(cursorInst)
+                    instances.append(blockInst)
+                }
+                
+                // Cursor Rendering (Beam / Underline)
+                if isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    let cursorColor = colorFromARGB(0xFFFFFFFF) // White
+                    
+                    var rectSize: SIMD2<Float> = .zero
+                    var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
+                    
+                    if currentStyle == .beam {
+                        rectSize = SIMD2<Float>(2.0, ch) // Match font height
+                        rectPos.y = y + (rowHeight - ch) / 2.0 // Center it
+                    } else if currentStyle == .underline {
+                        rectSize = SIMD2<Float>(cw, 2.0)
+                        rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
+                    }
+                    
+                    if rectSize.x > 0 {
+                        let cursorInst = GlyphInstance(
+                            position: rectPos,
+                            size: rectSize,
+                            texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
+                            texSize: SIMD2<Float>(solidRect.width, solidRect.height),
+                            fgColor: cursorColor,
+                            bgColor: cursorColor,
+                            flags: 0
+                        )
+                        instances.append(cursorInst)
+                    }
                 }
             }
         }
         
         return instances
     }
-
+    
     private let PADDING: Float = 10.0
-
+    
     /// Convert view point (local coords) to Grid (row, col)
     func convertPointToGrid(_ point: CGPoint) -> (uint: UInt32, row: UInt32, col: UInt32)? {
         guard viewportSize.x > 0 && viewportSize.y > 0 else { return nil }
@@ -367,7 +541,7 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let cellW = Float(fontAtlas.cellWidth) * ratio
         let cellH = Float(fontAtlas.cellHeight) * ratio
-        let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.lineSpacing ?? 1.2))
+        let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.font.lineHeight))
         let rowH = cellH * lineSpacing
         
         let padPx = PADDING * scaleFactor
@@ -394,7 +568,7 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     
     private var forceNextFrame = false
 
-    func applyTheme(_ theme: ThemeConfig) {
+    func applyTheme(_ theme: Theme) {
         colorMap.removeAll()
         // Default ANSI mapping (Zig internal defaults -> Theme Palette)
         let defaults: [UInt32] = [
@@ -431,20 +605,10 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     
     // Legacy support for menu
     func setTheme(_ name: String) {
-        // Build a temporary theme config from hardcoded values if needed,
-        // or just load from ConfigManager if we added them there.
-        // For now, let's map the menu names to the static presets in ConfigManager.
-        switch name {
-        case "Solarized Dark":
-            applyTheme(ThemeConfig.solarizedDark)
-        case "Dracula":
-             applyTheme(ThemeConfig.dracula)
-        case "OneDark":
-             applyTheme(ThemeConfig.oneDark)
-        default:
-             // Default or Custom from config
-             applyTheme(ConfigManager.shared.config.theme)
-        }
+        // Update global config
+        ConfigManager.shared.config.colors.scheme = name
+        let theme = ConfigManager.shared.config.colors.resolveTheme()
+        applyTheme(theme)
     }
 
     /// Decode ARGB color from Zig terminal (format: 0xAARRGGBB) using Theme mapping

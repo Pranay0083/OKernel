@@ -25,6 +25,8 @@ typedef struct {
     uint8_t style; // 0=block, 1=underline, 2=bar
 } AetherCursor;
 
+void aether_set_cursor_style(AetherTerminal* term, uint8_t style);
+
 // Callback types
 typedef void (*AetherTitleCallback)(const uint8_t* data, size_t len);
 typedef void (*AetherClipboardSetCallback)(const uint8_t* data, size_t len);
@@ -49,8 +51,17 @@ const AetherCell* aether_get_cell(const AetherTerminal* term, uint32_t row, uint
 bool aether_resize(AetherTerminal* term, uint32_t rows, uint32_t cols);
 
 // Scrolling
+typedef struct {
+    uint32_t total_rows;
+    uint32_t visible_rows;
+    uint32_t scrollback_rows;
+    uint32_t viewport_offset;
+} AetherScrollInfo;
+
 void aether_scroll_view(AetherTerminal* term, int32_t delta);
+void aether_scroll_to(AetherTerminal* term, uint32_t offset);
 void aether_scroll_to_bottom(AetherTerminal* term);
+AetherScrollInfo aether_get_scroll_info(AetherTerminal* term);
 
 // Selection
 void aether_selection_start(AetherTerminal* term, uint32_t row, uint32_t col);

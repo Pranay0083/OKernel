@@ -40,12 +40,48 @@ class FontAtlas {
         // Create font at scaled size (e.g. 14 * 2 = 28px for Retina)
         let scaledFontSize = fontSize * scale
         
-        let descriptor = CTFontDescriptorCreateWithAttributes([
-            kCTFontNameAttribute: fontName as CFString,
-            kCTFontSizeAttribute: scaledFontSize as CFNumber
-        ] as CFDictionary)
-        self.ctFont = CTFontCreateWithFontDescriptor(descriptor, scaledFontSize, nil)
+        // Font Fallback List
+        let requested = fontName
+        let fallbacks = ["Menlo", "Monaco", "Courier New", "Andale Mono"]
+        let candidates = [requested] + fallbacks
         
+        var bestFont: CTFont?
+        
+        for name in candidates {
+            let descriptor = CTFontDescriptorCreateWithAttributes([
+                kCTFontNameAttribute: name as CFString,
+                kCTFontSizeAttribute: scaledFontSize as CFNumber
+            ] as CFDictionary)
+            
+            let font = CTFontCreateWithFontDescriptor(descriptor, scaledFontSize, nil)
+            let actualName = CTFontCopyFullName(font) as String
+            
+            // Check if we got what we asked for
+            // If we ask for "SF Mono" and get "Helvetica", we should reject it.
+            // If we ask for "Menlo" and get "Menlo Regular", we accept it.
+            
+            // Special case for SF Mono which might have system prefixes
+            let match = actualName.localizedCaseInsensitiveContains(name) || 
+                       (name == "SF Mono" && actualName.contains("SF Mono"))
+            
+            if match {
+                 bestFont = font
+                 break
+            }
+        }
+        
+        // Final fallback
+        let finalFont = bestFont ?? CTFontCreateWithFontDescriptor(
+            CTFontDescriptorCreateWithAttributes([
+                kCTFontNameAttribute: "Menlo" as CFString,
+                kCTFontSizeAttribute: scaledFontSize as CFNumber
+            ] as CFDictionary),
+            scaledFontSize, nil)
+            
+        self.ctFont = finalFont
+        print("FontAtlas: Loaded font '\(CTFontCopyFullName(finalFont) as String)' (Requested: '\(fontName)')")
+        
+        // Solid pixel
         self.ascent = CTFontGetAscent(ctFont)
         self.descent = CTFontGetDescent(ctFont)
         
@@ -56,7 +92,7 @@ class FontAtlas {
         self.cellWidth = advance.width
         self.cellHeight = ascent + descent + CTFontGetLeading(ctFont)
         
-        // Initialize atlas texture (2048x2048 single channel 8-bit)
+        // Initialize atlas texture
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: 2048, height: 2048, mipmapped: false)
         textureDesc.usage = [.shaderRead]
         guard let tex = device.makeTexture(descriptor: textureDesc) else {
@@ -66,7 +102,7 @@ class FontAtlas {
         
         self.packer = ShelfPacker(width: 2048, height: 2048)
         
-        // Create solid white pixel for background drawing
+        // Create solid white pixel
         _ = createSolidPixel()
     }
     

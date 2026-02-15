@@ -30,6 +30,20 @@
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/ConfigManager.dia"
   },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/FontManager.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontManager.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontManager.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontManager.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontManager.dia"
+  },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/TOMLParser.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.dia"
+  },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/FontAtlas.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.d",
     "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/FontAtlas.swift.o",
@@ -44,12 +58,26 @@
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Renderer.dia"
   },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/TerminalScrollState.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalScrollState.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalScrollState.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalScrollState~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalScrollState.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalScrollState.dia"
+  },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Types.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.d",
     "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swift.o",
     "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types~partial.swiftmodule",
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Types.dia"
+  },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/CustomScrollBar.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.dia"
   },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalView.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.d",

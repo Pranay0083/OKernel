@@ -2,28 +2,116 @@ import Cocoa
 import MetalKit
 import CAether
 
+import Combine
+
 class TerminalView: MTKView {
     var renderer: TerminalRenderer?
     var terminal: OpaquePointer?
     private var hasMouseDragged = false
     
+    // Smart Blink State
+    private var lastInputTime: TimeInterval = 0
+    
+    // Shared State
+    var scrollState: TerminalScrollState
+    private var cancellables = Set<AnyCancellable>()
+    
     // Custom Fullscreen State
     private var isCustomFullScreen = false
     private var savedFrame: NSRect = .zero
     
+    override var intrinsicContentSize: NSSize {
+        return NSSize(width: 800, height: 600)
+    }
+    
+    override func layout() {
+        super.layout()
+        if let window = self.window {
+             self.layer?.contentsScale = window.backingScaleFactor
+             let newSize = CGSize(width: self.bounds.width * window.backingScaleFactor, 
+                                  height: self.bounds.height * window.backingScaleFactor)
+             self.drawableSize = newSize
+             // Explicitly notify renderer since autoResizeDrawable is false
+             renderer?.mtkView(self, drawableSizeWillChange: newSize)
+        }
+    }
+    
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
     
+    override func mouseDragged(with event: NSEvent) {
+        guard let terminal = terminal else { return }
+        
+        // Autoscroll check
+        let loc = convert(event.locationInWindow, from: nil)
+        if loc.y > self.bounds.height {
+             // Above view -> Scroll History (Up)
+             aether_scroll_view(terminal, -1)
+        } else if loc.y < 0 {
+             // Below view -> Scroll Bottom (Down)
+             aether_scroll_view(terminal, 1)
+        }
+        
+        // Update Selection
+        let (r, c) = pointToGrid(event.locationInWindow)
+        aether_selection_drag(terminal, UInt32(r), UInt32(c))
+        
+        self.setNeedsDisplay(self.bounds)
+    }
+    
     override func scrollWheel(with event: NSEvent) {
         guard let terminal = terminal else { return }
-        let delta = Int32(event.scrollingDeltaY)
+        
+        var dy = event.scrollingDeltaY
+        
+        // Logic to respect "Natural Scrolling" config:
+        // System Event magnitude is consistent, but sign depends on system pref.
+        // isDirectionInvertedFromDevice is TRUE if "Natural Scrolling" is enabled in OS.
+        // We want:
+        // If config.natural == true: Behaves like OS Natural.
+        // If config.natural == false: Behaves like OS Classic (Unnatural).
+        
+        let wantNatural = ConfigManager.shared.config.ui.scroll.naturalScrolling
+        let isSystemNatural = event.isDirectionInvertedFromDevice
+        
+        if wantNatural != isSystemNatural {
+            dy = -dy
+        }
+        
+        let speed = ConfigManager.shared.config.ui.scroll.speed
+        let delta = Int32(dy * Double(speed))
         if delta != 0 {
+            // Mouse wheel scrolls view (relative)
             aether_scroll_view(terminal, delta)
             self.setNeedsDisplay(self.bounds)
         }
     }
     
-    override init(frame frameRect: CGRect, device: MTLDevice?) {
+    // Helper for grid coordinates
+    private func pointToGrid(_ point: CGPoint) -> (Int, Int) {
+        let loc = self.convert(point, from: nil)
+        if let renderer = renderer, let (_, r, c) = renderer.convertPointToGrid(loc) {
+            return (Int(r), Int(c))
+        }
+        return (0, 0)
+    }
+    
+    func scrollTo(t: Double) {
+        // t: 0.0 (top/oldest) to 1.0 (bottom/newest)
+        guard let terminal = terminal else { return }
+        let info = aether_get_scroll_info(terminal)
+        let maxScroll = Double(info.scrollback_rows)
+        
+        // Offset 0 = bottom (t=1.0)
+        // Offset max = top (t=0.0)
+        // offset = (1.0 - t) * maxScroll
+        
+        let newOffset = UInt32((1.0 - t) * maxScroll)
+        aether_scroll_to(terminal, newOffset)
+    }
+    
+    init(frame frameRect: CGRect, device: MTLDevice?, scrollState: TerminalScrollState) {
+        self.scrollState = scrollState
         super.init(frame: frameRect, device: device ?? MTLCreateSystemDefaultDevice())
         
         self.colorPixelFormat = .bgra8Unorm
@@ -32,9 +120,10 @@ class TerminalView: MTKView {
         self.isPaused = false
         self.enableSetNeedsDisplay = false
         self.preferredFramesPerSecond = 30
+        self.autoResizeDrawable = false 
         
         AetherBridge.registerCallbacks()
-        
+        // ... (env vars)
         setenv("TERM", "xterm-256color", 1)
         setenv("LANG", "en_US.UTF-8", 1)
         setenv("LC_ALL", "en_US.UTF-8", 1)
@@ -43,12 +132,20 @@ class TerminalView: MTKView {
         self.terminal = aether_terminal_with_pty(24, 80, nil)
         
         do {
-            self.renderer = try TerminalRenderer(metalView: self)
+            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.scrollState)
             self.renderer?.terminal = self.terminal
             self.delegate = self.renderer
         } catch {
             print("Failed to init renderer: \(error)")
         }
+        
+        // Listen for scrollbar changes
+        self.scrollState.userScrollRequest
+            .sink { [weak self] t in
+                guard let self = self else { return }
+                self.scrollTo(t: t)
+            }
+            .store(in: &cancellables)
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleThemeChange(_:)), name: NSNotification.Name("AetherThemeChanged"), object: nil)
     }
@@ -84,6 +181,23 @@ class TerminalView: MTKView {
         }
         
         self.layer?.isOpaque = false
+    }
+    
+    func updateConfig(_ config: AetherConfig) {
+        guard let window = self.window else { return }
+        window.alphaValue = CGFloat(config.window.opacity)
+        
+        switch config.window.titleBar {
+        case .hidden:
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+        case .native:
+            window.titleVisibility = .visible
+            window.titlebarAppearsTransparent = false
+        case .transparent:
+            window.titleVisibility = .visible
+            window.titlebarAppearsTransparent = true
+        }
     }
     
     // MARK: - Custom Fullscreen (With Title Bar)
@@ -135,49 +249,51 @@ class TerminalView: MTKView {
         guard let name = notification.object as? String, let renderer = renderer else { return }
         renderer.setTheme(name)
         
-        switch name {
-        case "Solarized Dark":
-            self.clearColor = MTLClearColor(red: 0/255, green: 43/255, blue: 54/255, alpha: 0.85)
-        case "Dracula":
-            self.clearColor = MTLClearColor(red: 40/255, green: 42/255, blue: 54/255, alpha: 0.85)
-        case "OneDark":
-            self.clearColor = MTLClearColor(red: 40/255, green: 44/255, blue: 52/255, alpha: 0.85)
-        default:
-            self.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0.0)
+        // Update background color from theme
+        let theme = ConfigManager.shared.config.colors.resolveTheme()
+        if let bg = parseColor(theme.background) {
+            self.clearColor = bg
+        } else {
+             // Fallback for "Default" transparent
+             self.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0.0)
         }
         
         self.setNeedsDisplay(self.bounds)
     }
     
+    // Helper to reuse ConfigManager's parsing logic logic locally or just adding minimal one here
+    private func parseColor(_ hex: String) -> MTLClearColor? {
+        let argb = ConfigManager.shared.parseColor(hex)
+        let a = Double((argb >> 24) & 0xFF) / 255.0
+        let r = Double((argb >> 16) & 0xFF) / 255.0
+        let g = Double((argb >> 8) & 0xFF) / 255.0
+        let b = Double(argb & 0xFF) / 255.0
+        return MTLClearColor(red: r, green: g, blue: b, alpha: a)
+    }
+    
     override func keyDown(with event: NSEvent) {
+        lastInputTime = CACurrentMediaTime()
+        renderer?.updateLastInputTime(lastInputTime)
+        
         let modifiers = event.modifierFlags
         
-        // Cmd+C / Cmd+V / Cmd+Enter / Esc
-        if modifiers.contains(.command) && event.charactersIgnoringModifiers == "c" {
-            copySelection()
-            return
-        }
-        if modifiers.contains(.command) && event.charactersIgnoringModifiers == "v" {
-             let board = NSPasteboard.general
-             if let str = board.string(forType: .string) {
-                 sendBytes(Array(str.utf8))
-             }
-             return
-        }
-        if modifiers.contains(.command) && event.keyCode == 36 { // Cmd+Enter
-            toggleCustomFullScreen(nil)
-            return
-        }
-        if event.keyCode == 53 && isCustomFullScreen { // Esc
-            toggleCustomFullScreen(nil)
-            return
+        // 1. Resolve Key Binding
+        if let keyStr = keyString(for: event) {
+            if let action = ConfigManager.shared.config.keys.bindings[keyStr] {
+                if performAction(action) {
+                    return
+                }
+            }
         }
         
+        // 2. Default Input Handling
         // Key Mapping
         switch event.keyCode {
         case 36:  sendBytes([0x0D])
         case 51:  sendBytes([0x7F])
-        case 53:  sendBytes([0x1B])
+        case 53:  
+             if isCustomFullScreen { toggleCustomFullScreen(nil); return }
+             sendBytes([0x1B])
         case 48:  sendBytes([0x09])
         case 126: sendBytes([0x1B, 0x5B, 0x41])
         case 125: sendBytes([0x1B, 0x5B, 0x42])
@@ -237,23 +353,6 @@ class TerminalView: MTKView {
         }
     }
     
-    override func mouseDragged(with event: NSEvent) {
-        let point = self.convert(event.locationInWindow, from: nil)
-        guard let terminal = terminal, let renderer = renderer else { return }
-        
-        if let (_, r, c) = renderer.convertPointToGrid(point) {
-            // Drag event (Button 0 assumed for left drag)
-            if aether_mouse_event(terminal, 0, true, r, c, true) {
-                self.setNeedsDisplay(self.bounds)
-                return
-            }
-
-            hasMouseDragged = true
-            aether_selection_drag(terminal, r, c)
-            self.setNeedsDisplay(self.bounds)
-        }
-    }
-    
     override func mouseUp(with event: NSEvent) {
         let point = self.convert(event.locationInWindow, from: nil)
         guard let terminal = terminal, let renderer = renderer else { return }
@@ -288,5 +387,53 @@ class TerminalView: MTKView {
                  board.setString(str, forType: .string)
              }
         }
+    }
+    private func performAction(_ action: String) -> Bool {
+        switch action {
+        case "copy":
+            copySelection()
+            return true
+        case "paste":
+            let board = NSPasteboard.general
+            if let str = board.string(forType: .string) {
+                sendBytes(Array(str.utf8))
+            }
+            return true
+        case "toggle_fullscreen":
+            toggleCustomFullScreen(nil)
+            return true
+        case "new_tab", "new_window", "close_tab":
+            print("Action not implemented yet: \(action)")
+            return true
+        default:
+            return false
+        }
+    }
+    
+    private func keyString(for event: NSEvent) -> String? {
+        var str = ""
+        let mod = event.modifierFlags
+        
+        if mod.contains(.command) { str += "cmd+" }
+        if mod.contains(.control) { str += "ctrl+" }
+        if mod.contains(.option) { str += "opt+" }
+        if mod.contains(.shift) { str += "shift+" }
+        
+        if let char = event.charactersIgnoringModifiers?.lowercased() {
+             if event.keyCode == 36 { return str + "enter" }
+             if event.keyCode == 53 { return str + "esc" }
+             if event.keyCode == 48 { return str + "tab" }
+             if event.keyCode == 51 { return str + "backspace" }
+             
+             if event.keyCode == 123 { return str + "left" }
+             if event.keyCode == 124 { return str + "right" }
+             if event.keyCode == 125 { return str + "down" }
+             if event.keyCode == 126 { return str + "up" }
+             
+             if !char.isEmpty {
+                 return str + char
+             }
+        }
+        return nil
     }
 }

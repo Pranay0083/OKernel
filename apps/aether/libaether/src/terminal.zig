@@ -127,7 +127,8 @@ pub const Terminal = struct {
 
     cursor_row: u32 = 0,
     cursor_col: u32 = 0,
-    
+    cursor_style: CursorStyle = .block,
+
     current_fg: u32 = 0xFFFFFFFF,
     current_bg: u32 = 0xFF000000,
     default_fg: u32 = 0xFFFFFFFF,
@@ -171,6 +172,11 @@ pub const Terminal = struct {
     
     pub fn scrollToBottom(self: *Terminal) void {
         self.scroll_offset = 0;
+        self.dirty = true;
+    }
+
+    pub fn scrollTo(self: *Terminal, offset: u32) void {
+        self.scroll_offset = @min(offset, @as(u32, @intCast(self.grid.scrollback.len)));
         self.dirty = true;
     }
     
@@ -639,6 +645,129 @@ pub const Terminal = struct {
             row.cells[i].flags = .{};
         }
         row.dirty = true;
+        self.dirty = true;
+    }
+    
+    // --- Advanced Editing ---
+    
+    pub fn insertChars(self: *Terminal, n: u32) void {
+        const row = &self.grid.active[self.cursor_row];
+        const count = @min(n, self.grid.cols - self.cursor_col);
+        if (count == 0) return;
+        
+        const src_start = self.cursor_col;
+        const src_end = self.grid.cols - count;
+        const dst_start = self.cursor_col + count;
+        
+        // Move [src_start, src_end) -> [dst_start, cols)
+        // Check overlap (src < dst, copy backwards)
+        var i: u32 = 0;
+        while (i < src_end - src_start) : (i += 1) {
+            const idx = (src_end - 1) - i;
+            row.cells[dst_start + idx] = row.cells[src_start + idx];
+        }
+        
+        // Clear inserted
+        for (0..count) |j| {
+            row.cells[src_start + @as(u32, @intCast(j))] = Cell.init(' ', self.current_fg, self.current_bg);
+        }
+        row.dirty = true;
+        self.dirty = true;
+    }
+    
+    pub fn deleteChars(self: *Terminal, n: u32) void {
+        const row = &self.grid.active[self.cursor_row];
+        const count = @min(n, self.grid.cols - self.cursor_col);
+        if (count == 0) return;
+        
+        const src_start = self.cursor_col + count;
+        const dst_start = self.cursor_col;
+        const copy_len = self.grid.cols - src_start;
+        
+        // Move [src_start, cols) -> [dst_start, ...)
+        for (0..copy_len) |i| {
+            row.cells[dst_start + @as(u32, @intCast(i))] = row.cells[src_start + @as(u32, @intCast(i))];
+        }
+        
+        // Clear end
+        const clear_start = self.grid.cols - count;
+        for (0..count) |i| {
+            row.cells[clear_start + @as(u32, @intCast(i))] = Cell.init(' ', self.current_fg, self.current_bg);
+        }
+        row.dirty = true;
+        self.dirty = true;
+    }
+    
+    pub fn eraseChars(self: *Terminal, n: u32) void {
+        const row = &self.grid.active[self.cursor_row];
+        const count = @min(n, self.grid.cols - self.cursor_col);
+        for (0..count) |i| {
+            var cell = &row.cells[self.cursor_col + @as(u32, @intCast(i))];
+            cell.codepoint = ' ';
+            cell.fg_color = self.current_fg;
+            cell.bg_color = self.current_bg;
+            cell.flags = .{};
+        }
+        row.dirty = true;
+        self.dirty = true;
+    }
+    
+    pub fn insertLines(self: *Terminal, n: u32) void {
+        // Only affects scroll region
+        if (self.cursor_row < self.scroll_top or self.cursor_row >= self.scroll_bottom) return;
+        
+        const count = @min(n, self.scroll_bottom - self.cursor_row);
+        // Move down: [cursor_row, bottom-n) -> [cursor_row+n, bottom)
+        // Copy rows backwards to avoid overwrite
+        // Wait, Grid stores rows. We can swap rows?
+        // But referencing them is tricky. Just copy data for now or swapping if Grid supports it?
+        // Let's rely on manual copy for safety.
+        
+        var i: u32 = 0;
+        const num_move = (self.scroll_bottom - self.cursor_row) - count;
+        
+        while (i < num_move) : (i += 1) {
+            const src_idx = (self.scroll_bottom - count - 1) - i;
+            const dst_idx = (self.scroll_bottom - 1) - i;
+            self.grid.active[dst_idx] = self.grid.active[src_idx]; // Shallow copy of Row struct?
+            // Row contains `cells`. We need deep copy?
+            // Row is `struct { cells: []Cell, dirty: bool }`.
+            // The slice points to underlying allocator memory.
+            // WE CANNOT share slices. We must copy content.
+            // Or swap slices if we own them?
+            // Grid owns all rows.
+            // Actually, best way is to rotate pointers.
+            // But `cells` are slices.
+            // Let's just copy content.
+            @memcpy(self.grid.active[dst_idx].cells, self.grid.active[src_idx].cells);
+            self.grid.active[dst_idx].dirty = true;
+        }
+        
+        // Clear inserted lines
+        for (0..count) |j| {
+            self.clearRow(self.cursor_row + @as(u32, @intCast(j)));
+        }
+        self.dirty = true;
+    }
+
+    pub fn deleteLines(self: *Terminal, n: u32) void {
+        if (self.cursor_row < self.scroll_top or self.cursor_row >= self.scroll_bottom) return;
+        
+        const count = @min(n, self.scroll_bottom - self.cursor_row);
+        
+        // Move up: [cursor_row + n, bottom) -> [cursor_row, bottom - n)
+        const num_move = (self.scroll_bottom - self.cursor_row) - count;
+        for (0..num_move) |i| {
+             const src_idx = self.cursor_row + count + @as(u32, @intCast(i));
+             const dst_idx = self.cursor_row + @as(u32, @intCast(i));
+             @memcpy(self.grid.active[dst_idx].cells, self.grid.active[src_idx].cells);
+             self.grid.active[dst_idx].dirty = true;
+        }
+        
+        // Clear bottom lines
+        for (0..count) |j| {
+            self.clearRow(self.scroll_bottom - 1 - @as(u32, @intCast(j)));
+        }
         self.dirty = true;
     }
 
@@ -1170,8 +1299,13 @@ pub const Terminal = struct {
             .row = self.cursor_row,
             .col = self.cursor_col,
             .visible = self.mode.cursor_visible,
-            .style = if (self.mode.insert_mode) .bar else .block, 
+            .style = self.cursor_style,
         };
+    }
+
+    pub fn setCursorStyle(self: *Terminal, style: CursorStyle) void {
+        self.cursor_style = style;
+        self.dirty = true;
     }
 
     pub fn isDirty(self: *const Terminal) bool {

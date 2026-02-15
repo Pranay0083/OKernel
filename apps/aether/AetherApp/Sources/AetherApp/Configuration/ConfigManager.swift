@@ -1,41 +1,157 @@
 import Foundation
 import AppKit
 
+// MARK: - Top Level Config
 struct AetherConfig: Codable {
-    var theme: ThemeConfig
+    var window: WindowConfig
+    var ui: UIConfig
     var font: FontConfig
-    var cursorBlinkRate: Float? // Blinks per second (0.1 to 10.0), default 2.0
-    var lineSpacing: Float?     // Line height multiplier (1.0 = tight, 1.5 = spacious), default 1.2
-}
-
-struct FontConfig: Codable {
-    var size: Float
-    var name: String
-}
-
-struct ThemeConfig: Codable {
-    var name: String
-    var background: String // Hex #RRGGBB or #AARRGGBB
-    var foreground: String
-    var selectionColor: String? // Hex #AARRGGBB for selection highlight (optional)
-    var palette: [String] // 16 ANSI colors
+    var cursor: CursorConfig
+    var colors: ColorConfig
+    var keys: KeyBindingConfig
     
-    static let dracula = ThemeConfig(
+    // Default Configuration
+    static let `default` = AetherConfig(
+        window: WindowConfig(),
+        ui: UIConfig(),
+        font: FontConfig(),
+        cursor: CursorConfig(),
+        colors: ColorConfig(),
+        keys: KeyBindingConfig()
+    )
+}
+
+// MARK: - Window Settings
+struct WindowConfig: Codable {
+    var opacity: Float = 0.95
+    var blurType: BlurType = .sidebar
+    var titleBar: TitleBarMode = .transparent
+    var padding: Padding = Padding(x: 10, y: 10)
+    
+    enum BlurType: String, Codable {
+        case sidebar, header, hud, none
+        
+        var material: NSVisualEffectView.Material {
+            switch self {
+            case .sidebar: return .sidebar
+            case .header: return .headerView
+            case .hud: return .hudWindow
+            case .none: return .windowBackground // Corrected from .window
+            }
+        }
+    }
+    
+    enum TitleBarMode: String, Codable {
+        case transparent, native, hidden
+    }
+    
+    struct Padding: Codable {
+        var x: Int
+        var y: Int
+    }
+}
+
+// MARK: - UI Settings
+struct UIConfig: Codable {
+    var scrollbar: ScrollbarConfig = ScrollbarConfig()
+    
+    struct ScrollbarConfig: Codable {
+        var width: CGFloat = 12
+        var padding: VerticalPadding = VerticalPadding(top: 4, bottom: 4)
+        var visible: Bool = true
+    }
+    
+    var scroll: ScrollConfig = ScrollConfig()
+    
+    struct ScrollConfig: Codable {
+        var naturalScrolling: Bool = true
+        var speed: Float = 1.0
+    }
+    
+    struct VerticalPadding: Codable {
+        var top: CGFloat
+        var bottom: CGFloat
+    }
+}
+
+// MARK: - Font Settings
+struct FontConfig: Codable {
+    var family: String = "JetBrains Mono"
+    var size: Float = 14.0
+    var lineHeight: Float = 1.2
+    var weight: FontWeight = .regular
+    var downloadUrl: String? = nil
+    
+    enum FontWeight: String, Codable {
+        case regular, bold, light, thin, medium, semibold, heavy, black
+    }
+}
+
+// MARK: - Cursor Settings
+struct CursorConfig: Codable {
+    var style: CursorStyle = .block
+    var blink: Bool = true
+    var smartBlink: Bool = true
+    var blinkRate: Float = 0.8
+    var blinkCurve: BlinkCurve = .ease
+    
+    enum CursorStyle: String, Codable {
+        case block, beam, underline
+    }
+    
+    enum BlinkCurve: String, Codable {
+        case ease, linear
+    }
+}
+
+// MARK: - Color Settings
+struct ColorConfig: Codable {
+    var scheme: String = "Dracula"
+    var background: String? = nil // Override
+    var foreground: String? = nil // Override
+    var selection: String? = nil
+    var palette: [String]? = nil // Custom palette override
+    
+    // Helper to get effective theme
+    func resolveTheme() -> Theme {
+        // Start with base scheme
+        var theme = Theme.named(scheme) ?? Theme.dracula
+        
+        // Apply overrides
+        if let bg = background { theme.background = bg }
+        if let fg = foreground { theme.foreground = fg }
+        if let sel = selection { theme.selection = sel }
+        if let pal = palette, pal.count == 16 { theme.palette = pal }
+        
+        return theme
+    }
+}
+
+struct Theme: Codable {
+    var name: String
+    var background: String
+    var foreground: String
+    var selection: String
+    var palette: [String]
+    
+    static let dracula = Theme(
         name: "Dracula",
-        background: "#00000000", // Transparent
+        background: "#00000000",
         foreground: "#F8F8F2",
+        selection: "#44475A",
         palette: [
             "#21222C", "#FF5555", "#50FA7B", "#F1FA8C",
-            "#BD93F9", "#FF79C6", "#8BE9FD", "#F8F8F2", // Blue is #BD93F9 (Purple-ish) to be visible
+            "#BD93F9", "#FF79C6", "#8BE9FD", "#F8F8F2",
             "#6272A4", "#FF6E6E", "#69FF94", "#FFFFC7",
             "#D6ACFF", "#FF92DF", "#A4FFFF", "#FFFFFF"
         ]
     )
     
-    static let solarizedDark = ThemeConfig(
+    static let solarizedDark = Theme(
         name: "Solarized Dark",
         background: "#00000000",
         foreground: "#839496",
+        selection: "#073642",
         palette: [
             "#073642", "#DC322F", "#859900", "#B58900",
             "#268BD2", "#D33682", "#2AA198", "#EEE8D5",
@@ -44,11 +160,11 @@ struct ThemeConfig: Codable {
         ]
     )
     
-    // OneDark with lighter blue
-    static let oneDark = ThemeConfig(
+    static let oneDark = Theme(
         name: "OneDark",
         background: "#00000000",
         foreground: "#ABB2BF",
+        selection: "#3E4452",
         palette: [
             "#282C34", "#E06C75", "#98C379", "#E5C07B",
             "#61AFEF", "#C678DD", "#56B6C2", "#ABB2BF",
@@ -56,37 +172,157 @@ struct ThemeConfig: Codable {
             "#61AFEF", "#C678DD", "#56B6C2", "#FFFFFF"
         ]
     )
+    
+    static let catppuccinMocha = Theme(
+        name: "Catppuccin Mocha",
+        background: "#1E1E2E",
+        foreground: "#CDD6F4",
+        selection: "#45475A",
+        palette: [
+            "#45475A", "#F38BA8", "#A6E3A1", "#F9E2AF",
+            "#89B4FA", "#F5C2E7", "#94E2D5", "#BAC2DE",
+            "#585B70", "#F38BA8", "#A6E3A1", "#F9E2AF",
+            "#89B4FA", "#F5C2E7", "#94E2D5", "#A6ADC8"
+        ]
+    )
+    
+    static func named(_ name: String) -> Theme? {
+        let n = name.lowercased()
+        if n == "dracula" { return .dracula }
+        if n == "solarized dark" { return .solarizedDark }
+        if n == "onedark" { return .oneDark }
+        if n.contains("catppuccin") || n.contains("mocha") { return .catppuccinMocha }
+        return nil
+    }
 }
 
-class ConfigManager {
+// MARK: - Key Bindings
+struct KeyBindingConfig: Codable {
+    var bindings: [String: String] = [
+        "cmd+c": "copy",
+        "cmd+v": "paste",
+        "cmd+t": "new_tab",
+        "cmd+w": "close_tab",
+        "cmd+n": "new_window"
+    ]
+    
+    // Custom coding keys to allow arbitrary keys in JSON?
+    // Actually [String:String] dictionary handles this automatically in Codable.
+}
+
+// MARK: - Config Manager
+class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
     
-    var config: AetherConfig
+    @Published var config: AetherConfig
     
     private init() {
-        self.config = AetherConfig(theme: .dracula, font: FontConfig(size: 14.0, name: "Menlo"))
+        self.config = AetherConfig.default
         loadConfig()
     }
     
     func loadConfig() {
         let fileManager = FileManager.default
         let home = fileManager.homeDirectoryForCurrentUser
-        let configPath = home.appendingPathComponent(".config/aether/config.json")
+        let configDir = home.appendingPathComponent(".config/aether")
         
-        guard fileManager.fileExists(atPath: configPath.path) else {
-            // Create default if not exists
-            saveConfig()
-            return
+        // Ensure directory exists
+        try? fileManager.createDirectory(at: configDir, withIntermediateDirectories: true)
+        
+        // Priority: 1. JSON, 2. TOML
+        let jsonPath = configDir.appendingPathComponent("config.json")
+        let tomlPath = configDir.appendingPathComponent("config.toml")
+        let aetherTomlPath = configDir.appendingPathComponent("aether.toml")
+        
+        if fileManager.fileExists(atPath: jsonPath.path) {
+            do {
+                let data = try Data(contentsOf: jsonPath)
+                let decoder = JSONDecoder()
+                self.config = try decoder.decode(AetherConfig.self, from: data)
+                print("ConfigManager: Loaded \(jsonPath.lastPathComponent)")
+                return
+            } catch {
+                print("ConfigManager: Failed to parse JSON: \(error)")
+            }
         }
         
-        do {
-            let data = try Data(contentsOf: configPath)
-            let decoder = JSONDecoder()
-            self.config = try decoder.decode(AetherConfig.self, from: data)
-            print("Loaded config from \(configPath.path)")
-        } catch {
-            print("Failed to load config: \(error)")
+        // Try TOML
+        let tomlCandidate = fileManager.fileExists(atPath: tomlPath.path) ? tomlPath : (fileManager.fileExists(atPath: aetherTomlPath.path) ? aetherTomlPath : nil)
+        
+        if let path = tomlCandidate {
+            do {
+                let content = try String(contentsOf: path, encoding: .utf8)
+                let dict = SimpleTOMLParser.parse(toml: content)
+                if let mappedConfig = mapTomlToConfig(dict) {
+                    self.config = mappedConfig
+                    print("ConfigManager: Loaded & Mapped \(path.lastPathComponent)")
+                    return
+                }
+            } catch {
+                print("ConfigManager: Failed to parse TOML: \(error)")
+            }
         }
+        
+        // Fallback
+        print("ConfigManager: No config found. Using defaults.")
+        saveConfig()
+    }
+    
+    private func mapTomlToConfig(_ doc: [String: Any]) -> AetherConfig? {
+        var cfg = AetherConfig.default
+        
+        // [window]
+        if let win = doc["window"] as? [String: Any] {
+            if let opacity = win["opacity"] as? Double { cfg.window.opacity = Float(opacity) }
+            if let dec = win["decorations"] as? String {
+                cfg.window.titleBar = (dec == "transparent" || dec == "buttonless") ? .transparent : .native
+            }
+            
+            // Map flat padding_x/y to nested object
+            let px = (win["padding_x"] as? Int) ?? cfg.window.padding.x
+            let py = (win["padding_y"] as? Int) ?? cfg.window.padding.y
+            cfg.window.padding = WindowConfig.Padding(x: px, y: py)
+        }
+        
+        // [ui.scroll] - Assuming structure might be flattened or nested differently in TOML
+        // Checking for [ui] or direct keys if minimal TOML parser is used
+        if let ui = doc["ui"] as? [String: Any] {
+            if let scroll = ui["scroll"] as? [String: Any] {
+                 if let spd = scroll["speed"] as? Double { cfg.ui.scroll.speed = Float(spd) }
+            }
+        }
+        
+        // [font]
+        if let font = doc["font"] as? [String: Any] {
+            if let family = font["family"] as? String { cfg.font.family = family }
+            if let size = font["size"] as? Double { cfg.font.size = Float(size) }
+            // Ligatures not supported yet, ignoring
+        }
+        
+        // [theme] -> [colors]
+        if let theme = doc["theme"] as? [String: Any] {
+            if let name = theme["name"] as? String {
+                // Map common naming differences if needed
+                if name.lowercased().contains("catppuccin") {
+                    cfg.colors.scheme = "Dracula" // Fallback map since we lack Catppuccin defs, or just pass string
+                    // Ideally we'd map "catppuccin-mocha" -> some theme. 
+                    // For now, let's keep the name so it tries to load or falls back to valid theme.
+                    cfg.colors.scheme = name
+                    // Actually, if we leave it "catppuccin-mocha", resolveTheme will default to Dracula unless we add it.
+                    // Let's explicitly check if we want to add Catppuccin later.
+                } else {
+                    cfg.colors.scheme = name
+                }
+            }
+        }
+        
+        // [cursor]
+        if let cursor = doc["cursor"] as? [String: Any] {
+            if let sb = cursor["smartBlink"] as? Bool { cfg.cursor.smartBlink = sb }
+            if let blink = cursor["blink"] as? Bool { cfg.cursor.blink = blink }
+        }
+        
+        return cfg
     }
     
     func saveConfig() {
