@@ -1091,12 +1091,11 @@ pub const Terminal = struct {
         if (self.cursor_col >= cols) self.cursor_col = cols - 1;
         
         // Update scroll region if it was full screen
-        if (self.scroll_bottom >= self.grid.rows or self.scroll_bottom == 0) {
-            self.scroll_bottom = rows;
-        } else {
-            self.scroll_bottom = @min(self.scroll_bottom, rows);
-        }
-        self.scroll_top = @min(self.scroll_top, rows - 1);
+        // Always reset scroll region to full screen on resize.
+        // Applications (like vim/tmux) responsible for setting margins will handle SIGWINCH 
+        // and re-apply them if needed. This prevents the "stuck at 24 lines" issue.
+        self.scroll_top = 0;
+        self.scroll_bottom = rows;
         
         // Rebuild tab stops
         self.tab_stops.deinit();

@@ -93,6 +93,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         }
         recalculateGridSizeInternal()
         
+        print("DEBUG: Resize -> Viewport: \(viewportSize), Scale: \(scaleFactor), Rows: \(rows), Cols: \(cols)")
+        
         // Force a redraw so the terminal repaints with the new grid dimensions
         forceNextFrame = true
     }
@@ -356,7 +358,12 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         guard viewportSize.x > 0 && viewportSize.y > 0 else { return }
         
         // PADDING is in points. viewportSize is in pixels.
-        // Scale cell dimensions to drawable pixels for correct grid calculation
+        // We need consistent units. Let's work entirely in physical pixels (backing store).
+        
+        // FontAtlas gives metrics in pixels if scale was passed correctly during init.
+        // However, let's be explicit:
+        // cellWidth/Height in FontAtlas * (current_view_scale / font_atlas_scale) = physical pixels on screen of a cell?
+        
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let cellW = Float(fontAtlas.cellWidth) * ratio
         let cellH = Float(fontAtlas.cellHeight) * ratio

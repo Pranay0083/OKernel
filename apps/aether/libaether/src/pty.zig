@@ -201,7 +201,12 @@ pub const Pty = struct {
             .ws_xpixel = 0,
             .ws_ypixel = 0,
         };
-        if (c.ioctl(self.master_fd, c.TIOCSWINSZ, &ws) == -1) {
+        
+        // on macOS, ioctl request is unsigned long
+        const TIOCSWINSZ_DARWIN: u32 = 0x80087467;
+        const req = @as(c_ulong, TIOCSWINSZ_DARWIN);
+        
+        if (c.ioctl(self.master_fd, req, &ws) == -1) {
             return error.IoctlFailed;
         }
         _ = c.kill(self.child_pid, c.SIGWINCH);

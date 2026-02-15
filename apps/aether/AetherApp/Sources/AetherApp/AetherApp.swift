@@ -12,9 +12,12 @@ struct AetherApp: App {
                     .ignoresSafeArea()
                 
                 // Terminal Content
-                TerminalViewRepresentable()
-                    .frame(minWidth: 600, minHeight: 400)
-                    //.padding(.top, 28) // Removed to fix "starts very below"
+                GeometryReader { geometry in
+                    TerminalViewRepresentable(frame: geometry.frame(in: .local))
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                }
+                .padding(.top, 28)
+                .ignoresSafeArea()
                 
                 // Unified Title Bar Background ("Navbar")
                 // A visual strip at the top to back the traffic lights and title
@@ -88,9 +91,17 @@ struct VisualEffectView: NSViewRepresentable {
 }
 
 struct TerminalViewRepresentable: NSViewRepresentable {
+    var frame: CGRect
+
     func makeNSView(context: Context) -> TerminalView {
-        TerminalView(frame: .zero)
+        let view = TerminalView(frame: frame)
+        view.autoresizingMask = [.width, .height]
+        return view
     }
     
-    func updateNSView(_ nsView: TerminalView, context: Context) { }
+    func updateNSView(_ nsView: TerminalView, context: Context) {
+        if nsView.frame != frame {
+            nsView.frame = frame
+        }
+    }
 }
