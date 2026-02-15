@@ -1,0 +1,28 @@
+[metadata]
+name = "Ayu Dark"
+author = "dempfi"
+version = "1.0.0"
+
+[colors]
+background = "#0d1017"
+foreground = "#bfbdb6"
+cursor = "#e6b450"
+selection = "#273747"
+
+[palette]
+black = "#0d1017"
+red = "#f07178"
+green = "#aad94c"
+yellow = "#ffb454"
+blue = "#59c2ff"
+magenta = "#d2a6ff"
+cyan = "#95e6cb"
+white = "#bfbdb6"
+bright_black = "#565b66"
+bright_red = "#f07178"
+bright_green = "#aad94c"
+bright_yellow = "#ffb454"
+bright_blue = "#59c2ff"
+bright_magenta = "#d2a6ff"
+bright_cyan = "#95e6cb"
+bright_white = "#ffffff"

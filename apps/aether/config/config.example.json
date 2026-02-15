@@ -1,0 +1,47 @@
+{
+  "window": {
+    "opacity": 0.95,
+    "blurType": "sidebar",
+    "titleBar": "transparent",
+    "padding": { "x": 12, "y": 12 }
+  },
+  "ui": {
+    "scrollbar": {
+      "width": 10,
+      "padding": { "top": 4, "bottom": 4 },
+      "visible": true
+    },
+    "scroll": {
+      "naturalScrolling": true,
+      "speed": 1.0
+    }
+  },
+  "font": {
+    "family": "JetBrains Mono",
+    "size": 14.0,
+    "lineHeight": 1.2,
+    "weight": "regular"
+  },
+  "cursor": {
+    "style": "block",
+    "blink": true,
+    "smartBlink": true,
+    "blinkRate": 0.8,
+    "blinkCurve": "ease"
+  },
+  "colors": {
+    "scheme": "Dracula",
+    "background": "#1E1E2E",
+    "selection": "#44475A",
+    "foreground": "#F8F8F2"
+  },
+  "keys": {
+    "bindings": {
+      "cmd+c": "copy",
+      "cmd+v": "paste",
+      "cmd+enter": "toggle_fullscreen",
+      "cmd+t": "new_tab",
+      "cmd+w": "close_tab"
+    }
+  }
+}
