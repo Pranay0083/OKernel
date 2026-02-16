@@ -5,6 +5,7 @@ import Combine
 class TerminalSession: Identifiable, ObservableObject {
     let id: UUID
     @Published var title: String
+    @Published var windowTitle: String = "Aether"
     
     private(set) var terminal: OpaquePointer?
     let scrollState: TerminalScrollState
@@ -12,6 +13,7 @@ class TerminalSession: Identifiable, ObservableObject {
     init() {
         self.id = UUID()
         self.title = "Terminal"
+        self.windowTitle = "Aether"
         self.scrollState = TerminalScrollState()
         
         // Initialize backend terminal
@@ -32,7 +34,6 @@ class TerminalSession: Identifiable, ObservableObject {
         _ = aether_resize(term, UInt32(rows), UInt32(cols))
     }
 
-    
     // Polling for title
     private var timer: Timer?
     
@@ -52,55 +53,66 @@ class TerminalSession: Identifiable, ObservableObject {
         let pid = aether_get_pid(term)
         if pid <= 0 { return }
         
-        // 1. Get TTY Name
+        // 1. Get TTY & CWD
         var ttyBuf = [Int8](repeating: 0, count: 64)
         _ = aether_get_tty(term, &ttyBuf, 64)
         let ttyName = String(cString: ttyBuf)
         
-        // 2. Get CWD (of shell)
         var cwdBuf = [Int8](repeating: 0, count: 1024)
         _ = aether_get_cwd(pid, &cwdBuf, 1024)
         let cwdPath = String(cString: cwdBuf)
-        // let cwdName = URL(fileURLWithPath: cwdPath).lastPathComponent
         
-        // 3. Find Foreground Process
-        // Clean tty name for ps (e.g. /dev/ttys003 -> ttys003)
+        // Window Title Logic (User@Host:PWD)
+        let user = NSUserName()
+        let host = ProcessInfo.processInfo.hostName
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let displayPath = cwdPath.replacingOccurrences(of: home, with: "~")
+        let longTitle = "\(user)@\(host):\(displayPath)"
+        
+        // Tab Title Logic (Process Name)
         let cleanTty = ttyName.replacingOccurrences(of: "/dev/", with: "")
         
-        if !cleanTty.isEmpty {
+         if !cleanTty.isEmpty {
             DispatchQueue.global(qos: .background).async { [weak self] in
                 guard let self = self else { return }
                 
-                // Fetch config
+                // Get Process Name
+                var shortTitle = "Terminal"
+                if let proc = self.getForegroundProcess(tty: cleanTty) {
+                     shortTitle = proc
+                }
+                
+                // If user configured specific style for tabs, respect it?
+                // For now, user requested: Tab = AetherApp (Process), Window = Long.
+                // But the user also has title_style config. 
+                // Let's make Tab Title respect title_style? 
+                // Actually, user said "make the vaiditya@... this the title and AetherApp as Tab".
+                // This implies Window = Long, Tab = Process (or Smart).
+                
+                // Let's stick to title_style for TABs. 
+                // If style is "path", tab shows path. If "process", tab shows process.
+                
                 let style = ConfigManager.shared.config.ui.tabs.titleStyle
+                var tabTitle = shortTitle
                 
-                // Format CWD
-                let home = FileManager.default.homeDirectoryForCurrentUser.path
-                let displayPath = cwdPath.replacingOccurrences(of: home, with: "~")
-                
-                var newTitle = "Terminal"
-                
-                switch style {
-                case .path:
-                    newTitle = displayPath
-                case .process:
-                    if let proc = self.getForegroundProcess(tty: cleanTty) {
-                        newTitle = proc
-                    } else {
-                        newTitle = "Terminal"
-                    }
-                case .smart:
-                    // Smart: Show process if running (not shell), else show path
-                    let proc = self.getForegroundProcess(tty: cleanTty)
-                    if let name = proc, !name.contains("login"), !name.contains("-zsh"), !name.contains("zsh") {
-                         newTitle = name
-                    } else {
-                         newTitle = displayPath
-                    }
+                if style == .path {
+                    tabTitle = displayPath
+                } else if style == .smart {
+                     if let name = self.getForegroundProcess(tty: cleanTty), !name.contains("login"), !name.contains("-zsh"), !name.contains("zsh") {
+                         tabTitle = name
+                     } else {
+                         // Smart default: Path or Process? User wants "AetherApp" (Process) as tab.
+                         // But for shell, usually it shows current dir or "zsh".
+                         // Let's use displayPath if it's just a shell, or process if it's a command.
+                         tabTitle = displayPath
+                         // Wait, if I run `swift run`, process is `swift`. Tab should be `swift`.
+                         // If I am at prompt, process is `zsh`. Tab should be `~` or `folder`.
+                     }
                 }
                 
                 DispatchQueue.main.async {
-                    self.title = newTitle
+                    self.title = tabTitle
+                    self.windowTitle = longTitle
                 }
             }
         }

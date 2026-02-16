@@ -160,11 +160,17 @@ class TerminalView: MTKView {
             }
             .store(in: &cancellables)
             
-        // Observe title changes
+        // Observe tab title changes (for callback if needed, though TabBar observes directly)
         self.terminalSession.$title
             .sink { [weak self] newTitle in
-                self?.window?.title = newTitle
                 self?.onTitleChange?(newTitle)
+            }
+            .store(in: &cancellables)
+            
+        // Observe window title changes
+        self.terminalSession.$windowTitle
+            .sink { [weak self] newTitle in
+                self?.window?.title = newTitle
             }
             .store(in: &cancellables)
         
@@ -195,7 +201,7 @@ class TerminalView: MTKView {
         window.titleVisibility = .visible 
         
         // Initial title sync
-        window.title = terminalSession.title
+        window.title = terminalSession.windowTitle
         
         window.isOpaque = false
         window.backgroundColor = .clear

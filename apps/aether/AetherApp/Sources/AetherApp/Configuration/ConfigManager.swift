@@ -64,6 +64,15 @@ struct UIConfig: Codable {
     var scroll: ScrollConfig = ScrollConfig()
     var tabs: TabsConfig = TabsConfig()
     
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.scrollbar = try container.decodeIfPresent(ScrollbarConfig.self, forKey: .scrollbar) ?? ScrollbarConfig()
+        self.scroll = try container.decodeIfPresent(ScrollConfig.self, forKey: .scroll) ?? ScrollConfig()
+        self.tabs = try container.decodeIfPresent(TabsConfig.self, forKey: .tabs) ?? TabsConfig()
+    }
+    
     struct ScrollConfig: Codable {
         var naturalScrolling: Bool = true
         var speed: Float = 1.0
@@ -233,6 +242,12 @@ class ConfigManager: ObservableObject {
         loadConfig()
     }
     
+    // Priority:
+    // 1. ~/.config/aether/config.json
+    // 2. ~/.config/aether/config.toml
+    // 3. ~/.config/aether/aether.json
+    // 4. ~/.config/aether/aether.toml
+    
     func loadConfig() {
         let fileManager = FileManager.default
         let home = fileManager.homeDirectoryForCurrentUser
@@ -241,57 +256,38 @@ class ConfigManager: ObservableObject {
         // Ensure directory exists
         try? fileManager.createDirectory(at: configDir, withIntermediateDirectories: true)
         
-        // Priority: 1. JSON, 2. TOML
-        // Priority: 
-        // 1. ~/.config/aether/config.json
-        // 2. ~/.config/aether/config.toml
-        // 3. ~/config/aether/config.toml
-        // 4. ~/apps/aether/config/config.toml
+        let paths: [URL] = [
+            configDir.appendingPathComponent("config.json"),
+            configDir.appendingPathComponent("config.toml"),
+            configDir.appendingPathComponent("aether.json"),
+            configDir.appendingPathComponent("aether.toml")
+        ]
         
-        let jsonPath = configDir.appendingPathComponent("config.json")
-        let tomlPath = configDir.appendingPathComponent("config.toml")
-        
-        // Additional paths as requested
-        let altConfigDir = home.appendingPathComponent("config/aether")
-        let altTomlPath = altConfigDir.appendingPathComponent("config.toml")
-        
-        let appConfigDir = home.appendingPathComponent("apps/aether/config")
-        let appTomlPath = appConfigDir.appendingPathComponent("config.toml")
-        
-        let aetherTomlPath = configDir.appendingPathComponent("aether.toml")
-        
-        if fileManager.fileExists(atPath: jsonPath.path) {
-            do {
-                let data = try Data(contentsOf: jsonPath)
-                let decoder = JSONDecoder()
-                self.config = try decoder.decode(AetherConfig.self, from: data)
-                print("ConfigManager: Loaded \(jsonPath.lastPathComponent)")
-                return
-            } catch {
-                print("ConfigManager: Failed to parse JSON: \(error)")
-            }
-        }
-        
-        // Try TOML: Check multiple locations
-        let tomlCandidate: URL? = {
-            if fileManager.fileExists(atPath: tomlPath.path) { return tomlPath }
-            if fileManager.fileExists(atPath: altTomlPath.path) { return altTomlPath } // ~/config/aether/
-            if fileManager.fileExists(atPath: appTomlPath.path) { return appTomlPath } // ~/apps/aether/config/
-            if fileManager.fileExists(atPath: aetherTomlPath.path) { return aetherTomlPath }
-            return nil
-        }()
-        
-        if let path = tomlCandidate {
-            do {
-                let content = try String(contentsOf: path, encoding: .utf8)
-                let dict = SimpleTOMLParser.parse(toml: content)
-                if let mappedConfig = mapTomlToConfig(dict) {
-                    self.config = mappedConfig
-                    print("ConfigManager: Loaded & Mapped \(path.lastPathComponent)")
-                    return
+        for path in paths {
+            if fileManager.fileExists(atPath: path.path) {
+                if path.pathExtension == "json" {
+                    do {
+                        let data = try Data(contentsOf: path)
+                        let decoder = JSONDecoder()
+                        self.config = try decoder.decode(AetherConfig.self, from: data)
+                        print("ConfigManager: Loaded JSON \(path.lastPathComponent)")
+                        return
+                    } catch {
+                        print("ConfigManager: Failed to parse JSON \(path.lastPathComponent): \(error)")
+                    }
+                } else if path.pathExtension == "toml" {
+                     do {
+                        let content = try String(contentsOf: path, encoding: .utf8)
+                        let dict = SimpleTOMLParser.parse(toml: content)
+                        if let mappedConfig = mapTomlToConfig(dict) {
+                            self.config = mappedConfig
+                            print("ConfigManager: Loaded TOML \(path.lastPathComponent)")
+                            return
+                        }
+                    } catch {
+                        print("ConfigManager: Failed to parse TOML \(path.lastPathComponent): \(error)")
+                    }
                 }
-            } catch {
-                print("ConfigManager: Failed to parse TOML: \(error)")
             }
         }
         
