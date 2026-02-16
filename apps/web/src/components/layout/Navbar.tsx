@@ -101,11 +101,17 @@ export const Navbar = () => {
                                 </Button>
                             </Link>
                         ) : (
-                            <Link to="/console">
-                                <Button size="sm" className="rounded-full px-6 font-mono font-bold">
-                                    &gt;_ Launch Console
-                                </Button>
-                            </Link>
+                            <>
+                                <Link to="/aether" className="relative group flex items-center gap-2">
+                                    <span className="text-zinc-400 group-hover:text-white transition-colors">Aether</span>
+                                    <span className="absolute -top-3 -right-6 px-1.5 py-0.5 text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full animate-pulse">NEW</span>
+                                </Link>
+                                <Link to="/console">
+                                    <Button size="sm" className="rounded-full px-6 font-mono font-bold">
+                                        &gt;_ Launch Console
+                                    </Button>
+                                </Link>
+                            </>
                         )}
                     </div>
 

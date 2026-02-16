@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Globe, FileText, Package, Cpu, Terminal, Code, Database, Layers, Zap, Book } from 'lucide-react';
+import { ExternalLink, Globe, FileText, Package, Cpu, Terminal, Code, Database, Layers, Zap, Book, Download } from 'lucide-react';
 
 interface SiteLink {
     path: string;
@@ -22,11 +22,13 @@ const SITEMAP: SiteSection[] = [
             { path: "/packages", title: "Packages", description: "OKernel CLI packages and language poll", icon: <Package size={16} /> },
             { path: "/about", title: "About", description: "Project philosophy and team information", icon: <FileText size={16} /> },
             { path: "/changelog", title: "Changelog", description: "Version history and release notes", icon: <FileText size={16} /> },
+            { path: "/aether/download", title: "Download Aether", description: "Get the latest Aether release", icon: <Download size={16} /> },
         ]
     },
     {
         title: "Applications",
         links: [
+            { path: "/aether", title: "Aether Terminal", description: "GPU-accelerated terminal emulator for macOS", icon: <Terminal size={16} /> },
             { path: "/apps/visualizer", title: "Code Tracer", description: "Python execution visualizer with hardware inspection", icon: <Cpu size={16} /> },
             { path: "/apps/scheduler", title: "CPU Scheduler", description: "Interactive process scheduling simulator", icon: <Layers size={16} /> },
             { path: "/apps/shell", title: "Shell Maker", description: "Custom Unix shell builder", icon: <Terminal size={16} /> },
@@ -47,6 +49,7 @@ const SITEMAP: SiteSection[] = [
             { path: "/docs/architecture", title: "System Design", description: "High-level overview of the SysCore Engine", icon: <Globe size={16} /> },
             { path: "/docs/architecture/tracing", title: "Trace Engine", description: "How Python execution is intercepted", icon: <Layers size={16} /> },
             { path: "/docs/architecture/sympathy", title: "Code Tracer", description: "Machine Sympathy & Hardware Inspector", icon: <Zap size={16} /> },
+            { path: "/docs/aether", title: "Aether Architecture", description: "Deep dive into Aether's Zig/Metal engine", icon: <Terminal size={16} /> },
         ]
     },
     {
@@ -99,7 +102,7 @@ export const SitemapPage: React.FC = () => {
                             {section.links.map((link) => {
                                 const isExternal = link.path.startsWith('http');
                                 const LinkComponent = isExternal ? 'a' : Link;
-                                const linkProps = isExternal 
+                                const linkProps = isExternal
                                     ? { href: link.path, target: "_blank", rel: "noopener noreferrer" }
                                     : { to: link.path };
 

@@ -119,6 +119,16 @@ export const DocsLayout = () => {
             ];
         }
 
+        // Aether Docs
+        if (path.includes('aether')) {
+            return [
+                { id: 'architecture', label: 'Hybrid Architecture' },
+                { id: 'rendering', label: 'Metal Pipeline' },
+                { id: 'configuration', label: 'Configuration' },
+                { id: 'shortcuts', label: 'Keybindings' }
+            ];
+        }
+
         return [];
     };
 
