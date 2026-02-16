@@ -21,7 +21,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     private let lock = NSLock()
     
     // Terminal state (from Zig)
-    var terminal: OpaquePointer?
+    var terminal: OpaquePointer? {
+        didSet {
+             applyInitialState()
+        }
+    }
     var rows: Int = 24
     var cols: Int = 80
     
@@ -83,17 +87,6 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         // Apply initial theme from config
         applyTheme(ConfigManager.shared.config.colors.resolveTheme())
         
-        // Apply initial cursor style to LibAether
-        let style = ConfigManager.shared.config.cursor.style
-        var zigStyle: UInt8 = 0 // Block
-        switch style {
-        case .block: zigStyle = 0
-        case .underline: zigStyle = 1
-        case .beam: zigStyle = 2
-        }
-        if let terminal = terminal {
-            aether_set_cursor_style(terminal, zigStyle)
-        }
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleFontLoaded), name: NSNotification.Name("AetherFontLoaded"), object: nil)
     }
@@ -442,17 +435,27 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                          )
                          instances.append(fgInst)
                      }
-                } else if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                }
+                
+                // Cursor Geometry Logic
+                // User wants cursor to match "text height" (ascent + descent) and be centered.
+                
+                let ascent = Float(fontAtlas.ascent) * ratio
+                let descent = Float(fontAtlas.descent) * ratio
+                let textHeight = ascent + descent
+                
+                // Text is rendered from the top (y), so we should align cursor to top (y) to match.
+                // Centering in rowHeight causes misalignment if line spacing is large.
+                let textOffsetY: Float = 0.0
+                
+                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col && (cell.codepoint == 0 || cell.codepoint == 32) {
                     // Empty cell block cursor
-                    // Center the block vertically to match font size (ch) instead of rowHeight
-                    let offsetY = (rowHeight - ch) / 2.0
-                    
                     let blockInst = GlyphInstance(
-                        position: SIMD2<Float>(x, y + offsetY),
-                        size: SIMD2<Float>(cw, ch),
+                        position: SIMD2<Float>(x, y + textOffsetY),
+                        size: SIMD2<Float>(cw, textHeight),
                         texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
                         texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                        fgColor: bg, // Use the 'bg' (which is the effective FG aka cursor color) as color
+                        fgColor: bg, 
                         bgColor: bg,
                         flags: 0
                     )
@@ -467,8 +470,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                     var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
                     
                     if currentStyle == .beam {
-                        rectSize = SIMD2<Float>(2.0, ch) // Match font height
-                        rectPos.y = y + (rowHeight - ch) / 2.0 // Center it
+                        rectSize = SIMD2<Float>(2.0, textHeight) // Match text height
+                        rectPos.y = y + textOffsetY // Center it
                     } else if currentStyle == .underline {
                         rectSize = SIMD2<Float>(cw, 2.0)
                         rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
@@ -568,6 +571,26 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     
     private var forceNextFrame = false
 
+    private func applyInitialState() {
+        guard let terminal = terminal else { return }
+        
+        // Sync Dimensions
+        self.rows = Int(aether_get_rows(terminal))
+        self.cols = Int(aether_get_cols(terminal))
+        
+        // Apply Cursor Style
+        let style = ConfigManager.shared.config.cursor.style
+        var zigStyle: UInt8 = 0
+        switch style {
+        case .block: zigStyle = 0
+        case .underline: zigStyle = 1
+        case .beam: zigStyle = 2
+        }
+        aether_set_cursor_style(terminal, zigStyle)
+        
+        forceNextFrame = true
+    }
+    
     func applyTheme(_ theme: Theme) {
         colorMap.removeAll()
         // Default ANSI mapping (Zig internal defaults -> Theme Palette)

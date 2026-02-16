@@ -6,14 +6,21 @@ import Combine
 
 class TerminalView: MTKView {
     var renderer: TerminalRenderer?
-    var terminal: OpaquePointer?
+    
+    // Session State
+    var terminalSession: TerminalSession
+    var onAction: ((String) -> Void)?
+    var onTitleChange: ((String) -> Void)?
+    
+    // Convenience accessors
+    var terminal: OpaquePointer? { terminalSession.terminal }
+    var scrollState: TerminalScrollState { terminalSession.scrollState }
+
     private var hasMouseDragged = false
     
     // Smart Blink State
     private var lastInputTime: TimeInterval = 0
     
-    // Shared State
-    var scrollState: TerminalScrollState
     private var cancellables = Set<AnyCancellable>()
     
     // Custom Fullscreen State
@@ -33,6 +40,11 @@ class TerminalView: MTKView {
              self.drawableSize = newSize
              // Explicitly notify renderer since autoResizeDrawable is false
              renderer?.mtkView(self, drawableSizeWillChange: newSize)
+             
+             // Maintain focus during resize/layout
+             if window.firstResponder !== self {
+                 window.makeFirstResponder(self)
+             }
         }
     }
     
@@ -110,8 +122,9 @@ class TerminalView: MTKView {
         aether_scroll_to(terminal, newOffset)
     }
     
-    init(frame frameRect: CGRect, device: MTLDevice?, scrollState: TerminalScrollState) {
-        self.scrollState = scrollState
+    init(frame frameRect: CGRect, device: MTLDevice?, session: TerminalSession, onTitleChange: ((String) -> Void)? = nil) {
+        self.terminalSession = session
+        self.onTitleChange = onTitleChange
         super.init(frame: frameRect, device: device ?? MTLCreateSystemDefaultDevice())
         
         self.colorPixelFormat = .bgra8Unorm
@@ -129,10 +142,10 @@ class TerminalView: MTKView {
         setenv("LC_ALL", "en_US.UTF-8", 1)
         setenv("COLORTERM", "truecolor", 1)
         
-        self.terminal = aether_terminal_with_pty(24, 80, nil)
+        // Terminal is now managed by session
         
         do {
-            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.scrollState)
+            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.terminalSession.scrollState)
             self.renderer?.terminal = self.terminal
             self.delegate = self.renderer
         } catch {
@@ -146,6 +159,20 @@ class TerminalView: MTKView {
                 self.scrollTo(t: t)
             }
             .store(in: &cancellables)
+            
+        // Observe tab title changes (for callback if needed, though TabBar observes directly)
+        self.terminalSession.$title
+            .sink { [weak self] newTitle in
+                self?.onTitleChange?(newTitle)
+            }
+            .store(in: &cancellables)
+            
+        // Observe window title changes
+        self.terminalSession.$windowTitle
+            .sink { [weak self] newTitle in
+                self?.window?.title = newTitle
+            }
+            .store(in: &cancellables)
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleThemeChange(_:)), name: NSNotification.Name("AetherThemeChanged"), object: nil)
     }
@@ -155,6 +182,12 @@ class TerminalView: MTKView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         configureWindowAppearance()
+        
+        // Regain focus when added to window
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let window = self.window else { return }
+            window.makeFirstResponder(self)
+        }
     }
     
     private func configureWindowAppearance() {
@@ -165,8 +198,10 @@ class TerminalView: MTKView {
         // Title bar is transparent (we draw a blur view behind it in SwiftUI)
         window.titlebarAppearsTransparent = true
         window.styleMask.insert(.fullSizeContentView)
-        window.titleVisibility = .visible // Ensure title "Aether" is visible
-        window.title = "Aether"
+        window.titleVisibility = .visible 
+        
+        // Initial title sync
+        window.title = terminalSession.windowTitle
         
         window.isOpaque = false
         window.backgroundColor = .clear
@@ -240,9 +275,7 @@ class TerminalView: MTKView {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
-        if let term = terminal {
-            aether_terminal_free(term)
-        }
+        // Terminal lifecycle is managed by TerminalSession
     }
     
     @objc private func handleThemeChange(_ notification: Notification) {
@@ -402,7 +435,13 @@ class TerminalView: MTKView {
         case "toggle_fullscreen":
             toggleCustomFullScreen(nil)
             return true
-        case "new_tab", "new_window", "close_tab":
+        case "new_tab":
+            onAction?("new_tab")
+            return true
+        case "close_tab":
+            onAction?("close_tab")
+            return true
+        case "new_window":
             print("Action not implemented yet: \(action)")
             return true
         default:

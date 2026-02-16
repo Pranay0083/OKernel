@@ -8,6 +8,11 @@ pub const Config = @import("config.zig").Config;
 pub const TomlParser = @import("config.zig").TomlParser;
 pub const parseHexColor = @import("config.zig").parseHexColor;
 
+const c = @cImport({
+    @cInclude("libproc.h");
+    @cInclude("sys/errno.h");
+});
+
 // Use a global allocator for C API
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
@@ -170,8 +175,8 @@ pub export fn aether_set_cursor_style(term: ?*Terminal, style: u8) void {
 
 pub export fn aether_get_cursor(term: ?*const Terminal) extern struct { row: u32, col: u32, visible: bool, style: u8 } {
     if (term) |t| {
-        const c = t.getCursor();
-        return .{ .row = c.row, .col = c.col, .visible = c.visible, .style = @intFromEnum(c.style) };
+        const cur = t.getCursor();
+        return .{ .row = cur.row, .col = cur.col, .visible = cur.visible, .style = @intFromEnum(cur.style) };
     }
     return .{ .row = 0, .col = 0, .visible = false, .style = 0 };
 }
@@ -203,6 +208,7 @@ pub export fn aether_scroll_to(term: ?*Terminal, offset: u32) void {
 
 pub export fn aether_resize(term: ?*Terminal, rows: u32, cols: u32) bool {
     if (term) |t| {
+        if (t.grid.rows == rows and t.grid.cols == cols) return true;
         t.resize(rows, cols) catch return false;
         return true;
     }
@@ -225,6 +231,62 @@ pub export fn aether_is_dirty(term: ?*const Terminal) bool {
 
 pub export fn aether_mark_clean(term: ?*Terminal) void {
     if (term) |t| t.markClean();
+}
+
+pub export fn aether_get_pid(term: ?*const Terminal) i32 {
+    if (term) |t| {
+        if (t.pty) |p| {
+            return p.child_pid;
+        }
+    }
+    return -1;
+}
+
+pub export fn aether_get_tty(term: ?*const Terminal, buf: [*]u8, len: usize) usize {
+    if (term) |t| {
+        if (t.pty) |p| {
+            // Find null terminator or end
+            var name_len: usize = 0;
+            while (name_len < p.tty_name.len and p.tty_name[name_len] != 0) : (name_len += 1) {}
+            
+            const to_copy = @min(len - 1, name_len);
+            @memcpy(buf[0..to_copy], p.tty_name[0..to_copy]);
+            buf[to_copy] = 0;
+            return to_copy;
+        }
+    }
+    return 0;
+}
+
+pub export fn aether_get_cwd(pid: i32, buf: [*]u8, len: usize) usize {
+    var vnode_info: c.proc_vnodepathinfo = undefined;
+    const res = c.proc_pidinfo(pid, c.PROC_PIDVNODEPATHINFO, 0, &vnode_info, @sizeOf(c.proc_vnodepathinfo));
+    if (res > 0) {
+        const path = &vnode_info.pvi_cdir.vip_path;
+        // path is [1024]u8
+        var path_len: usize = 0;
+        while (path_len < 1024 and path[path_len] != 0) : (path_len += 1) {}
+        
+        const to_copy = @min(len - 1, path_len);
+        @memcpy(buf[0..to_copy], path[0..to_copy]);
+        buf[to_copy] = 0;
+        return to_copy;
+    }
+    return 0;
+}
+
+pub export fn aether_get_cols(term: ?*const Terminal) u32 {
+    if (term) |t| {
+        return t.grid.cols;
+    }
+    return 80;
+}
+
+pub export fn aether_get_rows(term: ?*const Terminal) u32 {
+    if (term) |t| {
+        return t.grid.rows;
+    }
+    return 24;
 }
 
 pub export fn aether_version() [*:0]const u8 {

@@ -62,10 +62,31 @@ struct UIConfig: Codable {
     }
     
     var scroll: ScrollConfig = ScrollConfig()
+    var tabs: TabsConfig = TabsConfig()
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.scrollbar = try container.decodeIfPresent(ScrollbarConfig.self, forKey: .scrollbar) ?? ScrollbarConfig()
+        self.scroll = try container.decodeIfPresent(ScrollConfig.self, forKey: .scroll) ?? ScrollConfig()
+        self.tabs = try container.decodeIfPresent(TabsConfig.self, forKey: .tabs) ?? TabsConfig()
+    }
     
     struct ScrollConfig: Codable {
         var naturalScrolling: Bool = true
         var speed: Float = 1.0
+    }
+    
+    struct TabsConfig: Codable {
+        var verticalPadding: CGFloat = 2
+        var horizontalPadding: CGFloat = 10
+        var cornerRadius: CGFloat = 6
+        var titleStyle: TitleStyle = .smart
+    }
+    
+    enum TitleStyle: String, Codable {
+        case smart, path, process
     }
     
     struct VerticalPadding: Codable {
@@ -221,6 +242,12 @@ class ConfigManager: ObservableObject {
         loadConfig()
     }
     
+    // Priority:
+    // 1. ~/.config/aether/config.json
+    // 2. ~/.config/aether/config.toml
+    // 3. ~/.config/aether/aether.json
+    // 4. ~/.config/aether/aether.toml
+    
     func loadConfig() {
         let fileManager = FileManager.default
         let home = fileManager.homeDirectoryForCurrentUser
@@ -229,37 +256,38 @@ class ConfigManager: ObservableObject {
         // Ensure directory exists
         try? fileManager.createDirectory(at: configDir, withIntermediateDirectories: true)
         
-        // Priority: 1. JSON, 2. TOML
-        let jsonPath = configDir.appendingPathComponent("config.json")
-        let tomlPath = configDir.appendingPathComponent("config.toml")
-        let aetherTomlPath = configDir.appendingPathComponent("aether.toml")
+        let paths: [URL] = [
+            configDir.appendingPathComponent("config.json"),
+            configDir.appendingPathComponent("config.toml"),
+            configDir.appendingPathComponent("aether.json"),
+            configDir.appendingPathComponent("aether.toml")
+        ]
         
-        if fileManager.fileExists(atPath: jsonPath.path) {
-            do {
-                let data = try Data(contentsOf: jsonPath)
-                let decoder = JSONDecoder()
-                self.config = try decoder.decode(AetherConfig.self, from: data)
-                print("ConfigManager: Loaded \(jsonPath.lastPathComponent)")
-                return
-            } catch {
-                print("ConfigManager: Failed to parse JSON: \(error)")
-            }
-        }
-        
-        // Try TOML
-        let tomlCandidate = fileManager.fileExists(atPath: tomlPath.path) ? tomlPath : (fileManager.fileExists(atPath: aetherTomlPath.path) ? aetherTomlPath : nil)
-        
-        if let path = tomlCandidate {
-            do {
-                let content = try String(contentsOf: path, encoding: .utf8)
-                let dict = SimpleTOMLParser.parse(toml: content)
-                if let mappedConfig = mapTomlToConfig(dict) {
-                    self.config = mappedConfig
-                    print("ConfigManager: Loaded & Mapped \(path.lastPathComponent)")
-                    return
+        for path in paths {
+            if fileManager.fileExists(atPath: path.path) {
+                if path.pathExtension == "json" {
+                    do {
+                        let data = try Data(contentsOf: path)
+                        let decoder = JSONDecoder()
+                        self.config = try decoder.decode(AetherConfig.self, from: data)
+                        print("ConfigManager: Loaded JSON \(path.lastPathComponent)")
+                        return
+                    } catch {
+                        print("ConfigManager: Failed to parse JSON \(path.lastPathComponent): \(error)")
+                    }
+                } else if path.pathExtension == "toml" {
+                     do {
+                        let content = try String(contentsOf: path, encoding: .utf8)
+                        let dict = SimpleTOMLParser.parse(toml: content)
+                        if let mappedConfig = mapTomlToConfig(dict) {
+                            self.config = mappedConfig
+                            print("ConfigManager: Loaded TOML \(path.lastPathComponent)")
+                            return
+                        }
+                    } catch {
+                        print("ConfigManager: Failed to parse TOML \(path.lastPathComponent): \(error)")
+                    }
                 }
-            } catch {
-                print("ConfigManager: Failed to parse TOML: \(error)")
             }
         }
         
@@ -286,9 +314,18 @@ class ConfigManager: ObservableObject {
         
         // [ui.scroll] - Assuming structure might be flattened or nested differently in TOML
         // Checking for [ui] or direct keys if minimal TOML parser is used
+        // [ui.scroll] & [ui.tabs]
         if let ui = doc["ui"] as? [String: Any] {
             if let scroll = ui["scroll"] as? [String: Any] {
                  if let spd = scroll["speed"] as? Double { cfg.ui.scroll.speed = Float(spd) }
+            }
+            if let tabs = ui["tabs"] as? [String: Any] {
+                 if let v = tabs["vertical_padding"] as? Double { cfg.ui.tabs.verticalPadding = CGFloat(v) }
+                 if let h = tabs["horizontal_padding"] as? Double { cfg.ui.tabs.horizontalPadding = CGFloat(h) }
+                 if let r = tabs["corner_radius"] as? Double { cfg.ui.tabs.cornerRadius = CGFloat(r) }
+                 if let s = tabs["title_style"] as? String, let style = UIConfig.TitleStyle(rawValue: s) {
+                     cfg.ui.tabs.titleStyle = style
+                 }
             }
         }
         
