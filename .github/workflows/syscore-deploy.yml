@@ -139,6 +139,15 @@ jobs:
             # 4.5 Create .env file with secrets
             echo "Creating .env file..."
             sudo sh -c "echo 'AETHER_UPLOAD_KEY=${{ secrets.AETHER_UPLOAD_KEY }}' > $CURRENT_LINK/.env"
+
+            # 4.6 Persistent Storage Setup
+            echo "Setting up Persistent Storage..."
+            STORAGE_PATH="${DEPLOY_PATH}/storage"
+            sudo mkdir -p "$STORAGE_PATH"
+            # Symlink persistent storage into the release directory so the app finds "storage/..."
+            sudo ln -sfn "$STORAGE_PATH" "$RELEASE_DIR/storage"
+            # Grant wide permissions to ensure the service user can write
+            sudo chmod -R 777 "$STORAGE_PATH"
             
             # 5. Restart Systemd
             echo "Restarting Service..."
