@@ -51,10 +51,10 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         }
         self.commandQueue = queue
         
-        // Load shaders — SPM doesn't compile .metal into .metallib,
-        // so we compile from source at runtime
+        // Load shaders - using robust bundle finder
         let library: MTLLibrary
-        if let metalURL = Bundle.module.url(forResource: "Shaders", withExtension: "metal"),
+        let resourceBundle = Bundle.aether
+        if let metalURL = resourceBundle.url(forResource: "Shaders", withExtension: "metal"),
            let shaderSource = try? String(contentsOf: metalURL, encoding: .utf8) {
             do {
                 library = try device.makeLibrary(source: shaderSource, options: nil)
@@ -65,7 +65,7 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
             }
         } else {
             throw NSError(domain: "AetherApp", code: 4, userInfo: [
-                NSLocalizedDescriptionKey: "Failed to find Shaders.metal in resource bundle"
+                NSLocalizedDescriptionKey: "Failed to find Shaders.metal in Aether bundle (\(resourceBundle.bundlePath))"
             ])
         }
         

@@ -7,80 +7,101 @@ struct AetherApp: App {
     @StateObject var tabManager = TabManager()
     @ObservedObject var configManager = ConfigManager.shared
     
+    // First Run Experience
+    @AppStorage("hasSeenStartup") private var hasSeenStartup = false
+    @State private var showStartup = false
+
     // Leader Key State
     @State private var isWindowMode = false
     
     var body: some Scene {
         WindowGroup("Aether") {
             ZStack(alignment: .top) {
-                // Main Window Background
-                BackgroundView(material: configManager.config.window.blurType.material)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Spacer for Title Bar
-                    Color.clear.frame(height: 28)
+                // Main Window Background & Content
+                // Hide strictly during startup to allow "floating logo" effect
+                Group {
+                    BackgroundView(material: configManager.config.window.blurType.material)
+                        .ignoresSafeArea()
                     
-                    TabBarView(
-                        tabManager: tabManager,
-                        onNewTab: { tabManager.addTab() },
-                        onCloseTab: { id in tabManager.closeTab(id: id) }
-                    )
-                    .frame(height: 28)
-                    .background(Color.clear)
-                    
-                    if let tab = tabManager.activeTab {
-                        TabContentView(
-                            tab: tab,
+                    VStack(spacing: 0) {
+                        // Spacer for Title Bar
+                        Color.clear.frame(height: 28)
+                        
+                        TabBarView(
                             tabManager: tabManager,
-                            configManager: configManager,
-                            onHandleAction: { action, session in
-                                return handleAction(action, in: session)
-                            }
+                            onNewTab: { tabManager.addTab() },
+                            onCloseTab: { id in tabManager.closeTab(id: id) }
                         )
-                        .id(tab.id) // Identify by tab ID so switching tabs refreshes view tree
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        // Fallback?
-                        Color.black
+                        .frame(height: 28)
+                        .background(Color.clear)
+                        
+                        if let tab = tabManager.activeTab {
+                            TabContentView(
+                                tab: tab,
+                                tabManager: tabManager,
+                                configManager: configManager,
+                                onHandleAction: { action, session in
+                                    return handleAction(action, in: session)
+                                }
+                            )
+                            .id(tab.id) // Identify by tab ID so switching tabs refreshes view tree
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            // Fallback?
+                            Color.black
+                        }
                     }
-                }
-                .layoutPriority(1)
-                .ignoresSafeArea()
-                
-                // Window Mode Indicator
-                if isWindowMode {
-                    VStack {
-                        Spacer()
+                    .layoutPriority(1)
+                    .ignoresSafeArea()
+                    
+                    // Window Mode Indicator
+                    if isWindowMode {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Text("WINDOW MODE")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .padding(6)
+                                    .background(Color.yellow) // User said blue border is bad, so maybe yellow warning color?
+                                    .foregroundColor(.black)
+                                    .cornerRadius(4)
+                                    .padding()
+                            }
+                        }
+                    }
+
+                    // ScrollBar - Attach to active session
+                    if configManager.config.ui.scrollbar.visible, let session = tabManager.activeSession {
                         HStack {
                             Spacer()
-                            Text("WINDOW MODE")
-                                .font(.system(size: 10, weight: .bold))
-                                .padding(6)
-                                .background(Color.yellow) // User said blue border is bad, so maybe yellow warning color?
-                                .foregroundColor(.black)
-                                .cornerRadius(4)
-                                .padding()
+                            CustomScrollBar(scrollState: session.scrollState) { t in
+                                session.scrollState.userScrollRequest.send(t)
+                            }
+                            .frame(width: configManager.config.ui.scrollbar.width)
+                            .padding(.top, 28 + configManager.config.ui.scrollbar.padding.top) // Offset for tab bar
+                            .padding(.bottom, configManager.config.ui.scrollbar.padding.bottom)
+                            .layoutPriority(0)
+                            .background(Color.black.opacity(0.1))
                         }
                     }
                 }
-
-                // ScrollBar - Attach to active session
-                if configManager.config.ui.scrollbar.visible, let session = tabManager.activeSession {
-                    HStack {
-                        Spacer()
-                        CustomScrollBar(scrollState: session.scrollState) { t in
-                            session.scrollState.userScrollRequest.send(t)
-                        }
-                        .frame(width: configManager.config.ui.scrollbar.width)
-                        .padding(.top, 28 + configManager.config.ui.scrollbar.padding.top) // Offset for tab bar
-                        .padding(.bottom, configManager.config.ui.scrollbar.padding.bottom)
-                        .layoutPriority(0)
-                        .background(Color.black.opacity(0.1))
-                    }
+                .opacity(showStartup ? 0 : 1) // Hide main content during startup
+                .animation(.easeIn(duration: 0.5), value: showStartup)
+                
+                // Startup Screen Overlay
+                if showStartup {
+                    StartupView(isPresented: $showStartup)
+                        .zIndex(100)
+                        .transition(.opacity)
                 }
             }
-            .background(Color.clear)
+            .background(Color.clear) // Ensure window background doesn't bleed if possible
+            .onAppear {
+                if !hasSeenStartup {
+                    showStartup = true
+                }
+            }
             .frame(minWidth: 800, minHeight: 600)
             // Global key listener for window mode arrows? 
             // It's tricky to capture arrows at the Scene level if TerminalView consumes them.

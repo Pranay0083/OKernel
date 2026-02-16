@@ -377,10 +377,10 @@ pub const Terminal = struct {
         };
     }
 
-    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, shell: ?[*:0]const u8) !Terminal {
+    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8) !Terminal {
         var term = try init(allocator, rows, cols);
         // Pty.init might fail, so we need to handle cleanup if it does
-        term.pty = Pty.init(allocator, shell) catch |err| {
+        term.pty = Pty.init(allocator, shell, cwd) catch |err| {
             term.deinit();
             return err;
         };

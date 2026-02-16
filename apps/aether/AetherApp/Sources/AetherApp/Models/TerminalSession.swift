@@ -23,7 +23,8 @@ class TerminalSession: Identifiable, ObservableObject {
         print("[TerminalSession] Init \(self.id)")
         
         // Initialize backend terminal
-        self.terminal = aether_terminal_with_pty(24, 80, nil)
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        self.terminal = aether_terminal_with_pty(24, 80, nil, home)
         
         startPolling()
     }

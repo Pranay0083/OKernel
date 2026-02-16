@@ -11,7 +11,8 @@ let package = Package(
             path: "Sources/AetherApp",
             exclude: ["Resources/Info.plist"],
             resources: [
-                .process("Rendering/Shaders.metal")
+                .process("Rendering/Shaders.metal"),
+                .process("Resources/logo.png")
             ],
             swiftSettings: [
                 .unsafeFlags(["-I", "Sources/AetherApp/Bridge"]),
