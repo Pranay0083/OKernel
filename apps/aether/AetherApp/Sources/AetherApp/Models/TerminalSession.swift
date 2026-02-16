@@ -10,11 +10,17 @@ class TerminalSession: Identifiable, ObservableObject {
     private(set) var terminal: OpaquePointer?
     let scrollState: TerminalScrollState
     
+    // Shared lock for synchronizing access to the terminal pointer (Zig backend)
+    // Used by both TerminalSession (polling) and TerminalRenderer (drawing/resizing)
+    public let lock = NSRecursiveLock()
+    
     init() {
         self.id = UUID()
         self.title = "Terminal"
         self.windowTitle = "Aether"
         self.scrollState = TerminalScrollState()
+        
+        print("[TerminalSession] Init \(self.id)")
         
         // Initialize backend terminal
         self.terminal = aether_terminal_with_pty(24, 80, nil)
@@ -23,6 +29,7 @@ class TerminalSession: Identifiable, ObservableObject {
     }
     
     deinit {
+        print("[TerminalSession] Deinit \(self.id)")
         stopPolling()
         if let term = terminal {
             aether_terminal_free(term)
@@ -30,25 +37,73 @@ class TerminalSession: Identifiable, ObservableObject {
     }
     
     func resize(cols: Int, rows: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        
         guard let term = terminal else { return }
         _ = aether_resize(term, UInt32(rows), UInt32(cols))
     }
 
     // Polling for title
     private var timer: Timer?
+    private var ioWorkItem: DispatchWorkItem?
     
     func startPolling() {
+        // Title Polling (Low Frequency)
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateTitle()
         }
+        
+        // I/O Polling (High Frequency / Continuous)
+        // We use a background thread to continuously read from the PTY and update the Grid.
+        // This decouples parsing from the UI thread (Renderer).
+        let workItem = DispatchWorkItem { [weak self] in
+            while let self = self, !self.ioWorkItem!.isCancelled {
+                self.processIO()
+                Thread.sleep(forTimeInterval: 0.005) // ~200Hz Poll Rate (Adaptive sleep could be better, but this is simple)
+            }
+        }
+        self.ioWorkItem = workItem
+        DispatchQueue.global(qos: .userInteractive).async(execute: workItem)
     }
     
     func stopPolling() {
         timer?.invalidate()
         timer = nil
+        ioWorkItem?.cancel()
+        ioWorkItem = nil
+    }
+    
+    private func processIO() {
+        lock.lock()
+         // We do NOT defer unlock here because we might want to notify UI *after* unlock to avoid holding it?
+         // No, standard defer is safer.
+        defer { lock.unlock() }
+        
+        guard let term = terminal else { return }
+        
+        // This reads from PTY, runs Parser, updates Grid.
+        // It is FAST for small chunks, but can block if we process megabytes.
+        // Since we are in background, we don't block UI.
+        aether_process_output(term)
+        
+        // If dirty, we should notify the view to redraw.
+        // Since TerminalSession is ObservableObject, we can't easily publish on background thread without main dispatch.
+        // But Renderer checks `forceNextFrame` or similar.
+        // How do we tell Renderer "New Data"?
+        // Renderer pulls `aether_get_cell` every frame (60fps).
+        // If we just update the grid, the next frame will pick it up.
+        // So explicit notification is only needed if Renderer is PAUSED (sleeping).
+        // Assuming Renderer runs animation loop?
+        // Renderer.draw is called by MTKView.
+        // If users reports "manageable in normal mode", MTKView is likely running.
+        // So we just update the data.
     }
     
     private func updateTitle() {
+        lock.lock()
+        defer { lock.unlock() }
+        
         guard let term = terminal else { return }
         let pid = aether_get_pid(term)
         if pid <= 0 { return }

@@ -1,9 +1,11 @@
+
 import SwiftUI
 
 struct TabBarView: View {
     @ObservedObject var tabManager: TabManager
     var onNewTab: () -> Void
     var onCloseTab: (UUID) -> Void
+    @ObservedObject var configManager = ConfigManager.shared
     
     var body: some View {
         HStack(spacing: 0) {
@@ -11,7 +13,7 @@ struct TabBarView: View {
                 HStack(spacing: 1) {
                     ForEach(tabManager.tabs) { tab in
                         TabItemView(
-                            session: tab,
+                            tab: tab,
                             isActive: tabManager.activeTabId == tab.id,
                             onClose: { onCloseTab(tab.id) }
                         )
@@ -40,7 +42,7 @@ struct TabBarView: View {
 }
 
 struct TabItemView: View {
-    @ObservedObject var session: TerminalSession
+    @ObservedObject var tab: Tab
     var isActive: Bool
     @ObservedObject var configManager = ConfigManager.shared
     var onClose: () -> Void
@@ -48,7 +50,7 @@ struct TabItemView: View {
     
     var body: some View {
         HStack(spacing: 6) {
-            Text(session.title)
+            Text(tab.title)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
                 .foregroundColor(isActive ? .primary : .secondary)
                 .lineLimit(1)
@@ -56,11 +58,11 @@ struct TabItemView: View {
             if isHovering || isActive {
                 Button(action: onClose) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 14, height: 14)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Circle())
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 14, height: 14)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
             } else {

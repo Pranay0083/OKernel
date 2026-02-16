@@ -13,24 +13,34 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     var fontAtlas: FontAtlas
     let scrollState: TerminalScrollState
     
+    var isActive: Bool = true {
+        didSet {
+            // Force redraw on focus change
+            forceNextFrame = true
+        }
+    }
+    
     private var lastInputTime: TimeInterval = 0
     
     private var instanceBuffer: MTLBuffer?
     private var viewportSize: SIMD2<Float> = .zero
     private var scaleFactor: Float = 2.0  // Retina: drawable pixels / view points
-    private let lock = NSLock()
+
+    // private let lock = NSLock() // Removed in favor of session.lock
     
-    // Terminal state (from Zig)
+    // Terminal state (accessed via session)
+    weak var session: TerminalSession?
+    
     var terminal: OpaquePointer? {
-        didSet {
-             applyInitialState()
-        }
+        session?.terminal
     }
+    
     var rows: Int = 24
     var cols: Int = 80
     
-    init(metalView: MTKView, scrollState: TerminalScrollState) throws {
-        self.scrollState = scrollState
+    init(metalView: MTKView, session: TerminalSession) throws {
+        self.session = session
+        self.scrollState = session.scrollState
         guard let device = metalView.device else {
             throw NSError(domain: "AetherApp", code: 2, userInfo: [NSLocalizedDescriptionKey: "Metal view has no device"])
         }
@@ -96,8 +106,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     }
     
     @objc private func handleFontLoaded() {
-        lock.lock()
-        defer { lock.unlock() }
+        session?.lock.lock()
+        defer { session?.lock.unlock() }
         
         do {
             let fontConfig = ConfigManager.shared.config.font
@@ -117,10 +127,13 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        guard size.width > 0 && size.height > 0 else { return }
+        if size.width == 0 || size.height == 0 { return }
         
-        lock.lock()
-        defer { lock.unlock() }
+        // Log thread to see if this is Main
+        print("Renderer: mtkView drawableSizeWillChange to \(size) on thread: \(Thread.current.isMainThread ? "Main" : "Background")")
+        
+        session?.lock.lock()
+        defer { session?.lock.unlock() }
         
         viewportSize = SIMD2<Float>(Float(size.width), Float(size.height))
         // Calculate scale factor: drawable pixels / view points
@@ -128,17 +141,62 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         if viewWidth > 0 {
             scaleFactor = Float(size.width / viewWidth)
         }
-        recalculateGridSizeInternal()
+        // Update Viewport State Only
+        // WE DO NOT CALL recalculateGridSizeInternal (aether_resize) HERE!
+        // That is now exclusively handled by resize() on the background thread.
         
-        print("DEBUG: Resize -> Viewport: \(viewportSize), Scale: \(scaleFactor), Rows: \(rows), Cols: \(cols)")
+        // Force a redraw so the terminal repaints with the new viewport/scale
+        forceNextFrame = true
+        if scrollState.viewportOffset == 0 {
+             if let terminal = terminal {
+                 aether_scroll_to(terminal, 0)
+             }
+        }
         
         // Force a redraw so the terminal repaints with the new grid dimensions
         forceNextFrame = true
     }
     
+    // Thread-safe resize called from TerminalView (possibly background thread)
+    func resize(drawableSize size: CGSize, viewWidth: CGFloat) {
+        if size.width == 0 || size.height == 0 { return }
+        
+        print("Renderer: resize to \(size) on thread: \(Thread.current.isMainThread ? "Main" : "Background")")
+        
+        session?.lock.lock()
+        defer { session?.lock.unlock() }
+        
+        viewportSize = SIMD2<Float>(Float(size.width), Float(size.height))
+        
+        if viewWidth > 0 {
+            scaleFactor = Float(size.width / viewWidth)
+        }
+        
+        recalculateGridSizeInternal()
+        
+        // Force a full clear/redraw on resize to prevent "garbage" text/artifacts
+        // logic: if possible, tell renderer to clear background? 
+        // For now, ensuring forceNextFrame is true is best we can do in Swift.
+        // The artifact might be from the PTY side. 
+        
+        if scrollState.viewportOffset == 0 {
+             if let terminal = terminal {
+                 aether_scroll_to(terminal, 0)
+             }
+        }
+        
+        forceNextFrame = true
+    }
+    
     func draw(in view: MTKView) {
-        lock.lock()
-        defer { lock.unlock() }
+        // Non-blocking lock attempt.
+        // If the background thread is resizing (holding lock), we simply SKIP this frame.
+        // This prevents the Main Thread from freezing/hanging while waiting for heavy resize ops.
+        guard let session = session else { return }
+        if !session.lock.try() {
+            return
+        }
+        defer { session.lock.unlock() }
         
         guard let terminal = terminal,
               let drawable = view.currentDrawable,
@@ -147,8 +205,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
             return
         }
         
-        // Process any pending PTY output
-        aether_process_output(terminal)
+        
+        // REMOVED: aether_process_output(terminal)
+        // This is now handled by TerminalSession's background IO loop.
+        // Doing I/O on the render thread caused massive stalls and contention.
+
         
         // Update scroll state for UI
         let scrollInfo = aether_get_scroll_info(terminal)
@@ -205,24 +266,28 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let blinkPeriod = 1.0 / Float(blinkRate) // seconds per full blink cycle
         
         // Smart Blink Logic
+        // Smart Blink Logic
+        
+        // Smart Blink / Inactive Logic
         var isCursorBlinkOn = false
-        if ConfigManager.shared.config.cursor.smartBlink {
-            let timeSinceInput = now - lastInputTime
-            if timeSinceInput < 0.5 {
-                // Typing -> Solid
-                isCursorBlinkOn = true
+        if isActive {
+            if ConfigManager.shared.config.cursor.smartBlink {
+                let timeSinceInput = now - lastInputTime
+                if timeSinceInput < 0.5 {
+                    isCursorBlinkOn = true
+                } else {
+                    let cursorPhase = fmod(Float(now), blinkPeriod)
+                    isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
+                }
             } else {
-                // Idle -> Blink
                 let cursorPhase = fmod(Float(now), blinkPeriod)
                 isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
             }
+            if !ConfigManager.shared.config.cursor.blink {
+                isCursorBlinkOn = cursor.visible
+            }
         } else {
-            // Standard Blink
-            let cursorPhase = fmod(Float(now), blinkPeriod)
-            isCursorBlinkOn = cursor.visible && (cursorPhase < blinkPeriod * 0.5)
-        }
-        
-        if !ConfigManager.shared.config.cursor.blink {
+            // Inactive: Always show cursor (no blink), but maybe diff style
             isCursorBlinkOn = cursor.visible
         }
         
@@ -364,7 +429,16 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                     let effectiveFG = fg
                     
                     var newFG = effectiveBG
-                    let newBG = effectiveFG
+                    var newBG = effectiveFG
+                    
+                    if !isActive {
+                         // Inactive Cursor: Grey Hollow-ish look (Stroke?) 
+                         // Or just Grey Block.
+                         newBG = SIMD4<Float>(0.5, 0.5, 0.5, 1.0) // Grey
+                         newFG = effectiveFG // Keep text color mostly same? Or invert against grey?
+                         // Let's force text to simple black or white for readability
+                         newFG = SIMD4<Float>(0, 0, 0, 1)
+                    }
                     
                     // Fix for "Transparent Lens": If newFG (Old BG) is transparent, text becomes invisible.
                     // Force newFG to be opaque contrast color.
@@ -372,11 +446,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                     
                     var safeNewBG = newBG
                     if safeNewBG.w < 1.0 {
-                        // If cell background was transparent, cursor block should be text color or opaque equivalent
                         safeNewBG.w = 1.0 
                     }
                     
-                    if newFG.w < 0.1 || (safeNewBG.w > 0.9 && distance(newFG, safeNewBG) < 0.1) {
+                    // Contrast check skipped for inactive grey cursor to keep it simple
+                    if isActive && (newFG.w < 0.1 || (safeNewBG.w > 0.9 && distance(newFG, safeNewBG) < 0.1)) {
                         let lum = 0.299 * newBG.x + 0.587 * newBG.y + 0.114 * newBG.z
                         if lum > 0.5 {
                             newFG = SIMD4<Float>(0, 0, 0, 1) // Black Text on Light Block
@@ -489,6 +563,33 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                         )
                         instances.append(cursorInst)
                     }
+                } else if !isActive && isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    // Inactive Beam/Underline -> Draw Hollow/Grey
+                    let cursorColor = SIMD4<Float>(0.5, 0.5, 0.5, 1.0)
+                     
+                    var rectSize: SIMD2<Float> = .zero
+                    var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
+                    
+                    if currentStyle == .beam {
+                        rectSize = SIMD2<Float>(2.0, textHeight) // Match text height
+                        rectPos.y = y + textOffsetY // Center it
+                    } else if currentStyle == .underline {
+                        rectSize = SIMD2<Float>(cw, 2.0)
+                        rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
+                    }
+                    
+                    if rectSize.x > 0 {
+                        let cursorInst = GlyphInstance(
+                            position: rectPos,
+                            size: rectSize,
+                            texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
+                            texSize: SIMD2<Float>(solidRect.width, solidRect.height),
+                            fgColor: cursorColor,
+                            bgColor: cursorColor,
+                            flags: 0
+                        )
+                        instances.append(cursorInst)
+                    }
                 }
             }
         }
@@ -551,8 +652,9 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let availableW = max(0, viewportSize.x - (padPx * 2))
         let availableH = max(0, viewportSize.y - (padPx * 2))
         
-        let newCols = max(1, Int(availableW / cellW))
-        let newRows = max(1, Int(availableH / rowH))
+        // Enforce minimum dimensions (e.g. 2x2) to prevent core crashes
+        let newCols = max(2, Int(availableW / cellW))
+        let newRows = max(2, Int(availableH / rowH))
         
         if newCols != cols || newRows != rows {
             cols = newCols

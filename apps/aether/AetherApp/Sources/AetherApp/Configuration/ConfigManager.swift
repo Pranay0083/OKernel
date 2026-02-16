@@ -224,7 +224,19 @@ struct KeyBindingConfig: Codable {
         "cmd+v": "paste",
         "cmd+t": "new_tab",
         "cmd+w": "close_tab",
-        "cmd+n": "new_window"
+        "cmd+n": "new_window",
+        
+        // Multi-Window
+        "cmd+d": "split_horizontal",
+        "cmd+shift+d": "split_vertical",
+        "cmd+shift+w": "close_pane",
+        
+        // Focus (Leader Key)
+        "cmd+x": "enter_window_mode",
+        "left": "focus_left",
+        "right": "focus_right",
+        "up": "focus_up",
+        "down": "focus_down"
     ]
     
     // Custom coding keys to allow arbitrary keys in JSON?

@@ -205,14 +205,10 @@ pub const Pty = struct {
             .ws_ypixel = 0,
         };
         
-        // on macOS, ioctl request is unsigned long
-        const TIOCSWINSZ_DARWIN: u32 = 0x80087467;
-        const req = @as(c_ulong, TIOCSWINSZ_DARWIN);
-        
-        if (c.ioctl(self.master_fd, req, &ws) == -1) {
-            return error.IoctlFailed;
+        if (c.ioctl(self.master_fd, c.TIOCSWINSZ, &ws) == -1) {
+            // Usually returns error if PTY not fully ready, ignore
+            return;
         }
-        _ = c.kill(self.child_pid, c.SIGWINCH);
     }
 
     pub fn isAlive(self: *Pty) bool {
