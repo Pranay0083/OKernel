@@ -62,10 +62,22 @@ struct UIConfig: Codable {
     }
     
     var scroll: ScrollConfig = ScrollConfig()
+    var tabs: TabsConfig = TabsConfig()
     
     struct ScrollConfig: Codable {
         var naturalScrolling: Bool = true
         var speed: Float = 1.0
+    }
+    
+    struct TabsConfig: Codable {
+        var verticalPadding: CGFloat = 2
+        var horizontalPadding: CGFloat = 10
+        var cornerRadius: CGFloat = 6
+        var titleStyle: TitleStyle = .smart
+    }
+    
+    enum TitleStyle: String, Codable {
+        case smart, path, process
     }
     
     struct VerticalPadding: Codable {
@@ -230,8 +242,22 @@ class ConfigManager: ObservableObject {
         try? fileManager.createDirectory(at: configDir, withIntermediateDirectories: true)
         
         // Priority: 1. JSON, 2. TOML
+        // Priority: 
+        // 1. ~/.config/aether/config.json
+        // 2. ~/.config/aether/config.toml
+        // 3. ~/config/aether/config.toml
+        // 4. ~/apps/aether/config/config.toml
+        
         let jsonPath = configDir.appendingPathComponent("config.json")
         let tomlPath = configDir.appendingPathComponent("config.toml")
+        
+        // Additional paths as requested
+        let altConfigDir = home.appendingPathComponent("config/aether")
+        let altTomlPath = altConfigDir.appendingPathComponent("config.toml")
+        
+        let appConfigDir = home.appendingPathComponent("apps/aether/config")
+        let appTomlPath = appConfigDir.appendingPathComponent("config.toml")
+        
         let aetherTomlPath = configDir.appendingPathComponent("aether.toml")
         
         if fileManager.fileExists(atPath: jsonPath.path) {
@@ -246,8 +272,14 @@ class ConfigManager: ObservableObject {
             }
         }
         
-        // Try TOML
-        let tomlCandidate = fileManager.fileExists(atPath: tomlPath.path) ? tomlPath : (fileManager.fileExists(atPath: aetherTomlPath.path) ? aetherTomlPath : nil)
+        // Try TOML: Check multiple locations
+        let tomlCandidate: URL? = {
+            if fileManager.fileExists(atPath: tomlPath.path) { return tomlPath }
+            if fileManager.fileExists(atPath: altTomlPath.path) { return altTomlPath } // ~/config/aether/
+            if fileManager.fileExists(atPath: appTomlPath.path) { return appTomlPath } // ~/apps/aether/config/
+            if fileManager.fileExists(atPath: aetherTomlPath.path) { return aetherTomlPath }
+            return nil
+        }()
         
         if let path = tomlCandidate {
             do {
@@ -286,9 +318,18 @@ class ConfigManager: ObservableObject {
         
         // [ui.scroll] - Assuming structure might be flattened or nested differently in TOML
         // Checking for [ui] or direct keys if minimal TOML parser is used
+        // [ui.scroll] & [ui.tabs]
         if let ui = doc["ui"] as? [String: Any] {
             if let scroll = ui["scroll"] as? [String: Any] {
                  if let spd = scroll["speed"] as? Double { cfg.ui.scroll.speed = Float(spd) }
+            }
+            if let tabs = ui["tabs"] as? [String: Any] {
+                 if let v = tabs["vertical_padding"] as? Double { cfg.ui.tabs.verticalPadding = CGFloat(v) }
+                 if let h = tabs["horizontal_padding"] as? Double { cfg.ui.tabs.horizontalPadding = CGFloat(h) }
+                 if let r = tabs["corner_radius"] as? Double { cfg.ui.tabs.cornerRadius = CGFloat(r) }
+                 if let s = tabs["title_style"] as? String, let style = UIConfig.TitleStyle(rawValue: s) {
+                     cfg.ui.tabs.titleStyle = style
+                 }
             }
         }
         

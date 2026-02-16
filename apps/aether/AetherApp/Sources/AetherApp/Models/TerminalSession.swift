@@ -61,7 +61,7 @@ class TerminalSession: Identifiable, ObservableObject {
         var cwdBuf = [Int8](repeating: 0, count: 1024)
         _ = aether_get_cwd(pid, &cwdBuf, 1024)
         let cwdPath = String(cString: cwdBuf)
-        let cwdName = URL(fileURLWithPath: cwdPath).lastPathComponent
+        // let cwdName = URL(fileURLWithPath: cwdPath).lastPathComponent
         
         // 3. Find Foreground Process
         // Clean tty name for ps (e.g. /dev/ttys003 -> ttys003)
@@ -70,15 +70,37 @@ class TerminalSession: Identifiable, ObservableObject {
         if !cleanTty.isEmpty {
             DispatchQueue.global(qos: .background).async { [weak self] in
                 guard let self = self else { return }
-                let processName = self.getForegroundProcess(tty: cleanTty)
+                
+                // Fetch config
+                let style = ConfigManager.shared.config.ui.tabs.titleStyle
+                
+                // Format CWD
+                let home = FileManager.default.homeDirectoryForCurrentUser.path
+                let displayPath = cwdPath.replacingOccurrences(of: home, with: "~")
+                
+                var newTitle = "Terminal"
+                
+                switch style {
+                case .path:
+                    newTitle = displayPath
+                case .process:
+                    if let proc = self.getForegroundProcess(tty: cleanTty) {
+                        newTitle = proc
+                    } else {
+                        newTitle = "Terminal"
+                    }
+                case .smart:
+                    // Smart: Show process if running (not shell), else show path
+                    let proc = self.getForegroundProcess(tty: cleanTty)
+                    if let name = proc, !name.contains("login"), !name.contains("-zsh"), !name.contains("zsh") {
+                         newTitle = name
+                    } else {
+                         newTitle = displayPath
+                    }
+                }
                 
                 DispatchQueue.main.async {
-                    if let name = processName, !name.contains("login"), !name.contains("-zsh"), !name.contains("zsh") {
-                        self.title = name
-                    } else {
-                        // Fallback to CWD
-                        self.title = cwdName.isEmpty ? "Terminal" : cwdName
-                    }
+                    self.title = newTitle
                 }
             }
         }

@@ -151,7 +151,17 @@ struct TerminalViewRepresentable: NSViewRepresentable {
     var onAction: (String) -> Void
 
     func makeNSView(context: Context) -> TerminalView {
-        let view = TerminalView(frame: .zero, device: MTLCreateSystemDefaultDevice(), session: session)
+        let view = TerminalView(
+            frame: .zero,
+            device: MTLCreateSystemDefaultDevice(),
+            session: session,
+            onTitleChange: { newTitle in
+                // Find window and set title? 
+                // TerminalView already sets window.title. 
+                // But if we want to bubble up, we can.
+                // For now, TerminalView setting self.window.title is enough for the window it's in.
+            }
+        )
         view.autoresizingMask = [.width, .height]
         view.updateConfig(config)
         view.onAction = onAction

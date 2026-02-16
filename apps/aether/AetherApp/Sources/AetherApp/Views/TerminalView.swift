@@ -10,6 +10,7 @@ class TerminalView: MTKView {
     // Session State
     var terminalSession: TerminalSession
     var onAction: ((String) -> Void)?
+    var onTitleChange: ((String) -> Void)?
     
     // Convenience accessors
     var terminal: OpaquePointer? { terminalSession.terminal }
@@ -39,6 +40,11 @@ class TerminalView: MTKView {
              self.drawableSize = newSize
              // Explicitly notify renderer since autoResizeDrawable is false
              renderer?.mtkView(self, drawableSizeWillChange: newSize)
+             
+             // Maintain focus during resize/layout
+             if window.firstResponder !== self {
+                 window.makeFirstResponder(self)
+             }
         }
     }
     
@@ -116,8 +122,9 @@ class TerminalView: MTKView {
         aether_scroll_to(terminal, newOffset)
     }
     
-    init(frame frameRect: CGRect, device: MTLDevice?, session: TerminalSession) {
+    init(frame frameRect: CGRect, device: MTLDevice?, session: TerminalSession, onTitleChange: ((String) -> Void)? = nil) {
         self.terminalSession = session
+        self.onTitleChange = onTitleChange
         super.init(frame: frameRect, device: device ?? MTLCreateSystemDefaultDevice())
         
         self.colorPixelFormat = .bgra8Unorm
@@ -152,6 +159,14 @@ class TerminalView: MTKView {
                 self.scrollTo(t: t)
             }
             .store(in: &cancellables)
+            
+        // Observe title changes
+        self.terminalSession.$title
+            .sink { [weak self] newTitle in
+                self?.window?.title = newTitle
+                self?.onTitleChange?(newTitle)
+            }
+            .store(in: &cancellables)
         
         NotificationCenter.default.addObserver(self, selector: #selector(handleThemeChange(_:)), name: NSNotification.Name("AetherThemeChanged"), object: nil)
     }
@@ -161,6 +176,12 @@ class TerminalView: MTKView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         configureWindowAppearance()
+        
+        // Regain focus when added to window
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let window = self.window else { return }
+            window.makeFirstResponder(self)
+        }
     }
     
     private func configureWindowAppearance() {
@@ -171,8 +192,10 @@ class TerminalView: MTKView {
         // Title bar is transparent (we draw a blur view behind it in SwiftUI)
         window.titlebarAppearsTransparent = true
         window.styleMask.insert(.fullSizeContentView)
-        window.titleVisibility = .visible // Ensure title "Aether" is visible
-        window.title = "Aether"
+        window.titleVisibility = .visible 
+        
+        // Initial title sync
+        window.title = terminalSession.title
         
         window.isOpaque = false
         window.backgroundColor = .clear
