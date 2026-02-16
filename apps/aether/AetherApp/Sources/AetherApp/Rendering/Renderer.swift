@@ -435,17 +435,27 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                          )
                          instances.append(fgInst)
                      }
-                } else if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                }
+                
+                // Cursor Geometry Logic
+                // User wants cursor to match "text height" (ascent + descent) and be centered.
+                
+                let ascent = Float(fontAtlas.ascent) * ratio
+                let descent = Float(fontAtlas.descent) * ratio
+                let textHeight = ascent + descent
+                
+                // Text is rendered from the top (y), so we should align cursor to top (y) to match.
+                // Centering in rowHeight causes misalignment if line spacing is large.
+                let textOffsetY: Float = 0.0
+                
+                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col && (cell.codepoint == 0 || cell.codepoint == 32) {
                     // Empty cell block cursor
-                    // Center the block vertically to match font size (ch) instead of rowHeight
-                    let offsetY = (rowHeight - ch) / 2.0
-                    
                     let blockInst = GlyphInstance(
-                        position: SIMD2<Float>(x, y + offsetY),
-                        size: SIMD2<Float>(cw, ch),
+                        position: SIMD2<Float>(x, y + textOffsetY),
+                        size: SIMD2<Float>(cw, textHeight),
                         texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
                         texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                        fgColor: bg, // Use the 'bg' (which is the effective FG aka cursor color) as color
+                        fgColor: bg, 
                         bgColor: bg,
                         flags: 0
                     )
@@ -460,8 +470,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                     var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
                     
                     if currentStyle == .beam {
-                        rectSize = SIMD2<Float>(2.0, ch) // Match font height
-                        rectPos.y = y + (rowHeight - ch) / 2.0 // Center it
+                        rectSize = SIMD2<Float>(2.0, textHeight) // Match text height
+                        rectPos.y = y + textOffsetY // Center it
                     } else if currentStyle == .underline {
                         rectSize = SIMD2<Float>(cw, 2.0)
                         rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
