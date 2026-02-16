@@ -729,16 +729,8 @@ pub const Terminal = struct {
         while (i < num_move) : (i += 1) {
             const src_idx = (self.scroll_bottom - count - 1) - i;
             const dst_idx = (self.scroll_bottom - 1) - i;
-            self.grid.active[dst_idx] = self.grid.active[src_idx]; // Shallow copy of Row struct?
-            // Row contains `cells`. We need deep copy?
-            // Row is `struct { cells: []Cell, dirty: bool }`.
-            // The slice points to underlying allocator memory.
-            // WE CANNOT share slices. We must copy content.
-            // Or swap slices if we own them?
-            // Grid owns all rows.
-            // Actually, best way is to rotate pointers.
-            // But `cells` are slices.
-            // Let's just copy content.
+            // DO NOT copy struct: self.grid.active[dst_idx] = self.grid.active[src_idx]; (Causes double free/leak)
+            // Copy contents only:
             @memcpy(self.grid.active[dst_idx].cells, self.grid.active[src_idx].cells);
             self.grid.active[dst_idx].dirty = true;
         }
@@ -1013,6 +1005,7 @@ pub const Terminal = struct {
             },
             'J' => { // ED - Erase in Display
                 const mode = if (params.len > 0) params[0] else 0;
+                std.debug.print("DEBUG: CSI J (Erase Display) Mode: {d}\n", .{mode});
                 self.eraseDisplay(mode);
             },
             'K' => { // EL - Erase in Line
@@ -1209,10 +1202,16 @@ pub const Terminal = struct {
 
     pub fn resize(self: *Terminal, rows: u32, cols: u32) !void {
         if (self.grid.rows == rows and self.grid.cols == cols) return;
+        
+        // Sync Terminal cursor state TO Grid before resize
+        // Grid.resize relies on this to calculate scroll offset and adjust cursor
+        self.grid.cursor_row = self.cursor_row;
+        self.grid.cursor_col = self.cursor_col;
+        
         try self.grid.resize(rows, cols);
         try self.inactive_grid.resize(rows, cols); // Also resize the backup/alt grid
         
-        // Sync cursor from grid (Smart Reflow updated it)
+        // Sync cursor BACK from grid (Smart Reflow updated it)
         self.cursor_row = self.grid.cursor_row;
         self.cursor_col = self.grid.cursor_col;
         

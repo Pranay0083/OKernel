@@ -44,6 +44,20 @@
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TOMLParser.dia"
   },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Models/PaneNode.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneNode.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneNode.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneNode~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneNode.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneNode.dia"
+  },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Models/Tab.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Tab.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Tab.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Tab~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Tab.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/Tab.dia"
+  },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Models/TabManager.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TabManager.d",
     "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TabManager.swift.o",
@@ -93,6 +107,13 @@
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/CustomScrollBar.dia"
   },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/PaneView.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneView.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneView.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneView~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneView.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/PaneView.dia"
+  },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TabBarView.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TabBarView.d",
     "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TabBarView.swift.o",
@@ -106,6 +127,13 @@
     "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView~partial.swiftmodule",
     "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.swiftdeps",
     "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalView.dia"
+  },
+  "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalViewRepresentable.swift": {
+    "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalViewRepresentable.d",
+    "object": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalViewRepresentable.swift.o",
+    "swiftmodule": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalViewRepresentable~partial.swiftmodule",
+    "swift-dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalViewRepresentable.swiftdeps",
+    "diagnostics": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalViewRepresentable.dia"
   },
   "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalWindow.swift": {
     "dependencies": "/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/TerminalWindow.d",

@@ -1,19 +1,32 @@
+
 {
   "window": {
     "opacity": 0.95,
     "blurType": "sidebar",
     "titleBar": "transparent",
-    "padding": { "x": 12, "y": 12 }
+    "padding": {
+      "x": 10,
+      "y": 10
+    }
   },
   "ui": {
     "scrollbar": {
-      "width": 10,
-      "padding": { "top": 4, "bottom": 4 },
+      "width": 12,
+      "padding": {
+        "top": 4,
+        "bottom": 4
+      },
       "visible": true
     },
     "scroll": {
       "naturalScrolling": true,
       "speed": 1.0
+    },
+    "tabs": {
+        "verticalPadding": 2,
+        "horizontalPadding": 10,
+        "cornerRadius": 6,
+        "titleStyle": "smart"
     }
   },
   "font": {
@@ -30,18 +43,23 @@
     "blinkCurve": "ease"
   },
   "colors": {
-    "scheme": "Dracula",
-    "background": "#1E1E2E",
-    "selection": "#44475A",
-    "foreground": "#F8F8F2"
+    "scheme": "Dracula"
   },
   "keys": {
     "bindings": {
       "cmd+c": "copy",
       "cmd+v": "paste",
-      "cmd+enter": "toggle_fullscreen",
       "cmd+t": "new_tab",
-      "cmd+w": "close_tab"
+      "cmd+w": "close_tab",
+      "cmd+n": "new_window",
+      "cmd+d": "split_horizontal",
+      "cmd+shift+d": "split_vertical",
+      "cmd+shift+w": "close_pane",
+      "cmd+x": "enter_window_mode",
+      "left": "focus_left",
+      "right": "focus_right",
+      "up": "focus_up",
+      "down": "focus_down"
     }
   }
 }

@@ -9,8 +9,18 @@ class TerminalView: MTKView {
     
     // Session State
     var terminalSession: TerminalSession
-    var onAction: ((String) -> Void)?
+    var onAction: ((String) -> Bool)?
     var onTitleChange: ((String) -> Void)?
+    var onSelect: (() -> Void)?
+    
+    var isActive: Bool = true {
+        didSet {
+            if oldValue != isActive {
+                renderer?.isActive = isActive
+                self.setNeedsDisplay(self.bounds)
+            }
+        }
+    }
     
     // Convenience accessors
     var terminal: OpaquePointer? { terminalSession.terminal }
@@ -25,10 +35,17 @@ class TerminalView: MTKView {
     
     // Custom Fullscreen State
     private var isCustomFullScreen = false
+
     private var savedFrame: NSRect = .zero
     
+    // Resize Debounce
+    private var resizeWorkItem: DispatchWorkItem?
+    // Static queue to serialize resize operations across ALL terminal instances to prevent thread explosion/lock contention
+    private static let resizeQueue = DispatchQueue(label: "com.aether.terminal.resize", qos: .userInteractive)
+    
     override var intrinsicContentSize: NSSize {
-        return NSSize(width: 800, height: 600)
+        // Return small size to allow shrinking in SplitView
+        return NSSize(width: 1, height: 1)
     }
     
     override func layout() {
@@ -37,14 +54,36 @@ class TerminalView: MTKView {
              self.layer?.contentsScale = window.backingScaleFactor
              let newSize = CGSize(width: self.bounds.width * window.backingScaleFactor, 
                                   height: self.bounds.height * window.backingScaleFactor)
-             self.drawableSize = newSize
-             // Explicitly notify renderer since autoResizeDrawable is false
-             renderer?.mtkView(self, drawableSizeWillChange: newSize)
              
-             // Maintain focus during resize/layout
-             if window.firstResponder !== self {
-                 window.makeFirstResponder(self)
+             if newSize != self.drawableSize {
+                 // Debounce resize events to prevent crash on extensive resizing
+                 self.drawableSize = newSize
+                 
+                 // Capture view width for scale calculation
+                 let currentViewWidth = self.bounds.width
+                 
+                 resizeWorkItem?.cancel()
+                 let item = DispatchWorkItem { [weak self] in
+                     guard let self = self else { return }
+                  // Run on background thread to avoid blocking Main Thread with Zig resize
+                  // SAFEGUARD: Ignore tiny resizes that occur during layout transitions to prevent "Crop" from wiping content.
+                  if newSize.width < 100 || newSize.height < 100 {
+                      // Skip tiny resize ( < ~10x5 chars)
+                      return
+                  }
+                  
+                  self.renderer?.resize(drawableSize: newSize, viewWidth: currentViewWidth)
+                  }
+                  resizeWorkItem = item
+                  
+                  // Use serial background queue to prevent thread explosion during rapid resize
+                  Self.resizeQueue.asyncAfter(deadline: .now() + 0.1, execute: item) // Increased debounce to 100ms
              }
+             
+             // Maintain focus logic should NOT be here as it causes infinite loops
+             // if window.firstResponder !== self {
+             //    window.makeFirstResponder(self)
+             // }
         }
     }
     
@@ -52,6 +91,9 @@ class TerminalView: MTKView {
     override var isFlipped: Bool { true }
     
     override func mouseDragged(with event: NSEvent) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         guard let terminal = terminal else { return }
         
         // Autoscroll check
@@ -72,6 +114,9 @@ class TerminalView: MTKView {
     }
     
     override func scrollWheel(with event: NSEvent) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         guard let terminal = terminal else { return }
         
         var dy = event.scrollingDeltaY
@@ -109,6 +154,9 @@ class TerminalView: MTKView {
     }
     
     func scrollTo(t: Double) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         // t: 0.0 (top/oldest) to 1.0 (bottom/newest)
         guard let terminal = terminal else { return }
         let info = aether_get_scroll_info(terminal)
@@ -123,6 +171,7 @@ class TerminalView: MTKView {
     }
     
     init(frame frameRect: CGRect, device: MTLDevice?, session: TerminalSession, onTitleChange: ((String) -> Void)? = nil) {
+        print("[TerminalView] Init for Session #\(session.id)")
         self.terminalSession = session
         self.onTitleChange = onTitleChange
         super.init(frame: frameRect, device: device ?? MTLCreateSystemDefaultDevice())
@@ -142,15 +191,15 @@ class TerminalView: MTKView {
         setenv("LC_ALL", "en_US.UTF-8", 1)
         setenv("COLORTERM", "truecolor", 1)
         
-        // Terminal is now managed by session
-        
+        // Init Metal Renderer
         do {
-            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.terminalSession.scrollState)
-            self.renderer?.terminal = self.terminal
+            self.renderer = try TerminalRenderer(metalView: self, session: session)
             self.delegate = self.renderer
         } catch {
             print("Failed to init renderer: \(error)")
         }
+        
+        // Terminal is now managed by session
         
         // Listen for scrollbar changes
         self.scrollState.userScrollRequest
@@ -186,7 +235,19 @@ class TerminalView: MTKView {
         // Regain focus when added to window
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let window = self.window else { return }
-            window.makeFirstResponder(self)
+            // Only auto-focus if this view is part of the active pane
+            // But we don't strictly know if we are the active pane here easily without checking TabManager.
+            if self.isActive {
+                 // Explicitly claim focus if we are the active pane
+                 window.makeFirstResponder(self)
+            }
+
+            // Force initial render
+            // Ensure we have a valid size before calling renderer
+            if self.frame.width > 0 && self.frame.height > 0 {
+                self.layout() // Force layout pass to calculate drawableSize and notify renderer
+            }
+            self.setNeedsDisplay(self.bounds)
         }
     }
     
@@ -214,6 +275,9 @@ class TerminalView: MTKView {
             zoomButton.target = window
             zoomButton.action = #selector(NSWindow.zoom(_:))
         }
+        
+        // Enforce Minimum Window Size to prevent layout crashes
+        window.minSize = NSSize(width: 800, height: 600)
         
         self.layer?.isOpaque = false
     }
@@ -360,6 +424,9 @@ class TerminalView: MTKView {
     }
     
     private func sendBytes(_ bytes: [UInt8]) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         guard let terminal = terminal else { return }
         bytes.withUnsafeBufferPointer { ptr in
             if let base = ptr.baseAddress {
@@ -371,6 +438,13 @@ class TerminalView: MTKView {
     // --- Mouse Handling ---
     
     override func mouseDown(with event: NSEvent) {
+        // Explicitly claim focus
+        self.window?.makeFirstResponder(self)
+        onSelect?()
+        
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         let point = self.convert(event.locationInWindow, from: nil)
         guard let terminal = terminal, let renderer = renderer else { return }
         
@@ -387,6 +461,9 @@ class TerminalView: MTKView {
     }
     
     override func mouseUp(with event: NSEvent) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         let point = self.convert(event.locationInWindow, from: nil)
         guard let terminal = terminal, let renderer = renderer else { return }
         
@@ -409,6 +486,9 @@ class TerminalView: MTKView {
     }
     
     private func copySelection() {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
         guard let terminal = terminal else { return }
         if let ptr = aether_get_selection(terminal) {
              let str = String(cString: ptr)
@@ -436,14 +516,15 @@ class TerminalView: MTKView {
             toggleCustomFullScreen(nil)
             return true
         case "new_tab":
-            onAction?("new_tab")
-            return true
+            return onAction?("new_tab") ?? false
         case "close_tab":
-            onAction?("close_tab")
-            return true
+            return onAction?("close_tab") ?? false
         case "new_window":
             print("Action not implemented yet: \(action)")
             return true
+        case "split_horizontal", "split_vertical", "close_pane", "enter_window_mode", 
+             "focus_left", "focus_right", "focus_up", "focus_down":
+            return onAction?(action) ?? false
         default:
             return false
         }

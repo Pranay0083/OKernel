@@ -83,19 +83,21 @@ pub fn build(b: *std.Build) void {
     });
     config_tests.linkLibC();
 
-    // Grid Reflow tests
-    const grid_reflow_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tests/grid_reflow_test.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "libaether", .module = lib_mod },
-            },
-        }),
-    });
-    grid_reflow_tests.linkLibC();
-
+    // Grid Reflow tests (REMOVED - Reflow logic replaced by Crop/Extend)
+    // const grid_reflow_tests = b.addTest(.{
+    //     .root_module = b.createModule(.{
+    //         .root_source_file = b.path("tests/grid_reflow_test.zig"),
+    //         .target = target,
+    //         .optimize = optimize,
+    //         .imports = &.{
+    //             .{ .name = "libaether", .module = lib_mod },
+    //         },
+    //     }),
+    // });
+    // grid_reflow_tests.linkLibC();
+    
+    const run_main_tests = b.addRunArtifact(main_tests);
+    const run_grid_tests = b.addRunArtifact(grid_tests);
 
     // Grid Scrollback tests
     const grid_scrollback_tests = b.addTest(.{
@@ -123,9 +125,7 @@ pub fn build(b: *std.Build) void {
     });
     selection_tests.linkLibC();
 
-    const run_main_tests = b.addRunArtifact(main_tests);
-    const run_grid_tests = b.addRunArtifact(grid_tests);
-    const run_grid_reflow_tests = b.addRunArtifact(grid_reflow_tests);
+    // const run_grid_reflow_tests = b.addRunArtifact(grid_reflow_tests);
     const run_grid_scrollback_tests = b.addRunArtifact(grid_scrollback_tests);
     const run_selection_tests = b.addRunArtifact(selection_tests);
     const run_terminal_tests = b.addRunArtifact(terminal_tests);
@@ -135,7 +135,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_main_tests.step);
     test_step.dependOn(&run_grid_tests.step);
-    test_step.dependOn(&run_grid_reflow_tests.step);
+    // test_step.dependOn(&run_grid_reflow_tests.step);
     test_step.dependOn(&run_grid_scrollback_tests.step);
     test_step.dependOn(&run_selection_tests.step);
     test_step.dependOn(&run_terminal_tests.step);

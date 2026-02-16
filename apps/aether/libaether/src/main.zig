@@ -13,8 +13,8 @@ const c = @cImport({
     @cInclude("sys/errno.h");
 });
 
-// Use a global allocator for C API
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+// Use C allocator (malloc) for better performance and thread safety in release
+var gpa = std.heap.c_allocator;
 
 // Callback registration functions (called from Swift)
 pub export fn aether_set_title_callback(cb: ?*const fn ([*]const u8, usize) callconv(.c) void) void {
@@ -29,18 +29,18 @@ pub export fn aether_set_get_clipboard_callback(cb: ?*const fn () callconv(.c) ?
     terminal_mod.cb_get_clipboard = cb;
 }
 pub export fn aether_terminal_new(rows: u32, cols: u32) ?*Terminal {
-    const term = gpa.allocator().create(Terminal) catch return null;
-    term.* = Terminal.init(gpa.allocator(), rows, cols) catch {
-        gpa.allocator().destroy(term);
+    const term = gpa.create(Terminal) catch return null;
+    term.* = Terminal.init(gpa, rows, cols) catch {
+        gpa.destroy(term);
         return null;
     };
     return term;
 }
 
 pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const u8) ?*Terminal {
-    const term = gpa.allocator().create(Terminal) catch return null;
-    term.* = Terminal.initWithPty(gpa.allocator(), rows, cols, shell) catch {
-        gpa.allocator().destroy(term);
+    const term = gpa.create(Terminal) catch return null;
+    term.* = Terminal.initWithPty(gpa, rows, cols, shell) catch {
+        gpa.destroy(term);
         return null;
     };
     return term;
@@ -49,7 +49,7 @@ pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const 
 pub export fn aether_terminal_free(term: ?*Terminal) void {
     if (term) |t| {
         t.deinit();
-        gpa.allocator().destroy(t);
+        gpa.destroy(t);
     }
 }
 
@@ -141,7 +141,7 @@ pub export fn aether_selection_contains(term: ?*Terminal, row: u32, col: u32) bo
 
 pub export fn aether_get_selection(term: ?*Terminal) ?[*:0]u8 {
     if (term) |t| {
-        const text = t.getSelectionText(gpa.allocator()) catch return null;
+        const text = t.getSelectionText(gpa) catch return null;
         // Append null terminator? toOwnedSlice returns slice.
         // We need a null-terminated string for C.
         // Reallocate or just append null?
@@ -149,12 +149,12 @@ pub export fn aether_get_selection(term: ?*Terminal) ?[*:0]u8 {
         // But getSelectionText returns []u8.
         
         // Let's create a null-terminated copy.
-        const c_str = gpa.allocator().allocSentinel(u8, text.len, 0) catch {
-            gpa.allocator().free(text);
+        const c_str = gpa.allocSentinel(u8, text.len, 0) catch {
+            gpa.free(text);
             return null;
         };
         @memcpy(c_str, text);
-        gpa.allocator().free(text);
+        gpa.free(text);
         return c_str;
     }
     return null;
@@ -162,7 +162,7 @@ pub export fn aether_get_selection(term: ?*Terminal) ?[*:0]u8 {
 
 pub export fn aether_free_string(str: ?[*:0]u8) void {
     if (str) |s| {
-        gpa.allocator().free(std.mem.span(s));
+        gpa.free(std.mem.span(s));
     }
 }
 
