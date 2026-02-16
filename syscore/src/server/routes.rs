@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::docker::manager::{ContainerManager, Language};
 use crate::simulation::{SimulationState, next_tick};
 use crate::vm::{VMState, VMMallocRequest, VMWriteRequest, FSOperationRequest, FSOperationResponse};
+use super::aether; // Import local module from parent server module if needed, or crate::server::aether
 
 #[derive(Deserialize)]
 pub struct ExecuteRequest {
