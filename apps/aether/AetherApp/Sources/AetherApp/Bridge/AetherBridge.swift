@@ -45,10 +45,10 @@ class AetherBridge {
         
         if let shell = shell {
             terminal = shell.withCString { cShell in
-                aether_terminal_with_pty(rows, cols, cShell)
+                aether_terminal_with_pty(rows, cols, cShell, nil)
             }
         } else {
-            terminal = aether_terminal_with_pty(rows, cols, nil)
+            terminal = aether_terminal_with_pty(rows, cols, nil, nil)
         }
     }
     
@@ -56,7 +56,7 @@ class AetherBridge {
         Self.registerCallbacks()
         
         if withPty {
-            terminal = aether_terminal_with_pty(rows, cols, nil)
+            terminal = aether_terminal_with_pty(rows, cols, nil, nil)
         } else {
             terminal = aether_terminal_new(rows, cols)
         }

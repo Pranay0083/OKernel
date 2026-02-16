@@ -71,7 +71,15 @@ pub const Pty = struct {
     allocator: std.mem.Allocator,
     tty_name: [64]u8,
     
-    pub fn init(allocator: std.mem.Allocator, shell_path: ?[*:0]const u8) !Pty {
+    // Extern declaration for macOS extension
+    extern fn posix_spawn_file_actions_addchdir_np(
+        file_actions: *c.posix_spawn_file_actions_t,
+        path: [*c]const u8
+    ) c_int;
+
+
+
+    pub fn init(allocator: std.mem.Allocator, shell_path: ?[*:0]const u8, cwd: ?[*:0]const u8) !Pty {
         var master: c_int = undefined;
         var slave: c_int = undefined;
         var name_buf: [64]u8 = undefined;
@@ -79,6 +87,7 @@ pub const Pty = struct {
         if (c.openpty(&master, &slave, &name_buf, null, null) == -1) {
             return error.OpenPtyFailed;
         }
+
         errdefer _ = c.close(master);
         errdefer _ = c.close(slave);
 
@@ -93,12 +102,27 @@ pub const Pty = struct {
         }
         defer _ = c.posix_spawn_file_actions_destroy(&file_actions);
 
+        // Map PTY slave to Stdin (0), Stdout (1), Stderr (2)
         _ = c.posix_spawn_file_actions_adddup2(&file_actions, slave, 0);
         _ = c.posix_spawn_file_actions_adddup2(&file_actions, slave, 1);
         _ = c.posix_spawn_file_actions_adddup2(&file_actions, slave, 2);
         
         _ = c.posix_spawn_file_actions_addclose(&file_actions, slave);
         _ = c.posix_spawn_file_actions_addclose(&file_actions, master);
+
+        // Set CWD if provided
+        var old_cwd_buf: [1024]u8 = undefined;
+        var needs_restore = false;
+        
+        if (cwd) |working_dir| {
+            if (c.access(working_dir, c.R_OK | c.X_OK) == 0) {
+                 if (c.getcwd(&old_cwd_buf, old_cwd_buf.len) != null) {
+                     if (c.chdir(working_dir) == 0) {
+                         needs_restore = true;
+                     }
+                 }
+            }
+        }
 
         var shell: [*c]const u8 = "/bin/zsh";
         
@@ -114,19 +138,51 @@ pub const Pty = struct {
         var argv = [_]?[*:0]const u8{ @ptrCast(shell), "-l", null };
         const argv_ptr: [*c]const [*c]u8 = @ptrCast(&argv);
         
-        // Explicitly set environment to ensure correct terminal behavior
-        var envs = [_]?[*:0]const u8{
-            "TERM=xterm-256color",
-            "LANG=en_US.UTF-8",
-            "LC_ALL=en_US.UTF-8",
-            "COLORTERM=truecolor",
-            "PATH=/usr/bin:/bin:/usr/sbin:/sbin", // Basic PATH
-            null
-        };
-        const envp_ptr: [*c]const [*c]u8 = @ptrCast(&envs);
+        // Explicitly set environment
+        var env_count: usize = 5; // Base 5
+        if (c.getenv("HOME") != null) env_count += 1;
+        // SHELL is always added
+        env_count += 1;
+        env_count += 1; // null terminator
+
+        const env_slice = try allocator.alloc([*c]const u8, env_count);
+        defer allocator.free(env_slice);
+        
+        var env_idx: usize = 0;
+        env_slice[env_idx] = "TERM=xterm-256color"; env_idx += 1;
+        env_slice[env_idx] = "LANG=en_US.UTF-8"; env_idx += 1;
+        env_slice[env_idx] = "LC_ALL=en_US.UTF-8"; env_idx += 1;
+        env_slice[env_idx] = "COLORTERM=truecolor"; env_idx += 1;
+        env_slice[env_idx] = "PATH=/usr/bin:/bin:/usr/sbin:/sbin"; env_idx += 1;
+        
+        // Add HOME
+        var home_s: []u8 = undefined;
+        var has_home = false;
+        if (c.getenv("HOME")) |h| {
+            home_s = try std.fmt.allocPrint(allocator, "HOME={s}\x00", .{std.mem.span(h)});
+            has_home = true;
+            env_slice[env_idx] = @ptrCast(home_s.ptr); env_idx += 1;
+        }
+        defer if (has_home) allocator.free(home_s);
+
+        // Add SHELL
+        var shell_s: []u8 = undefined;
+        shell_s = try std.fmt.allocPrint(allocator, "SHELL={s}\x00", .{std.mem.span(shell)});
+        env_slice[env_idx] = @ptrCast(shell_s.ptr); env_idx += 1;
+        defer allocator.free(shell_s);
+
+        env_slice[env_idx] = null; // Terminator
 
         var pid: c.pid_t = undefined;
-        if (c.posix_spawn(&pid, shell, &file_actions, null, argv_ptr, envp_ptr) != 0) {
+        const envp_ptr: [*c]const [*c]u8 = @ptrCast(env_slice.ptr);
+        const spawn_res = c.posix_spawn(&pid, shell, &file_actions, null, argv_ptr, envp_ptr);
+        
+        // Restore CWD
+        if (needs_restore) {
+            _ = c.chdir(&old_cwd_buf);
+        }
+
+        if (spawn_res != 0) {
             return error.SpawnFailed;
         }
 
@@ -163,6 +219,7 @@ pub const Pty = struct {
             // Check errno for EAGAIN/EWOULDBLOCK
             const err_val = c.__error().*;
             if (err_val == c.EAGAIN or err_val == c.EWOULDBLOCK) {
+                // Do not log EAGAIN to avoid flooding
                 return 0;
             }
             return error.ReadFailed;

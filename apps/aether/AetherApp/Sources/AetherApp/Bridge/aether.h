@@ -39,7 +39,7 @@ void aether_set_get_clipboard_callback(AetherClipboardGetCallback cb);
 
 // Lifecycle
 AetherTerminal* aether_terminal_new(uint32_t rows, uint32_t cols);
-AetherTerminal* aether_terminal_with_pty(uint32_t rows, uint32_t cols, const char* shell);
+AetherTerminal* aether_terminal_with_pty(uint32_t rows, uint32_t cols, const char* shell, const char* cwd);
 void aether_terminal_free(AetherTerminal* term);
 
 // I/O

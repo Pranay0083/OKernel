@@ -7,7 +7,7 @@ const c = @cImport({
 
 test "PTY creation and destruction" {
     const allocator = std.testing.allocator;
-    var pty = try Pty.init(allocator, "/bin/echo");
+    var pty = try Pty.init(allocator, "/bin/echo", null);
     defer pty.deinit();
 
     try std.testing.expect(pty.master_fd >= 0);
@@ -17,7 +17,7 @@ test "PTY creation and destruction" {
 
 test "PTY read/write roundtrip" {
     const allocator = std.testing.allocator;
-    var pty = try Pty.init(allocator, "/bin/cat");
+    var pty = try Pty.init(allocator, "/bin/cat", null);
     defer pty.deinit();
 
     const message = "Hello Zig PTY!\n";
@@ -36,7 +36,7 @@ test "PTY read/write roundtrip" {
 
 test "PTY window resize" {
     const allocator = std.testing.allocator;
-    var pty = try Pty.init(allocator, "/bin/sh");
+    var pty = try Pty.init(allocator, "/bin/sh", null);
     defer pty.deinit();
 
     try pty.setSize(24, 80);
