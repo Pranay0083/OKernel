@@ -135,6 +135,10 @@ jobs:
             # 4. Atomic Link Switch
             echo "Switching symlink..."
             sudo ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+
+            # 4.5 Create .env file with secrets
+            echo "Creating .env file..."
+            sudo sh -c "echo 'AETHER_UPLOAD_KEY=${{ secrets.AETHER_UPLOAD_KEY }}' > $CURRENT_LINK/.env"
             
             # 5. Restart Systemd
             echo "Restarting Service..."
