@@ -68,13 +68,17 @@ class TerminalSession: Identifiable, ObservableObject {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let displayPath = cwdPath.replacingOccurrences(of: home, with: "~")
         let longTitle = "\(user)@\(host):\(displayPath)"
-        
-        // Tab Title Logic (Process Name)
+                // Tab Title Logic (Process Name)
         let cleanTty = ttyName.replacingOccurrences(of: "/dev/", with: "")
         
          if !cleanTty.isEmpty {
             DispatchQueue.global(qos: .background).async { [weak self] in
                 guard let self = self else { return }
+                
+                // Tab Title Logic
+                // User wants "only the last folder name" for path-based titles.
+                let cwdUrl = URL(fileURLWithPath: cwdPath)
+                let folderName = cwdPath == "/" ? "/" : cwdUrl.lastPathComponent
                 
                 // Get Process Name
                 var shortTitle = "Terminal"
@@ -82,32 +86,21 @@ class TerminalSession: Identifiable, ObservableObject {
                      shortTitle = proc
                 }
                 
-                // If user configured specific style for tabs, respect it?
-                // For now, user requested: Tab = AetherApp (Process), Window = Long.
-                // But the user also has title_style config. 
-                // Let's make Tab Title respect title_style? 
-                // Actually, user said "make the vaiditya@... this the title and AetherApp as Tab".
-                // This implies Window = Long, Tab = Process (or Smart).
-                
-                // Let's stick to title_style for TABs. 
-                // If style is "path", tab shows path. If "process", tab shows process.
-                
                 let style = ConfigManager.shared.config.ui.tabs.titleStyle
                 var tabTitle = shortTitle
                 
                 if style == .path {
-                    tabTitle = displayPath
+                    tabTitle = folderName // Was displayPath
                 } else if style == .smart {
                      if let name = self.getForegroundProcess(tty: cleanTty), !name.contains("login"), !name.contains("-zsh"), !name.contains("zsh") {
                          tabTitle = name
                      } else {
-                         // Smart default: Path or Process? User wants "AetherApp" (Process) as tab.
-                         // But for shell, usually it shows current dir or "zsh".
-                         // Let's use displayPath if it's just a shell, or process if it's a command.
-                         tabTitle = displayPath
-                         // Wait, if I run `swift run`, process is `swift`. Tab should be `swift`.
-                         // If I am at prompt, process is `zsh`. Tab should be `~` or `folder`.
+                         // Fallback to Folder Name
+                         tabTitle = folderName
                      }
+                } else {
+                    // .process
+                    tabTitle = shortTitle
                 }
                 
                 DispatchQueue.main.async {
