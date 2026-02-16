@@ -69,12 +69,14 @@ pub const Pty = struct {
     child_pid: c.pid_t,
     read_buffer: RingBuffer,
     allocator: std.mem.Allocator,
+    tty_name: [64]u8,
     
     pub fn init(allocator: std.mem.Allocator, shell_path: ?[*:0]const u8) !Pty {
         var master: c_int = undefined;
         var slave: c_int = undefined;
+        var name_buf: [64]u8 = undefined;
 
-        if (c.openpty(&master, &slave, null, null, null) == -1) {
+        if (c.openpty(&master, &slave, &name_buf, null, null) == -1) {
             return error.OpenPtyFailed;
         }
         errdefer _ = c.close(master);
@@ -137,6 +139,7 @@ pub const Pty = struct {
             .child_pid = pid,
             .read_buffer = rb,
             .allocator = allocator,
+            .tty_name = name_buf,
         };
     }
 

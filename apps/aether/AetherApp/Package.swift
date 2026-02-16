@@ -15,12 +15,17 @@ let package = Package(
             ],
             swiftSettings: [
                 .unsafeFlags(["-I", "Sources/AetherApp/Bridge"]),
-                .unsafeFlags(["-Xcc", "-fmodule-map-file=Sources/AetherApp/Bridge/module.modulemap"])
+                .unsafeFlags(["-Xcc", "-fmodule-map-file=Sources/AetherApp/Bridge/module.modulemap"]),
+                .unsafeFlags(["-enable-testing"])
             ],
             linkerSettings: [
                 .unsafeFlags(["-L", "../libaether/zig-out/lib"]),
                 .linkedLibrary("aether"),
             ]
+        ),
+        .testTarget(
+            name: "AetherAppTests",
+            dependencies: ["AetherApp"]
         )
     ]
 )

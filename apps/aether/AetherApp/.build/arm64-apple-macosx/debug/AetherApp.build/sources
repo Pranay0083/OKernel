@@ -4,11 +4,14 @@
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/ConfigManager.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/FontManager.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Configuration/TOMLParser.swift
+/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Models/TabManager.swift
+/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Models/TerminalSession.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/FontAtlas.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Renderer.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/TerminalScrollState.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Rendering/Types.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/CustomScrollBar.swift
+/Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TabBarView.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalView.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/Sources/AetherApp/Views/TerminalWindow.swift
 /Users/vaiditya/Desktop/PROJECTS/OKernel/apps/aether/AetherApp/.build/arm64-apple-macosx/debug/AetherApp.build/DerivedSources/resource_bundle_accessor.swift

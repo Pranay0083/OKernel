@@ -6,14 +6,20 @@ import Combine
 
 class TerminalView: MTKView {
     var renderer: TerminalRenderer?
-    var terminal: OpaquePointer?
+    
+    // Session State
+    var terminalSession: TerminalSession
+    var onAction: ((String) -> Void)?
+    
+    // Convenience accessors
+    var terminal: OpaquePointer? { terminalSession.terminal }
+    var scrollState: TerminalScrollState { terminalSession.scrollState }
+
     private var hasMouseDragged = false
     
     // Smart Blink State
     private var lastInputTime: TimeInterval = 0
     
-    // Shared State
-    var scrollState: TerminalScrollState
     private var cancellables = Set<AnyCancellable>()
     
     // Custom Fullscreen State
@@ -110,8 +116,8 @@ class TerminalView: MTKView {
         aether_scroll_to(terminal, newOffset)
     }
     
-    init(frame frameRect: CGRect, device: MTLDevice?, scrollState: TerminalScrollState) {
-        self.scrollState = scrollState
+    init(frame frameRect: CGRect, device: MTLDevice?, session: TerminalSession) {
+        self.terminalSession = session
         super.init(frame: frameRect, device: device ?? MTLCreateSystemDefaultDevice())
         
         self.colorPixelFormat = .bgra8Unorm
@@ -129,10 +135,10 @@ class TerminalView: MTKView {
         setenv("LC_ALL", "en_US.UTF-8", 1)
         setenv("COLORTERM", "truecolor", 1)
         
-        self.terminal = aether_terminal_with_pty(24, 80, nil)
+        // Terminal is now managed by session
         
         do {
-            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.scrollState)
+            self.renderer = try TerminalRenderer(metalView: self, scrollState: self.terminalSession.scrollState)
             self.renderer?.terminal = self.terminal
             self.delegate = self.renderer
         } catch {
@@ -240,9 +246,7 @@ class TerminalView: MTKView {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
-        if let term = terminal {
-            aether_terminal_free(term)
-        }
+        // Terminal lifecycle is managed by TerminalSession
     }
     
     @objc private func handleThemeChange(_ notification: Notification) {
@@ -402,7 +406,13 @@ class TerminalView: MTKView {
         case "toggle_fullscreen":
             toggleCustomFullScreen(nil)
             return true
-        case "new_tab", "new_window", "close_tab":
+        case "new_tab":
+            onAction?("new_tab")
+            return true
+        case "close_tab":
+            onAction?("close_tab")
+            return true
+        case "new_window":
             print("Action not implemented yet: \(action)")
             return true
         default:

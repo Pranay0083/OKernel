@@ -80,6 +80,13 @@ AetherCursor aether_get_cursor(const AetherTerminal* term);
 bool aether_is_dirty(const AetherTerminal* term);
 void aether_mark_clean(AetherTerminal* term);
 
+// Queue
+int32_t aether_get_pid(const AetherTerminal* term);
+size_t aether_get_tty(const AetherTerminal* term, char* buf, size_t len);
+size_t aether_get_cwd(int32_t pid, char* buf, size_t len);
+uint32_t aether_get_cols(const AetherTerminal* term);
+uint32_t aether_get_rows(const AetherTerminal* term);
+
 // Version
 const char* aether_version(void);
 

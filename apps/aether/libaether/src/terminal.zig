@@ -1208,6 +1208,7 @@ pub const Terminal = struct {
     }
 
     pub fn resize(self: *Terminal, rows: u32, cols: u32) !void {
+        if (self.grid.rows == rows and self.grid.cols == cols) return;
         try self.grid.resize(rows, cols);
         try self.inactive_grid.resize(rows, cols); // Also resize the backup/alt grid
         
