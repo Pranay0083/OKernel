@@ -76,6 +76,9 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                 <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
                     <span className="text-xs text-zinc-500 font-mono">© 2026 OKernel. Released under MIT License.</span>
                     <div className="flex items-center gap-1 text-xs text-zinc-500 font-mono">
+                        <Link to="/docs" className="hover:text-green-500 transition-colors">Documentation</Link>
+                        <Link to="/blog" className="hover:text-green-500 transition-colors">Blog</Link>
+                        <Link to="/aether" className="hover:text-green-500 transition-colors">Aether Terminal <span className="text-purple-500 text-xs ml-1">New</span></Link>
                         <span>Made with</span>
                         <Heart size={12} className="text-red-500 fill-red-500 animate-pulse" />
                         <span>by the OKernel Team</span>

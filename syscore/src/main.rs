@@ -12,6 +12,7 @@ use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::docker::manager::ContainerManager;
 use crate::server::routes::{execute_handler, simulate_tick_handler, vm_malloc_handler, vm_write_handler, vm_reset_handler, vm_fs_handler};
+use crate::server::aether::{upload_handler, list_handlers, download_handler};
 use crate::server::websocket::websocket_handler;
 
 #[tokio::main]
@@ -28,6 +29,11 @@ async fn main() {
 
     tracing::info!("SysCore Engine v2.0 initializing...");
     tracing::info!("CWD: {:?}", std::env::current_dir().ok());
+
+    // Ensure Aether storage exists
+    if let Err(e) = std::fs::create_dir_all("storage/aether") {
+        tracing::error!("Failed to create storage/aether: {}", e);
+    }
 
     // Initialize Docker connection
     let container_manager = match ContainerManager::new() {
@@ -59,6 +65,8 @@ async fn main() {
         .route("/api/vm/reset", post(vm_reset_handler))
         .route("/api/vm/fs/ls", post(vm_fs_handler))
         .route("/api/vm/fs/create", post(vm_fs_handler))
+        .route("/api/v1/aether", get(list_handlers).post(upload_handler))
+        .route("/api/v1/aether/download", get(download_handler))
         .route("/ws/stream", get(websocket_handler))
         .layer(
             tower_http::cors::CorsLayer::new()

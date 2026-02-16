@@ -18,13 +18,13 @@ export const IntroPage = () => {
                     OKernel is a browser-based operating system simulation platform designed to visualize complex OS concepts like process scheduling, memory management, and concurrency.
                 </p>
                 <div className="flex gap-4">
-                    <button 
+                    <button
                         onClick={() => navigate('/docs/quickstart')}
                         className="px-6 py-3 bg-white text-black font-bold rounded hover:bg-zinc-200 transition-colors flex items-center gap-2"
                     >
                         Get Started <ArrowRight size={16} />
                     </button>
-                    <button 
+                    <button
                         onClick={() => navigate('/code-tracer')}
                         className="px-6 py-3 bg-zinc-800 text-white font-bold rounded hover:bg-zinc-700 transition-colors border border-zinc-700"
                     >
@@ -44,7 +44,7 @@ export const IntroPage = () => {
                         A fully functional terminal environment that supports standard commands, piping, and custom script execution.
                     </p>
                 </div>
-                
+
                 <div className="space-y-4 p-6 bg-zinc-900/50 rounded-xl border border-zinc-800/50 hover:border-zinc-700 transition-colors">
                     <div className="w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center border border-zinc-800 text-blue-500">
                         <Cpu size={24} />
@@ -57,6 +57,19 @@ export const IntroPage = () => {
 
                 <div className="space-y-4 p-6 bg-zinc-900/50 rounded-xl border border-zinc-800/50 hover:border-zinc-700 transition-colors">
                     <div className="w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center border border-zinc-800 text-purple-500">
+                        <Terminal size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Aether Terminal</h3>
+                    <p className="text-zinc-400 text-sm leading-relaxed">
+                        A GPU-accelerated, native macOS terminal emulator built with Zig and Metal. Designed for sub-16ms latency.
+                    </p>
+                    <a href="/docs/aether" className="text-purple-400 text-xs font-mono hover:underline flex items-center gap-1">
+                        Read Architecture <ArrowRight size={10} />
+                    </a>
+                </div>
+
+                <div className="space-y-4 p-6 bg-zinc-900/50 rounded-xl border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                    <div className="w-12 h-12 bg-zinc-900 rounded-lg flex items-center justify-center border border-zinc-800 text-blue-500">
                         <Shield size={24} />
                     </div>
                     <h3 className="text-xl font-bold text-white">Sandboxed</h3>
@@ -77,15 +90,15 @@ export const IntroPage = () => {
                         <span className="ml-2 text-xs font-mono text-zinc-500">example_trace.py</span>
                     </div>
                     <div className="p-6 font-mono text-sm text-zinc-300 overflow-x-auto">
-                        <span className="text-purple-400">import</span> sys<br/>
-                        <span className="text-purple-400">from</span> okernel <span className="text-purple-400">import</span> trace<br/><br/>
-                        <span className="text-zinc-500"># The engine intercepts every line execution</span><br/>
-                        <span className="text-blue-400">@trace</span><br/>
-                        <span className="text-purple-400">def</span> <span className="text-yellow-400">main</span>():<br/>
-                        &nbsp;&nbsp;x = [1, 2, 3]<br/>
-                        &nbsp;&nbsp;                        <span className="text-zinc-500"># Heap state captured here -&gt; ID: 0x7F...</span><br/>
-                        &nbsp;&nbsp;y = x<br/>
-                        &nbsp;&nbsp;<span className="text-zinc-500"># Reference count updated</span><br/>
+                        <span className="text-purple-400">import</span> sys<br />
+                        <span className="text-purple-400">from</span> okernel <span className="text-purple-400">import</span> trace<br /><br />
+                        <span className="text-zinc-500"># The engine intercepts every line execution</span><br />
+                        <span className="text-blue-400">@trace</span><br />
+                        <span className="text-purple-400">def</span> <span className="text-yellow-400">main</span>():<br />
+                        &nbsp;&nbsp;x = [1, 2, 3]<br />
+                        &nbsp;&nbsp;                        <span className="text-zinc-500"># Heap state captured here -&gt; ID: 0x7F...</span><br />
+                        &nbsp;&nbsp;y = x<br />
+                        &nbsp;&nbsp;<span className="text-zinc-500"># Reference count updated</span><br />
                     </div>
                 </div>
             </div>

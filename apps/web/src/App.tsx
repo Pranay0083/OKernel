@@ -23,6 +23,10 @@ import { AlgoWiki } from './pages/AlgoWiki';
 import { ReportBug, RequestFeature, Contributing } from './pages/CommunityPages';
 import { Privacy } from './pages/legal/Privacy';
 import { Terms } from './pages/legal/Terms';
+import { Aether } from './pages/Aether';
+import { AetherDownload } from './pages/AetherDownload';
+import { AetherChangelog } from './pages/AetherChangelog';
+import { AetherDocs } from './pages/Docs/AetherDocs';
 
 import { supabase } from './lib/supabase';
 import { SponsorManager } from './pages/admin/SponsorManager';
@@ -84,153 +88,159 @@ function App() {
     <>
       <ScrollToTop />
       <Routes>
-  
+
         <Route path="/" element={<Home />} /> {/* Landing Page */}
-      <Route path="/cpu-scheduler" element={<CPUSchedulerPage />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/architecture" element={<Architecture />} />
-      <Route path="/console" element={<Console />} />
+        <Route path="/cpu-scheduler" element={<CPUSchedulerPage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/architecture" element={<Architecture />} />
+        <Route path="/console" element={<Console />} />
 
-      {/* Admin Area */}
-      <Route path="/root" element={<AdminLogin />} />
-      <Route element={<AdminLayout />}>
-        <Route path="/root/dashboard" element={<Overview />} />
-        <Route path="/root/inbox" element={<Inbox />} />
-        <Route path="/root/featured" element={<FeaturedManager />} />
-        <Route path="/root/config" element={<SystemConfig />} />
-        <Route path="/root/database" element={<DatabaseExplorer />} />
-        <Route path="/root/sql" element={<SQLEditor />} />
-        <Route path="/root/sponsor" element={<SponsorManager />} />
-      </Route>
+        {/* Admin Area */}
+        <Route path="/root" element={<AdminLogin />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/root/dashboard" element={<Overview />} />
+          <Route path="/root/inbox" element={<Inbox />} />
+          <Route path="/root/featured" element={<FeaturedManager />} />
+          <Route path="/root/config" element={<SystemConfig />} />
+          <Route path="/root/database" element={<DatabaseExplorer />} />
+          <Route path="/root/sql" element={<SQLEditor />} />
+          <Route path="/root/sponsor" element={<SponsorManager />} />
+        </Route>
 
-      <Route path="/roadmap" element={<Roadmap />} />
-      <Route path="/shell-maker" element={<ShellMakerPage />} />
-      <Route path="/changelog" element={<Changelog />} />
-      <Route path="/packages" element={<Packages />} />
+        <Route path="/roadmap" element={<Roadmap />} />
+        <Route path="/shell-maker" element={<ShellMakerPage />} />
+        <Route path="/changelog" element={<Changelog />} />
+        <Route path="/packages" element={<Packages />} />
 
-      {/* Documentation Hub */}
-      <Route path="/docs" element={<DocsLayout />}>
-        {DOCS_NAVIGATION.flatMap(section => section.items).map(item => {
-           // Calculate relative path: /docs/architecture -> architecture
-           // /docs -> index
-           const relativePath = item.path === '/docs' ? undefined : item.path.replace('/docs/', '');
-           return (
-             <Route 
-                key={item.id} 
-                index={item.path === '/docs'} 
-                path={relativePath} 
-                element={item.component} 
-             />
-           );
-        })}
-      </Route>
+        {/* Aether Pages */}
+        <Route path="/aether" element={<Aether />} />
+        <Route path="/aether/download" element={<AetherDownload />} />
+        <Route path="/aether/changelog" element={<AetherChangelog />} />
+        <Route path="/docs/aether" element={<AetherDocs />} />
 
-      <Route path="/os-concepts" element={<OSConcepts />}>
-        {ARCH_NAVIGATION.flatMap(section => section.items).map(item => {
-           // /os-concepts -> index route
-           const relativePath = item.path === '/os-concepts' ? undefined : item.path.replace('/os-concepts/', '');
-           return (
-             <Route 
-                key={item.id} 
-                index={item.path === '/os-concepts'} 
-                path={relativePath} 
-                element={item.component} 
-             />
-           );
-        })}
-      </Route>
-      <Route path="/algo-wiki" element={<AlgoWiki />}>
-        {WIKI_NAVIGATION.flatMap(section => section.items).map(item => {
-           // /algo-wiki -> index route
-           const relativePath = item.path === '/algo-wiki' ? undefined : item.path.replace('/algo-wiki/', '');
-           return (
-             <Route 
-                key={item.id} 
-                index={item.path === '/algo-wiki'} 
-                path={relativePath} 
-                element={item.component} 
-             />
-           );
-        })}
-      </Route>
+        {/* Documentation Hub */}
+        <Route path="/docs" element={<DocsLayout />}>
+          {DOCS_NAVIGATION.flatMap(section => section.items).map(item => {
+            // Calculate relative path: /docs/architecture -> architecture
+            // /docs -> index
+            const relativePath = item.path === '/docs' ? undefined : item.path.replace('/docs/', '');
+            return (
+              <Route
+                key={item.id}
+                index={item.path === '/docs'}
+                path={relativePath}
+                element={item.component}
+              />
+            );
+          })}
+        </Route>
 
-      {/* Community Pages */}
-      <Route path="/bug-report" element={<ReportBug />} />
-      <Route path="/feature-request" element={<RequestFeature />} />
-      <Route path="/contributing" element={<Contributing />} />
+        <Route path="/os-concepts" element={<OSConcepts />}>
+          {ARCH_NAVIGATION.flatMap(section => section.items).map(item => {
+            // /os-concepts -> index route
+            const relativePath = item.path === '/os-concepts' ? undefined : item.path.replace('/os-concepts/', '');
+            return (
+              <Route
+                key={item.id}
+                index={item.path === '/os-concepts'}
+                path={relativePath}
+                element={item.component}
+              />
+            );
+          })}
+        </Route>
+        <Route path="/algo-wiki" element={<AlgoWiki />}>
+          {WIKI_NAVIGATION.flatMap(section => section.items).map(item => {
+            // /algo-wiki -> index route
+            const relativePath = item.path === '/algo-wiki' ? undefined : item.path.replace('/algo-wiki/', '');
+            return (
+              <Route
+                key={item.id}
+                index={item.path === '/algo-wiki'}
+                path={relativePath}
+                element={item.component}
+              />
+            );
+          })}
+        </Route>
 
-      {/* Legal Pages */}
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/sponsor" element={<Sponsor />} />
+        {/* Community Pages */}
+        <Route path="/bug-report" element={<ReportBug />} />
+        <Route path="/feature-request" element={<RequestFeature />} />
+        <Route path="/contributing" element={<Contributing />} />
 
-      <Route path="/auth" element={<AuthPage />} />
+        {/* Legal Pages */}
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/sponsor" element={<Sponsor />} />
 
-      {/* User Dashboard */}
-      <Route path="/dashboard" element={
-        <AuthGuard>
-          <Dashboard />
-        </AuthGuard>
-      } />
-      
-      <Route path="/settings" element={
-        <AuthGuard>
-          <Settings />
-        </AuthGuard>
-      } />
+        <Route path="/auth" element={<AuthPage />} />
 
-      {/* Legacy Redirects - All old routes point to new ones */}
-      <Route path="/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
-      <Route path="/visualizer" element={<Navigate to="/cpu-scheduler" replace />} />
-      <Route path="/shell" element={<Navigate to="/shell-maker" replace />} />
-      <Route path="/platform" element={<Navigate to="/code-tracer" replace />} />
-      <Route path="/platform/sympathy" element={<Navigate to="/code-tracer" replace />} />
-      <Route path="/platform/:mode" element={<Navigate to="/code-tracer/:mode" replace />} />
-      
-      <Route path="/dev/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
-      <Route path="/dev/about" element={<Navigate to="/about" replace />} />
-      <Route path="/dev/architecture" element={<Navigate to="/architecture" replace />} />
-      <Route path="/dev/console" element={<Navigate to="/console" replace />} />
-      <Route path="/dev/roadmap" element={<Navigate to="/roadmap" replace />} />
-      <Route path="/dev/shell" element={<Navigate to="/shell-maker" replace />} />
-      <Route path="/dev/changelog" element={<Navigate to="/changelog" replace />} />
-      <Route path="/dev/docs" element={<Navigate to="/docs" replace />} />
-      <Route path="/dev/os-concepts" element={<Navigate to="/os-concepts" replace />} />
-      <Route path="/dev/algo-wiki" element={<Navigate to="/algo-wiki" replace />} />
-      <Route path="/dev/bug-report" element={<Navigate to="/bug-report" replace />} />
-      <Route path="/dev/feature-request" element={<Navigate to="/feature-request" replace />} />
-      <Route path="/dev/contributing" element={<Navigate to="/contributing" replace />} />
-      <Route path="/dev/sympathy" element={<Navigate to="/code-tracer" replace />} />
-      <Route path="/dev/sympathy/platform" element={<Navigate to="/code-tracer" replace />} />
-      <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/code-tracer/cpu" replace />} />
-      <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/code-tracer/mem" replace />} />
-      <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/code-tracer/compare" replace />} />
-      <Route path="/dev/sympathy/platform:hardware" element={<Navigate to="/code-tracer/hardware" replace />} />
-      <Route path="/dev/sympathy/platform:recursion" element={<Navigate to="/code-tracer/recursion" replace />} />
-      <Route path="/dev/cpu-scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
-      <Route path="/dev/shell-maker" element={<Navigate to="/shell-maker" replace />} />
-
-      {/* Public Landing Page - No Sidebar */}
-      <Route path="/code-tracer" element={<CodeTracerLanding />} />
-
-      {/* OKernel Visualizer Routes (Wrapped in App Shell) */}
-      <Route element={<AppLayout />}>
-        {/* Protected Visualizer */}
-        <Route path="/code-tracer/compare" element={
+        {/* User Dashboard */}
+        <Route path="/dashboard" element={
           <AuthGuard>
-            <ComparePage />
+            <Dashboard />
           </AuthGuard>
         } />
-        <Route path="/code-tracer/:mode" element={
+
+        <Route path="/settings" element={
           <AuthGuard>
-            <CodeTracerPage />
+            <Settings />
           </AuthGuard>
         } />
-      </Route>
 
-      <Route path="/console" element={<Console />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Legacy Redirects - All old routes point to new ones */}
+        <Route path="/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
+        <Route path="/visualizer" element={<Navigate to="/cpu-scheduler" replace />} />
+        <Route path="/shell" element={<Navigate to="/shell-maker" replace />} />
+        <Route path="/platform" element={<Navigate to="/code-tracer" replace />} />
+        <Route path="/platform/sympathy" element={<Navigate to="/code-tracer" replace />} />
+        <Route path="/platform/:mode" element={<Navigate to="/code-tracer/:mode" replace />} />
+
+        <Route path="/dev/scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
+        <Route path="/dev/about" element={<Navigate to="/about" replace />} />
+        <Route path="/dev/architecture" element={<Navigate to="/architecture" replace />} />
+        <Route path="/dev/console" element={<Navigate to="/console" replace />} />
+        <Route path="/dev/roadmap" element={<Navigate to="/roadmap" replace />} />
+        <Route path="/dev/shell" element={<Navigate to="/shell-maker" replace />} />
+        <Route path="/dev/changelog" element={<Navigate to="/changelog" replace />} />
+        <Route path="/dev/docs" element={<Navigate to="/docs" replace />} />
+        <Route path="/dev/os-concepts" element={<Navigate to="/os-concepts" replace />} />
+        <Route path="/dev/algo-wiki" element={<Navigate to="/algo-wiki" replace />} />
+        <Route path="/dev/bug-report" element={<Navigate to="/bug-report" replace />} />
+        <Route path="/dev/feature-request" element={<Navigate to="/feature-request" replace />} />
+        <Route path="/dev/contributing" element={<Navigate to="/contributing" replace />} />
+        <Route path="/dev/sympathy" element={<Navigate to="/code-tracer" replace />} />
+        <Route path="/dev/sympathy/platform" element={<Navigate to="/code-tracer" replace />} />
+        <Route path="/dev/sympathy/platform:cpu" element={<Navigate to="/code-tracer/cpu" replace />} />
+        <Route path="/dev/sympathy/platform:mem" element={<Navigate to="/code-tracer/mem" replace />} />
+        <Route path="/dev/sympathy/platform:compare" element={<Navigate to="/code-tracer/compare" replace />} />
+        <Route path="/dev/sympathy/platform:hardware" element={<Navigate to="/code-tracer/hardware" replace />} />
+        <Route path="/dev/sympathy/platform:recursion" element={<Navigate to="/code-tracer/recursion" replace />} />
+        <Route path="/dev/cpu-scheduler" element={<Navigate to="/cpu-scheduler" replace />} />
+        <Route path="/dev/shell-maker" element={<Navigate to="/shell-maker" replace />} />
+
+        {/* Public Landing Page - No Sidebar */}
+        <Route path="/code-tracer" element={<CodeTracerLanding />} />
+
+        {/* OKernel Visualizer Routes (Wrapped in App Shell) */}
+        <Route element={<AppLayout />}>
+          {/* Protected Visualizer */}
+          <Route path="/code-tracer/compare" element={
+            <AuthGuard>
+              <ComparePage />
+            </AuthGuard>
+          } />
+          <Route path="/code-tracer/:mode" element={
+            <AuthGuard>
+              <CodeTracerPage />
+            </AuthGuard>
+          } />
+        </Route>
+
+        <Route path="/console" element={<Console />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 }

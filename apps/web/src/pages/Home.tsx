@@ -105,26 +105,31 @@ export const Home = () => {
 
     return (
         <Layout>
-            {/* NEW: OKernel.Sympathy Banner */}
-            <section className="pt-20 pb-12 relative border-b border-green-500/20 bg-zinc-950/80 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.15),transparent_70%)] pointer-events-none"></div>
+            {/* NEW: Aether Terminal Banner */}
+            <section className="pt-20 pb-12 relative border-b border-purple-500/20 bg-zinc-950/80 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_70%)] pointer-events-none"></div>
                 <div className="container mx-auto px-4 text-center relative z-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-900/20 border border-green-500/30 text-green-400 text-xs font-mono rounded-full mb-4 animate-pulse">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-900/20 border border-purple-500/30 text-purple-400 text-xs font-mono rounded-full mb-4 animate-pulse">
+                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                         NEW PRODUCT RELEASE
                     </div>
                     <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-4">
-                        OKernel.<span className="text-green-500">CodeTracer</span>
+                        Aether <span className="text-purple-500">Terminal</span>
                     </h1>
                     <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto mb-8 leading-relaxed font-light">
-                        A cycle-accurate execution engine for <span className="text-white font-medium">Python & C++</span>.
-                        <span className="text-zinc-500 text-sm block mt-1">(More languages coming soon)</span>
-                        <span className="text-green-400 font-mono text-base block mt-4">Trace 100+ lines of code state without a debugger.</span>
+                        The <span className="text-white font-medium">Next-Gen</span> terminal emulator for macOS.
+                        <span className="text-zinc-500 text-sm block mt-1">(Only 2MB in size)</span>
+                        <span className="text-purple-400 font-mono text-base block mt-4">Fast. Configurable. Beautiful.</span>
                     </p>
                     <div className="flex justify-center gap-4">
-                        <Link to="/code-tracer">
+                        <Link to="/aether">
                             <Button size="lg" className="h-12 px-6 text-base bg-white text-black hover:bg-zinc-200 font-bold rounded-full shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                                Explore Code Tracer &rarr;
+                                Discover Aether &rarr;
+                            </Button>
+                        </Link>
+                        <Link to="/code-tracer">
+                            <Button size="lg" variant="outline" className="h-12 px-6 text-base border-zinc-700 hover:bg-zinc-800 font-bold rounded-full">
+                                Code Tracer
                             </Button>
                         </Link>
                     </div>
@@ -739,7 +744,7 @@ int main() {
             {/* OKernel Marketing Section */}
             <section className="py-24 bg-zinc-950 border-t border-zinc-800 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-green-500/5 blur-[100px] rounded-full pointer-events-none"></div>
-                
+
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col lg:flex-row gap-16 items-center">
                         {/* Left: Content */}
@@ -748,11 +753,11 @@ int main() {
                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                                 CLI TOOL
                             </div>
-                            
+
                             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
                                 Local <span className="text-green-500">Python Tracing</span>
                             </h2>
-                            
+
                             <p className="text-xl text-zinc-400 leading-relaxed">
                                 Zero dependencies. Full visualization. One command.
                                 <br />
@@ -767,10 +772,10 @@ int main() {
                                         pip install okernel
                                     </div>
                                 </div>
-                                
-                                <a 
-                                    href="https://pypi.org/project/okernel/" 
-                                    target="_blank" 
+
+                                <a
+                                    href="https://pypi.org/project/okernel/"
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-2 px-6 py-3 bg-zinc-100 hover:bg-white text-zinc-900 font-bold rounded-lg transition-colors"
                                 >
@@ -783,7 +788,7 @@ int main() {
                         <div className="lg:w-1/2 w-full">
                             <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 overflow-hidden shadow-2xl relative group">
                                 <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                                
+
                                 {/* Window Header */}
                                 <div className="bg-zinc-900/80 backdrop-blur px-4 py-3 flex items-center gap-2 border-b border-zinc-800">
                                     <div className="flex gap-1.5">
@@ -879,7 +884,7 @@ int main() {
                                 const totalVotes = Object.values(pollVotes).reduce((a, b) => a + b, 0);
                                 const voteCount = pollVotes[lang.key as keyof PollVotes];
                                 const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
-                                
+
                                 return (
                                     <div
                                         key={lang.key}
@@ -898,7 +903,7 @@ int main() {
                                 );
                             })}
                         </div>
-                        
+
                         <p className="text-center text-zinc-600 text-xs mt-4 font-mono">
                             {Object.values(pollVotes).reduce((a, b) => a + b, 0)} total votes
                         </p>
