@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { APP_VERSION } from '../version';
 
 interface SystemConfig {
     version: string;
@@ -10,9 +11,9 @@ interface SystemConfig {
 
 export const useSystemConfig = () => {
     const [config, setConfig] = useState<SystemConfig>({
-        version: 'v1.1.0', // Fallback
+        version: `v${APP_VERSION}`, // Fallback
         status: 'ONLINE',
-        motd: 'SysCore v1.1.0 Stable'
+        motd: `SysCore v${APP_VERSION} Stable`
     });
     const [loading, setLoading] = useState(true);
 
@@ -29,7 +30,7 @@ export const useSystemConfig = () => {
                 });
 
                 setConfig({
-                    version: configMap['app_version'] || 'v0.4.0',
+                    version: configMap['app_version'] || `v${APP_VERSION}`,
                     status: configMap['system_status'] || 'ONLINE',
                     motd: configMap['motd'] || ''
                 });
