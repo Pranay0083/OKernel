@@ -291,6 +291,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
             isCursorBlinkOn = cursor.visible
         }
         
+        // Hide cursor while loading to avoid blinking at 0,0 (Global override)
+        if session?.isLoading == true {
+            isCursorBlinkOn = false
+        }
+        
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let cw = Float(fontAtlas.cellWidth) * ratio
         let ch = Float(fontAtlas.cellHeight) * ratio
