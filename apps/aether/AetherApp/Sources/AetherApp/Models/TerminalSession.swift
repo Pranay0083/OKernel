@@ -6,6 +6,7 @@ class TerminalSession: Identifiable, ObservableObject {
     let id: UUID
     @Published var title: String
     @Published var windowTitle: String = "Aether"
+    @Published var isLoading: Bool = true
     
     private(set) var terminal: OpaquePointer?
     let scrollState: TerminalScrollState
@@ -59,7 +60,8 @@ class TerminalSession: Identifiable, ObservableObject {
         // We use a background thread to continuously read from the PTY and update the Grid.
         // This decouples parsing from the UI thread (Renderer).
         let workItem = DispatchWorkItem { [weak self] in
-            while let self = self, !self.ioWorkItem!.isCancelled {
+            while let self = self {
+                if let item = self.ioWorkItem, item.isCancelled { break }
                 self.processIO()
                 Thread.sleep(forTimeInterval: 0.005) // ~200Hz Poll Rate (Adaptive sleep could be better, but this is simple)
             }
@@ -87,6 +89,14 @@ class TerminalSession: Identifiable, ObservableObject {
         // It is FAST for small chunks, but can block if we process megabytes.
         // Since we are in background, we don't block UI.
         aether_process_output(term)
+        
+        // Mark as loaded once we get any output from the shell that modifies the grid
+        // Reverting to wait for actual visual changes to avoid "trash" black screen snapping
+        if self.isLoading && aether_is_dirty(term) {
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+        }
         
         // If dirty, we should notify the view to redraw.
         // Since TerminalSession is ObservableObject, we can't easily publish on background thread without main dispatch.
