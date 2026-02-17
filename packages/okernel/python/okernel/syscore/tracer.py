@@ -2,6 +2,7 @@ import sys
 import time
 import dis
 import gc
+import reprlib
 from types import FrameType
 from typing import Any, List, Dict, Optional, Set, Callable
 from .memory import MemoryTracker
@@ -21,6 +22,9 @@ class Tracer:
         self.memory_tracker: MemoryTracker = MemoryTracker()
         self.stack_depth: int = 0
         self._ignore_files: Set[str] = {__file__}
+        self._repr_obj = reprlib.Repr()
+        self._repr_obj.maxstring = 100
+        self._repr_obj.maxother = 100
 
     def start(self) -> None:
         """
@@ -97,7 +101,11 @@ class Tracer:
             self.memory_tracker.track(v)
 
             # Safe string conversion with truncation
-            val_str = str(v)
+            if isinstance(v, str):
+                val_str = v
+            else:
+                val_str = self._repr_obj.repr(v)
+
             if len(val_str) > 100:
                 val_str = val_str[:100] + "..."
 
