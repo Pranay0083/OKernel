@@ -80,13 +80,11 @@ struct TerminalPaneView: View {
 
             if session.isLoading {
                 CircleLoader()
-                    .transition(.opacity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.2))
                     .zIndex(1)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: session.isLoading)
     }
 }
 
