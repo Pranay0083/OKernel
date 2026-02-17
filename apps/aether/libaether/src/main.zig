@@ -37,9 +37,9 @@ pub export fn aether_terminal_new(rows: u32, cols: u32) ?*Terminal {
     return term;
 }
 
-pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8) ?*Terminal {
+pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) ?*Terminal {
     const term = gpa.create(Terminal) catch return null;
-    term.* = Terminal.initWithPty(gpa, rows, cols, shell, cwd) catch {
+    term.* = Terminal.initWithPty(gpa, rows, cols, shell, cwd, ctrlc_sends_sigint) catch {
         gpa.destroy(term);
         return null;
     };

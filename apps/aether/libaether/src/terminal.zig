@@ -377,10 +377,10 @@ pub const Terminal = struct {
         };
     }
 
-    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8) !Terminal {
+    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) !Terminal {
         var term = try init(allocator, rows, cols);
         // Pty.init might fail, so we need to handle cleanup if it does
-        term.pty = Pty.init(allocator, shell, cwd) catch |err| {
+        term.pty = Pty.init(allocator, shell, cwd, ctrlc_sends_sigint) catch |err| {
             term.deinit();
             return err;
         };
@@ -531,6 +531,22 @@ pub const Terminal = struct {
         } else {
             self.cursor_row = self.scroll_bottom - 1;
         }
+        self.dirty = true;
+    }
+
+    pub fn cursorNextLine(self: *Terminal, n: u16) void {
+        self.cursorDown(n);
+        self.cursor_col = 0;
+    }
+
+    pub fn cursorPrecedingLine(self: *Terminal, n: u16) void {
+        self.cursorUp(n);
+        self.cursor_col = 0;
+    }
+
+    pub fn cursorHorizontalAbsolute(self: *Terminal, n: u16) void {
+        const col = if (n > 0) n - 1 else 0;
+        self.cursor_col = @min(@as(u32, col), self.grid.cols - 1);
         self.dirty = true;
     }
 
@@ -952,6 +968,14 @@ pub const Terminal = struct {
         self.dirty = true;
     }
 
+    pub fn scrollUp(self: *Terminal, n: u16) void {
+        for (0..n) |_| self.scrollUpOne();
+    }
+
+    pub fn scrollDown(self: *Terminal, n: u16) void {
+        for (0..n) |_| self.scrollDownOne();
+    }
+
     pub fn execute(self: *Terminal, cmd: u8) void {
         switch (cmd) {
             0x0A => self.lineFeed(),
@@ -963,72 +987,8 @@ pub const Terminal = struct {
         }
     }
     
-    pub fn csiDispatch(self: *Terminal, params: []const u16, intermediates: []const u8, final: u8) void {
-        const p1_def1 = if (params.len > 0 and params[0] > 0) params[0] else 1;
-        
-        // Handle Private Modes (?25h etc)
-        if (intermediates.len > 0 and intermediates[0] == '?') {
-            switch (final) {
-                'h' => { // SM - Set Mode
-                    for (params) |p| self.setPrivateMode(p, true);
-                },
-                'l' => { // RM - Reset Mode
-                    for (params) |p| self.setPrivateMode(p, false);
-                },
-                else => {},
-            }
-            return;
-        }
+    // csiDispatch removed - now handled in parser.zig
 
-        switch (final) {
-            'A' => self.cursorUp(p1_def1),
-            'B' => self.cursorDown(p1_def1),
-            'C' => self.cursorForward(p1_def1),
-            'D' => self.cursorBack(p1_def1),
-            'E' => { // Next Line
-                self.cursorDown(p1_def1);
-                self.cursor_col = 0;
-            },
-            'F' => { // Preceding Line
-                self.cursorUp(p1_def1);
-                self.cursor_col = 0;
-            },
-            'G' => { // CHA - Cursor Horizontal Absolute
-                const col = p1_def1;
-                self.cursor_col = if (col > 0) @min(@as(u32, col) - 1, self.grid.cols - 1) else 0;
-                self.dirty = true;
-            },
-            'H', 'f' => { // CUP - Cursor Position
-                const row = if (params.len > 0 and params[0] > 0) params[0] else 1;
-                const col = if (params.len > 1 and params[1] > 0) params[1] else 1;
-                self.setCursorPos(row, col);
-            },
-            'J' => { // ED - Erase in Display
-                const mode = if (params.len > 0) params[0] else 0;
-                std.debug.print("DEBUG: CSI J (Erase Display) Mode: {d}\n", .{mode});
-                self.eraseDisplay(mode);
-            },
-            'K' => { // EL - Erase in Line
-                const mode = if (params.len > 0) params[0] else 0;
-                self.eraseLine(mode);
-            },
-            'm' => self.setGraphicsRendition(params),
-            'n' => { // DSR - Device Status Report
-                if (params.len > 0 and params[0] == 6) {
-                    // Report cursor position: ESC [ row ; col R
-                    var buf: [32]u8 = undefined;
-                    // Provide 1-based coords
-                    const r = if (self.mode.origin_mode) self.cursor_row - self.scroll_top + 1 else self.cursor_row + 1;
-                    const c = self.cursor_col + 1;
-                    const text = std.fmt.bufPrint(&buf, "\x1B[{d};{d}R", .{r, c}) catch "";
-                    self.writeInput(text) catch {};
-                }
-            },
-            's' => self.saveCursor(),
-            'u' => self.restoreCursor(),
-            else => {},
-        }
-    }
 
     fn setGraphicsRendition(self: *Terminal, params: []const u16) void {
         if (params.len == 0) {
@@ -1153,14 +1113,14 @@ pub const Terminal = struct {
         if (self.cursor_row + 1 < self.scroll_bottom) {
             self.cursor_row += 1;
         } else {
-            self.scrollUp();
+            self.scrollUpOne();
         }
         if (self.mode.line_feed_mode) {
              self.cursor_col = 0;
         }
     }
     
-    fn scrollUp(self: *Terminal) void {
+    fn scrollUpOne(self: *Terminal) void {
         // We need to scroll the region between scroll_top and scroll_bottom
         if (self.scroll_top == 0 and self.scroll_bottom == self.grid.rows) {
             // Full screen scroll
@@ -1197,6 +1157,29 @@ pub const Terminal = struct {
                  };
              }
              last.dirty = true;
+        }
+    }
+
+    fn scrollDownOne(self: *Terminal) void {
+        if (self.scroll_top == 0 and self.scroll_bottom == self.grid.rows) {
+            self.grid.scrollDown(1);
+        } else {
+             // Partial scroll down
+             var i = self.scroll_bottom - 1;
+             while (i > self.scroll_top) : (i -= 1) {
+                 const dest = &self.grid.active[i];
+                 const src = &self.grid.active[i-1];
+                 @memcpy(dest.cells, src.cells);
+                 dest.dirty = true;
+             }
+             
+             const first = &self.grid.active[self.scroll_top];
+             for (first.cells) |*c| {
+                 c.* = Cell{
+                     .bg_color = self.current_bg,
+                 };
+             }
+             first.dirty = true;
         }
     }
 

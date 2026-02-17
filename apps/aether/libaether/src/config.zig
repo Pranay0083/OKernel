@@ -7,6 +7,8 @@ pub const Config = struct {
     font: FontConfig = .{},
     // Theme reference or inline colors
     theme: ThemeConfig = .{},
+    // Behavior settings
+    behavior: BehaviorConfig = .{},
 
     pub fn load(allocator: std.mem.Allocator, path: []const u8) !Config {
         const file = try std.fs.cwd().openFile(path, .{});
@@ -73,6 +75,10 @@ pub const ThemeConfig = struct {
         bright_cyan: u32 = 0xFF94E2D5,
         bright_white: u32 = 0xFFA6ADC8,
     };
+};
+
+pub const BehaviorConfig = struct {
+    ctrlc_sends_sigint: bool = true,
 };
 
 // TOML Parser
@@ -200,6 +206,8 @@ pub const TomlParser = struct {
             if (std.mem.eql(u8, kv.key, "ligatures")) config.font.ligatures = std.mem.eql(u8, kv.value, "true");
         } else if (std.mem.eql(u8, self.current_section, "theme")) {
             if (std.mem.eql(u8, kv.key, "name")) config.theme.name = kv.value;
+        } else if (std.mem.eql(u8, self.current_section, "behavior")) {
+            if (std.mem.eql(u8, kv.key, "ctrlc_sends_sigint")) config.behavior.ctrlc_sends_sigint = std.mem.eql(u8, kv.value, "true");
         }
     }
 };

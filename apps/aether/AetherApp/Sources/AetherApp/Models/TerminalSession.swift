@@ -23,9 +23,16 @@ class TerminalSession: Identifiable, ObservableObject {
         
         print("[TerminalSession] Init \(self.id)")
         
+        // Set environment variables before spawning PTY
+        setenv("TERM", "xterm-256color", 1)
+        setenv("COLORTERM", "truecolor", 1)
+        setenv("LANG", "en_US.UTF-8", 1)
+        setenv("LC_ALL", "en_US.UTF-8", 1)
+
         // Initialize backend terminal
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        self.terminal = aether_terminal_with_pty(24, 80, nil, home)
+        let ctrlcSigint = ConfigManager.shared.config.behavior.ctrlcSendsSigint
+        self.terminal = aether_terminal_with_pty(24, 80, nil, home, ctrlcSigint)
         
         startPolling()
     }

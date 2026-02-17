@@ -9,6 +9,7 @@ struct AetherConfig: Codable {
     var cursor: CursorConfig
     var colors: ColorConfig
     var keys: KeyBindingConfig
+    var behavior: BehaviorConfig
     
     // Default Configuration
     static let `default` = AetherConfig(
@@ -17,7 +18,8 @@ struct AetherConfig: Codable {
         font: FontConfig(),
         cursor: CursorConfig(),
         colors: ColorConfig(),
-        keys: KeyBindingConfig()
+        keys: KeyBindingConfig(),
+        behavior: BehaviorConfig()
     )
 }
 
@@ -243,6 +245,15 @@ struct KeyBindingConfig: Codable {
     // Actually [String:String] dictionary handles this automatically in Codable.
 }
 
+// MARK: - Behavior Settings
+struct BehaviorConfig: Codable {
+    var ctrlcSendsSigint: Bool = true
+    
+    enum CodingKeys: String, CodingKey {
+        case ctrlcSendsSigint = "ctrlc_sends_sigint"
+    }
+}
+
 // MARK: - Config Manager
 class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
@@ -369,6 +380,11 @@ class ConfigManager: ObservableObject {
         if let cursor = doc["cursor"] as? [String: Any] {
             if let sb = cursor["smartBlink"] as? Bool { cfg.cursor.smartBlink = sb }
             if let blink = cursor["blink"] as? Bool { cfg.cursor.blink = blink }
+        }
+        
+        // [behavior]
+        if let behavior = doc["behavior"] as? [String: Any] {
+            if let sigint = behavior["ctrlc_sends_sigint"] as? Bool { cfg.behavior.ctrlcSendsSigint = sigint }
         }
         
         return cfg
