@@ -3,6 +3,7 @@ import React from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Terminal, Users, Code, Globe } from 'lucide-react';
 import { useSystemConfig } from '../hooks/useSystemConfig';
+import { APP_VERSION, RELEASE_NAME } from '../version';
 
 export const About = () => {
     const { config } = useSystemConfig();
@@ -84,7 +85,7 @@ export const About = () => {
                             <div className="font-mono text-[10px] space-y-6 pl-4 border-l border-zinc-800 relative">
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-green-500 border border-black shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                                    <div className="text-white font-bold mb-1">v1.1.0 - Hard Tech</div>
+                                <div className="text-white font-bold mb-1">v{APP_VERSION} - {RELEASE_NAME}</div>
                                     <p className="text-zinc-500 text-xs">Code Tracer Landing Page. C++ Support. UI Overhaul.</p>
                                 </div>
                                 <div className="relative">
@@ -135,7 +136,7 @@ export const About = () => {
 
                                 <div className="col-span-3 text-zinc-800">--------------------------------</div>
 
-                                <span className="font-bold text-green-500">v1.1.0</span>
+                                <span className="font-bold text-green-500">v{APP_VERSION}</span>
                                 <span className="font-bold text-green-500 text-right">Total</span>
                                 <span className="font-bold text-green-500 text-right">7,970</span>
                             </div>
