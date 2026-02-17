@@ -321,9 +321,30 @@ pub const Grid = struct {
     }
     
     pub fn scrollDown(self: *Grid, lines: u32) void {
-        _ = self;
-        _ = lines;
-        // Placeholder as discussed
+        var i: u32 = 0;
+        while (i < lines) : (i += 1) {
+            // Check if we can pull from scrollback?
+            // Actually DEC SD / CSI T usually just scrolls the screen down and fills with empty space at top.
+            // It doesn't necessarily pull from history unless it's a specific "unscroll" operation.
+            // Standard CSI T behavior is to insert empty lines at the top of the scroll region.
+            
+            // Reuse the last row for the new top row
+            const last_row = self.active[self.rows - 1];
+            
+            // Shift active rows down
+            std.mem.copyBackwards(Row, self.active[1..self.rows], self.active[0..self.rows-1]);
+            
+            // Clear the recycled row and put it at the top
+            var recycled_row = last_row;
+            for (recycled_row.cells) |*c| c.* = Cell{};
+            recycled_row.dirty = true;
+            recycled_row.wrapped = false;
+            
+            self.active[0] = recycled_row;
+        }
+        
+        self.dirty = true;
+        self.dirty_rows.setRangeValue(.{ .start = 0, .end = self.rows }, true);
     }
     
     pub fn clearScreen(self: *Grid) void {

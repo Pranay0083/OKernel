@@ -44,3 +44,6 @@ foreground = "#F8F8F2"
 "cmd+enter" = "toggle_fullscreen"
 "cmd+t" = "new_tab"
 "cmd+w" = "close_tab"
+
+[behavior]
+ctrlc_sends_sigint = true

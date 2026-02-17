@@ -61,5 +61,8 @@
       "up": "focus_up",
       "down": "focus_down"
     }
+  },
+  "behavior": {
+    "ctrlc_sends_sigint": true
   }
 }
