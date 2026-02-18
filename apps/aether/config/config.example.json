@@ -65,5 +65,8 @@
   "behavior": {
     "ctrlc_sends_sigint": true,
     "keyboard_selection": true
+  },
+  "session": {
+    "restore_strategy": "ask"
   }
 }

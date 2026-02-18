@@ -48,3 +48,6 @@ foreground = "#F8F8F2"
 [behavior]
 ctrlc_sends_sigint = true
 keyboard_selection = true
+
+[session]
+restore_strategy = "ask"
