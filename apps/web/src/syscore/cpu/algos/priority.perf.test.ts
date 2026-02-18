@@ -2,6 +2,21 @@ import { priority } from './priority';
 import { Process } from '../../../core/types';
 import { describe, it, expect } from 'vitest';
 
+const createMockProcess = (id: number, priority: number): Process => ({
+    id,
+    name: `P${id}`,
+    burstTime: 0,
+    arrivalTime: 0,
+    priority,
+    remainingTime: 0,
+    color: '#000000',
+    state: 'READY',
+    startTime: null,
+    completionTime: null,
+    waitingTime: 0,
+    turnaroundTime: 0
+});
+
 describe('Priority Algorithm', () => {
     const generateProcesses = (count: number): Process[] => {
         return Array.from({ length: count }, (_, i) => ({
@@ -38,10 +53,10 @@ describe('Priority Algorithm', () => {
 
     it('should correctly select highest priority (lowest number)', () => {
         const processes: Process[] = [
-            { id: 1, priority: 10 } as any,
-            { id: 2, priority: 5 } as any,
-            { id: 3, priority: 8 } as any,
-            { id: 4, priority: 5 } as any // Same priority as 2
+            createMockProcess(1, 10),
+            createMockProcess(2, 5),
+            createMockProcess(3, 8),
+            createMockProcess(4, 5),
         ];
         const readyQueue = [1, 2, 3, 4];
 
@@ -51,9 +66,9 @@ describe('Priority Algorithm', () => {
 
     it('should handle tie breaking by readyQueue order', () => {
         const processes: Process[] = [
-            { id: 1, priority: 10 } as any,
-            { id: 2, priority: 5 } as any,
-            { id: 3, priority: 5 } as any
+            createMockProcess(1, 10),
+            createMockProcess(2, 5),
+            createMockProcess(3, 5),
         ];
         // If readyQueue order is 3, 2, 1
         const readyQueue = [3, 2, 1];

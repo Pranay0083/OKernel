@@ -100,38 +100,57 @@ export const SitemapPage: React.FC = () => {
                         </h2>
                         <div className="grid gap-3">
                             {section.links.map((link) => {
-                                const isExternal = link.path.startsWith('http');
-                                const LinkComponent = isExternal ? 'a' : Link;
-                                const linkProps = isExternal
-                                    ? { href: link.path, target: "_blank", rel: "noopener noreferrer" }
-                                    : { to: link.path };
-
-                                return (
-                                    <LinkComponent
+                                const isExternal = link.path.startsWith('http');return isExternal ? (
+                                    <a
                                         key={link.path}
-                                        {...linkProps as any}
+                                        href={link.path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="group flex items-start gap-4 p-4 bg-zinc-900/50 border border-zinc-800/50 rounded-lg hover:border-green-500/30 hover:bg-zinc-900 transition-all"
                                     >
                                         <div className="p-2 bg-zinc-800 rounded-md group-hover:bg-green-500/10 transition-colors">
-                                            <span className="text-zinc-400 group-hover:text-green-400 transition-colors">
-                                                {link.icon}
+                                        <span className="text-zinc-400 group-hover:text-green-400 transition-colors">
+                                            {link.icon}
+                                        </span>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-white group-hover:text-green-400 transition-colors">
+                                            {link.title}
+                                            </span>
+                                            <ExternalLink size={12} className="text-zinc-500" />
+                                        </div>
+                                        <p className="text-sm text-zinc-500 mt-1">{link.description}</p>
+                                        <code className="text-xs text-zinc-600 font-mono mt-2 block">
+                                            {link.path}
+                                        </code>
+                                        </div>
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={link.path}
+                                        to={link.path}
+                                        className="group flex items-start gap-4 p-4 bg-zinc-900/50 border border-zinc-800/50 rounded-lg hover:border-green-500/30 hover:bg-zinc-900 transition-all"
+                                    >
+                                        <div className="p-2 bg-zinc-800 rounded-md group-hover:bg-green-500/10 transition-colors">
+                                        <span className="text-zinc-400 group-hover:text-green-400 transition-colors">
+                                            {link.icon}
+                                        </span>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-white group-hover:text-green-400 transition-colors">
+                                            {link.title}
                                             </span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-medium text-white group-hover:text-green-400 transition-colors">
-                                                    {link.title}
-                                                </span>
-                                                {isExternal && (
-                                                    <ExternalLink size={12} className="text-zinc-500" />
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-zinc-500 mt-1">{link.description}</p>
-                                            <code className="text-xs text-zinc-600 font-mono mt-2 block">
-                                                {link.path}
-                                            </code>
+                                        <p className="text-sm text-zinc-500 mt-1">{link.description}</p>
+                                        <code className="text-xs text-zinc-600 font-mono mt-2 block">
+                                            {link.path}
+                                        </code>
                                         </div>
-                                    </LinkComponent>
+                                    </Link>
                                 );
                             })}
                         </div>
