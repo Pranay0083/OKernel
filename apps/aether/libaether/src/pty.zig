@@ -140,51 +140,41 @@ pub const Pty = struct {
             // Use -l to force a login shell so PATH and profile are loaded
             var argv = [_]?[*:0]const u8{ @ptrCast(shell), "-l", null };
             
-            // Explicitly set environment
-            var env_count: usize = 5; // Base 5
-            if (c.getenv("HOME") != null) env_count += 1;
-            // SHELL is always added
-            env_count += 1;
-            env_count += 1; // null terminator
+            // Inherit parent environment but ensure critical variables are set
+            // On macOS, extern var environ is not always available in shared libraries, 
+            // so we use _NSGetEnviron() to get the actual environment pointer.
+            const ns_get_environ = struct {
+                extern fn _NSGetEnviron() [*c][*c][*c]u8;
+            }._NSGetEnviron;
 
-            const env_slice = allocator.alloc([*c]const u8, env_count) catch {
-                c.exit(1); // Cannot allocate, exit child
-            };
-            defer allocator.free(env_slice); // This defer won't run if execve succeeds
-
-            var env_idx: usize = 0;
-            env_slice[env_idx] = "TERM=xterm-256color"; env_idx += 1;
-            env_slice[env_idx] = "LANG=en_US.UTF-8"; env_idx += 1;
-            env_slice[env_idx] = "LC_ALL=en_US.UTF-8"; env_idx += 1;
-            env_slice[env_idx] = "COLORTERM=truecolor"; env_idx += 1;
-            env_slice[env_idx] = "PATH=/usr/bin:/bin:/usr/sbin:/sbin"; env_idx += 1;
+            // Set critical environment variables in the child process
+            _ = c.setenv("TERM", "xterm-256color", 1);
+            _ = c.setenv("COLORTERM", "truecolor", 1);
+            _ = c.setenv("LANG", "en_US.UTF-8", 1);
+            _ = c.setenv("LC_ALL", "en_US.UTF-8", 1);
             
-            // Add HOME
-            var home_s: []u8 = undefined;
-            var has_home = false;
-            if (c.getenv("HOME")) |h| {
-                home_s = std.fmt.allocPrint(allocator, "HOME={s}\x00", .{std.mem.span(h)}) catch {
-                    c.exit(1);
-                };
-                has_home = true;
-                env_slice[env_idx] = @ptrCast(home_s.ptr); env_idx += 1;
+            // If PATH is too restricted (common in GUI apps), expand it
+            if (c.getenv("PATH")) |p| {
+                const current_path = std.mem.span(p);
+                if (!std.mem.containsAtLeast(u8, current_path, 1, "/opt/homebrew/bin")) {
+                    // Create a more complete PATH for macOS
+                    const extra_paths = ":/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin";
+                    const new_path = allocator.alloc(u8, current_path.len + extra_paths.len + 1) catch current_path;
+                    if (new_path.ptr != current_path.ptr) {
+                        @memcpy(new_path[0..current_path.len], current_path);
+                        @memcpy(new_path[current_path.len..current_path.len+extra_paths.len], extra_paths);
+                        new_path[new_path.len-1] = 0;
+                        _ = c.setenv("PATH", @ptrCast(new_path.ptr), 1);
+                    }
+                }
+            } else {
+                _ = c.setenv("PATH", "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin", 1);
             }
-            defer if (has_home) allocator.free(home_s);
 
-            // Add SHELL
-            var shell_s: []u8 = undefined;
-            shell_s = std.fmt.allocPrint(allocator, "SHELL={s}\x00", .{std.mem.span(shell)}) catch {
-                c.exit(1);
-            };
-            env_slice[env_idx] = @ptrCast(shell_s.ptr); env_idx += 1;
-            defer allocator.free(shell_s);
-
-            env_slice[env_idx] = null; // Terminator
-
-            const envp_ptr: [*c]const [*c]u8 = @ptrCast(env_slice.ptr);
             const argv_ptr: [*c]const [*c]u8 = @ptrCast(&argv[0]);
             
-            _ = c.execve(shell, argv_ptr, envp_ptr);
+            // Use execve with the inherited (and modified) environment
+            _ = c.execve(shell, argv_ptr, ns_get_environ().*);
             c.exit(1); // Should not reach here
         }
 
@@ -211,8 +201,12 @@ pub const Pty = struct {
     }
 
     fn pump(self: *Pty) !usize {
+        const available = self.read_buffer.capacity - self.read_buffer.count;
+        if (available == 0) return 0;
+
         var buf: [4096]u8 = undefined;
-        const n = c.read(self.master_fd, &buf, buf.len);
+        const to_read = @min(buf.len, available);
+        const n = c.read(self.master_fd, &buf, to_read);
         
         if (n > 0) {
             return self.read_buffer.write(buf[0..@intCast(n)]);

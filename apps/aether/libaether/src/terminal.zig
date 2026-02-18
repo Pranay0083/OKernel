@@ -1330,4 +1330,26 @@ pub const Terminal = struct {
             }
         }
     }
+
+    // --- Terminal Queries (Responses sent back to PTY) ---
+
+    pub fn deviceAttributes(self: *Terminal) void {
+        // CSI ? 62 ; 1 ; 2 ; 4 ; 6 ; 9 ; 15 ; 22 c (xterm-like response)
+        self.writeInput("\x1B[?62;1;2;4;6;9;15;22c") catch {};
+    }
+
+    pub fn deviceStatusReport(self: *Terminal, param: u16) void {
+        switch (param) {
+            5 => self.writeInput("\x1B[0n") catch {}, // Status OK
+            6 => self.cursorPositionReport(),
+            else => {},
+        }
+    }
+
+    pub fn cursorPositionReport(self: *Terminal) void {
+        var buf: [32]u8 = undefined;
+        // CPR: CSI r ; c R (1-indexed)
+        const response = std.fmt.bufPrint(&buf, "\x1B[{d};{d}R", .{ self.cursor_row + 1, self.cursor_col + 1 }) catch return;
+        self.writeInput(response) catch {};
+    }
 };
