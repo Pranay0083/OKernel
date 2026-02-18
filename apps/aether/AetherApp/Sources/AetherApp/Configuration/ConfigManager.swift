@@ -10,6 +10,7 @@ struct AetherConfig: Codable {
     var colors: ColorConfig
     var keys: KeyBindingConfig
     var behavior: BehaviorConfig
+    var session: SessionConfig = SessionConfig()
     
     // Default Configuration
     static let `default` = AetherConfig(
@@ -19,8 +20,32 @@ struct AetherConfig: Codable {
         cursor: CursorConfig(),
         colors: ColorConfig(),
         keys: KeyBindingConfig(),
-        behavior: BehaviorConfig()
+        behavior: BehaviorConfig(),
+        session: SessionConfig()
     )
+    
+    init(window: WindowConfig, ui: UIConfig, font: FontConfig, cursor: CursorConfig, colors: ColorConfig, keys: KeyBindingConfig, behavior: BehaviorConfig, session: SessionConfig) {
+        self.window = window
+        self.ui = ui
+        self.font = font
+        self.cursor = cursor
+        self.colors = colors
+        self.keys = keys
+        self.behavior = behavior
+        self.session = session
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.window = try container.decodeIfPresent(WindowConfig.self, forKey: .window) ?? WindowConfig()
+        self.ui = try container.decodeIfPresent(UIConfig.self, forKey: .ui) ?? UIConfig()
+        self.font = try container.decodeIfPresent(FontConfig.self, forKey: .font) ?? FontConfig()
+        self.cursor = try container.decodeIfPresent(CursorConfig.self, forKey: .cursor) ?? CursorConfig()
+        self.colors = try container.decodeIfPresent(ColorConfig.self, forKey: .colors) ?? ColorConfig()
+        self.keys = try container.decodeIfPresent(KeyBindingConfig.self, forKey: .keys) ?? KeyBindingConfig()
+        self.behavior = try container.decodeIfPresent(BehaviorConfig.self, forKey: .behavior) ?? BehaviorConfig()
+        self.session = try container.decodeIfPresent(SessionConfig.self, forKey: .session) ?? SessionConfig()
+    }
 }
 
 // MARK: - Window Settings
@@ -264,6 +289,19 @@ struct BehaviorConfig: Codable {
     }
 }
 
+// MARK: - Session Settings
+struct SessionConfig: Codable {
+    var restoreStrategy: RestoreStrategy = .ask
+    
+    enum RestoreStrategy: String, Codable {
+        case ask, always, never
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case restoreStrategy = "restore_strategy"
+    }
+}
+
 // MARK: - Config Manager
 class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
@@ -396,6 +434,13 @@ class ConfigManager: ObservableObject {
         if let behavior = doc["behavior"] as? [String: Any] {
             if let sigint = behavior["ctrlc_sends_sigint"] as? Bool { cfg.behavior.ctrlcSendsSigint = sigint }
             if let ks = behavior["keyboard_selection"] as? Bool { cfg.behavior.keyboardSelection = ks }
+        }
+        
+        // [session]
+        if let session = doc["session"] as? [String: Any] {
+            if let s = session["restore_strategy"] as? String, let strategy = SessionConfig.RestoreStrategy(rawValue: s) {
+                cfg.session.restoreStrategy = strategy
+            }
         }
         
         return cfg

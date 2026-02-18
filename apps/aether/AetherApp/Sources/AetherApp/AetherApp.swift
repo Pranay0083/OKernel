@@ -11,6 +11,8 @@ struct AetherApp: App {
     @AppStorage("hasSeenStartup") private var hasSeenStartup = false
     @State private var showStartup = false
     
+    @State private var showSessionRestore = false
+    
     @Environment(\.scenePhase) var scenePhase
 
     // Leader Key State
@@ -109,6 +111,25 @@ struct AetherApp: App {
                         .zIndex(100)
                         .transition(.opacity)
                 }
+                
+                // Session Restore Dialog
+                if showSessionRestore {
+                    SessionRestoreView(
+                        isPresented: $showSessionRestore,
+                        onRestore: {
+                            if let saved = SessionManager.shared.restoreLastSession() {
+                                print("[AetherApp] User restored session.")
+                                tabManager.restore(from: saved)
+                            }
+                        },
+                        onFresh: {
+                            print("[AetherApp] User chose fresh session.")
+                            // Do nothing, default state is fresh
+                        }
+                    )
+                    .zIndex(101)
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
             .background(Color.clear) // Ensure window background doesn't bleed if possible
             .onAppear {
@@ -119,15 +140,27 @@ struct AetherApp: App {
                     showStartup = true
                 }
                 
-                // Auto-restore session?
-                // Logic: If we have a saved session and we are fresh (only 1 empty tab), restore it.
-                if let saved = SessionManager.shared.restoreLastSession() {
-                    // Check if current state is "fresh" (1 tab, default title)
-                    // Or just overwrite?
-                    // Let's prompt or just restore if configured.
-                    // For now: Just restore if it exists.
-                    print("[AetherApp] Restoring last session...")
-                    tabManager.restore(from: saved)
+                // Auto-restore session logic
+                let strategy = configManager.config.session.restoreStrategy
+                let hasSavedSession = SessionManager.shared.restoreLastSession() != nil
+                
+                if hasSavedSession {
+                    switch strategy {
+                    case .always:
+                        print("[AetherApp] Auto-restoring session (Always).")
+                        if let saved = SessionManager.shared.restoreLastSession() {
+                            tabManager.restore(from: saved)
+                        }
+                    case .ask:
+                        // Only ask if we verify there's something to restore
+                        print("[AetherApp] Asking to restore session.")
+                        // Delay slightly to let startup animation finish if needed, or just show
+                        showSessionRestore = true
+                    case .never:
+                        print("[AetherApp] Starting fresh session (Never).")
+                    }
+                } else {
+                     print("[AetherApp] No saved session to restore.")
                 }
             }
             .onChange(of: scenePhase) { newPhase in
