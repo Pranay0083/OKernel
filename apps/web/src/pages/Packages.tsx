@@ -65,12 +65,14 @@ export const Packages = () => {
         localStorage.setItem('okernel_language_vote', language);
         setUserVote(language);
         setVoteStatus('success');
-        const { data } = await supabase
+        const { data, error: refetchError } = await supabase
             .from('language_poll')
             .select('language, votes')
             .order('language');
 
-        if (data) {
+        if (refetchError) console.error('Failed to refresh votes:', refetchError);
+        
+        if(data && !refetchError) {
             const voteMap: PollVotes = {
                 javascript: 0,
                 rust: 0,
