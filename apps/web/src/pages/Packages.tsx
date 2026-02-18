@@ -15,35 +15,36 @@ interface PollVotes {
 
 export const Packages = () => {
     const [votes, setVotes] = useState<PollVotes>({ javascript: 0, rust: 0, go: 0, java: 0, cpp: 0 });
-    const [userVote, setUserVote] = useState<string | null>(null);
+    const [userVote, setUserVote] = useState<string | null>(() => {
+        return localStorage.getItem('okernel_language_vote');
+    });
     const [voteStatus, setVoteStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [copied, setCopied] = useState<string | null>(null);
 
-    const fetchVotes = async () => {
-        const { data, error } = await supabase
-            .from('language_poll')
-            .select('language, votes')
-            .order('language');
-
-        if (data && !error) {
-            const voteMap: PollVotes = { javascript: 0, rust: 0, go: 0, java: 0, cpp: 0 };
-            data.forEach((row: { language: string; votes: number }) => {
-                if (row.language in voteMap) {
-                    voteMap[row.language as keyof PollVotes] = row.votes;
-                }
-            });
-            setVotes(voteMap);
-        }
-    };
-
     useEffect(() => {
-        // Check if user already voted (localStorage)
-        const existingVote = localStorage.getItem('okernel_language_vote');
-        if (existingVote) {
-            setUserVote(existingVote);
-        }
+        const fetchVotes = async () => {
+            const { data, error } = await supabase
+                .from('language_poll')
+                .select('language, votes')
+                .order('language');
 
-        // Fetch current votes
+            if (data && !error) {
+                const voteMap: PollVotes = {
+                    javascript: 0,
+                    rust: 0,
+                    go: 0,
+                    java: 0,
+                    cpp: 0,
+                };
+                data.forEach((row: { language: string; votes: number }) => {
+                    if (row.language in voteMap) {
+                        voteMap[row.language as keyof PollVotes] = row.votes;
+                    }
+                });
+                setVotes(voteMap);
+            }
+        };
+
         fetchVotes();
     }, []);
 
@@ -64,7 +65,28 @@ export const Packages = () => {
         localStorage.setItem('okernel_language_vote', language);
         setUserVote(language);
         setVoteStatus('success');
-        fetchVotes();
+        const { data } = await supabase
+            .from('language_poll')
+            .select('language, votes')
+            .order('language');
+
+        if (data) {
+            const voteMap: PollVotes = {
+                javascript: 0,
+                rust: 0,
+                go: 0,
+                java: 0,
+                cpp: 0,
+            };
+
+            data.forEach((row: { language: string; votes: number }) => {
+                if (row.language in voteMap) {
+                    voteMap[row.language as keyof PollVotes] = row.votes;
+                }
+            });
+
+            setVotes(voteMap);
+        }
         setTimeout(() => setVoteStatus('idle'), 2000);
     };
 

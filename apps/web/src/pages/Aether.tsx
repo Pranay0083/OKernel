@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { Zap, Layers, Cpu, Terminal, Shield, Download, ArrowRight, Palette, Maximize, Code, Settings, Heart, Users, GitMerge, Command, Globe } from 'lucide-react';
+import { Zap, Layers, Cpu, Terminal, Download, ArrowRight, Settings, Heart, Users, GitMerge } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Aether = () => {
-    const [scrolled, setScrolled] = useState(false);
+    const [_scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
