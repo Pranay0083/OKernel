@@ -248,9 +248,19 @@ struct KeyBindingConfig: Codable {
 // MARK: - Behavior Settings
 struct BehaviorConfig: Codable {
     var ctrlcSendsSigint: Bool = true
+    var keyboardSelection: Bool = true
     
     enum CodingKeys: String, CodingKey {
         case ctrlcSendsSigint = "ctrlc_sends_sigint"
+        case keyboardSelection = "keyboard_selection"
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.ctrlcSendsSigint = try container.decodeIfPresent(Bool.self, forKey: .ctrlcSendsSigint) ?? true
+        self.keyboardSelection = try container.decodeIfPresent(Bool.self, forKey: .keyboardSelection) ?? true
     }
 }
 
@@ -385,6 +395,7 @@ class ConfigManager: ObservableObject {
         // [behavior]
         if let behavior = doc["behavior"] as? [String: Any] {
             if let sigint = behavior["ctrlc_sends_sigint"] as? Bool { cfg.behavior.ctrlcSendsSigint = sigint }
+            if let ks = behavior["keyboard_selection"] as? Bool { cfg.behavior.keyboardSelection = ks }
         }
         
         return cfg

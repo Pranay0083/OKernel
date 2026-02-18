@@ -203,4 +203,54 @@ class TabManager: ObservableObject {
         case .split(_, _, _, let second, _): return findLastPane(node: second)
         }
     }
+    // MARK: - Session Restoration
+        
+    func restore(from state: SavedSessionState) {
+        // Clear existing tabs
+        // But we must ensure we don't leak resources (terminal sessions)
+        // Tab.deinit -> Pane.deinit -> TerminalSession.deinit -> aether_terminal_free
+        // So just replacing the array should work.
+        
+        var newTabs: [Tab] = []
+        
+        for savedTab in state.tabs {
+            if let root = restoreNode(savedTab.root) {
+                let tab = Tab(root: root, id: savedTab.id)
+                tab.activePaneId = savedTab.activePaneId
+                tab.title = savedTab.title
+                newTabs.append(tab)
+            }
+        }
+        
+        if !newTabs.isEmpty {
+            self.tabs = newTabs
+            self.activeTabId = state.activeTabId
+        } else {
+            // Fallback if restoration failed
+            if self.tabs.isEmpty {
+                addTab()
+            }
+        }
+    }
+    
+    private func restoreNode(_ node: SavedPaneNode) -> PaneNode? {
+        switch node {
+        case .pane(let savedPane):
+            let session = TerminalSession(cwd: savedPane.cwd)
+            // Restore title if possible? 
+            // Session title is dynamic based on shell, but we can start with saved title.
+            session.title = savedPane.title
+            
+            let pane = Pane(session: session, id: savedPane.id)
+             
+             return .pane(pane)
+             
+        case .split(let id, let axis, let first, let second, let loc):
+            guard let firstNode = restoreNode(first),
+                  let secondNode = restoreNode(second) else {
+                return nil
+            }
+            return .split(id: id, axis: axis, first: firstNode, second: secondNode, splitLocation: loc)
+        }
+    }
 }

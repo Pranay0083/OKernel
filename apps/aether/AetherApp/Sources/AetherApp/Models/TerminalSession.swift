@@ -7,6 +7,7 @@ class TerminalSession: Identifiable, ObservableObject {
     @Published var title: String
     @Published var windowTitle: String = "Aether"
     @Published var isLoading: Bool = true
+    @Published var currentCwd: String?
     
     private(set) var terminal: OpaquePointer?
     let scrollState: TerminalScrollState
@@ -15,7 +16,7 @@ class TerminalSession: Identifiable, ObservableObject {
     // Used by both TerminalSession (polling) and TerminalRenderer (drawing/resizing)
     public let lock = NSRecursiveLock()
     
-    init() {
+    init(cwd: String? = nil) {
         self.id = UUID()
         self.title = "Terminal"
         self.windowTitle = "Aether"
@@ -31,8 +32,17 @@ class TerminalSession: Identifiable, ObservableObject {
 
         // Initialize backend terminal
         let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let initialCwd = cwd ?? home
+        
         let ctrlcSigint = ConfigManager.shared.config.behavior.ctrlcSendsSigint
-        self.terminal = aether_terminal_with_pty(24, 80, nil, home, ctrlcSigint)
+        
+        // Convert cwd to unsafe pointer if needed or just pass string
+        // aether_terminal_with_pty takes [*:0]const u8
+        self.terminal = initialCwd.withCString { cwdPtr in
+             return aether_terminal_with_pty(24, 80, nil, cwdPtr, ctrlcSigint)
+        }
+        
+        self.currentCwd = initialCwd
         
         startPolling()
     }
@@ -134,6 +144,12 @@ class TerminalSession: Identifiable, ObservableObject {
         var cwdBuf = [Int8](repeating: 0, count: 1024)
         _ = aether_get_cwd(pid, &cwdBuf, 1024)
         let cwdPath = String(cString: cwdBuf)
+        
+        DispatchQueue.main.async {
+            if self.currentCwd != cwdPath {
+                self.currentCwd = cwdPath
+            }
+        }
         
         // Window Title Logic (User@Host:PWD)
         let user = NSUserName()

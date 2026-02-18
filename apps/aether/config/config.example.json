@@ -63,6 +63,7 @@
     }
   },
   "behavior": {
-    "ctrlc_sends_sigint": true
+    "ctrlc_sends_sigint": true,
+    "keyboard_selection": true
   }
 }

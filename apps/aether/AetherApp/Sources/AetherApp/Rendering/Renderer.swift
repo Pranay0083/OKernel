@@ -13,6 +13,9 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     var fontAtlas: FontAtlas
     let scrollState: TerminalScrollState
     
+    // Cursor Override for Visual Selection (e.g. Shift+Arrow)
+    public var cursorOverride: (row: UInt32, col: UInt32)?
+    
     var isActive: Bool = true {
         didSet {
             // Force redraw on focus change
@@ -260,7 +263,16 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         var instances: [GlyphInstance] = []
         guard let terminal = terminal else { return [] }
         
-        let cursor = aether_get_cursor(terminal)
+        var cursor = aether_get_cursor(terminal)
+        
+        if let override = cursorOverride {
+            cursor.row = override.row
+            cursor.col = override.col
+            cursor.visible = true
+            // Force block style for visual selection
+            cursor.style = 0 
+        }
+        
         let now = CACurrentMediaTime()
         let blinkRate = max(0.1, min(10.0, ConfigManager.shared.config.cursor.blinkRate))
         let blinkPeriod = 1.0 / Float(blinkRate) // seconds per full blink cycle
@@ -323,13 +335,25 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         // Pass 1: Backgrounds
         let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
         
+        // Pre-calculate fixed cursor color (Theme Foreground) outside loop
+        let theme = ConfigManager.shared.config.colors.resolveTheme()
+        let themeFgColor = colorFromARGB(ConfigManager.shared.parseColor(theme.foreground))
+        
+        // ascentScaled is already defined above
+        let descentScaled = Float(fontAtlas.descent) * ratio
+        let textHeight = ascentScaled + descentScaled
+        
+        // Calculate vertical centering offset for cursor to align with text
+        // Text baseline is at y + ascentScaled.
+        // We want the cursor block (height = textHeight) to span from (baseline - ascent) to (baseline + descent).
+        // (y + ascent) - ascent = y.
+        // So aligning to y is correct IF the font metrics are standard.
+        // User says "more in bottom", implying rowHeight > textHeight adds space at bottom.
+        // So limiting height to textHeight will fix it.
+        
         for r in 0..<UInt32(rows) {
             for c in 0..<UInt32(cols) {
-                // If this is the cursor and it's a BLOCK, SKIP background drawing in Pass 1.
-                // We will draw the inverted block in Pass 2.
-                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
-                    continue
-                }
+                // (Legacy skip logic removed)
                 
                 guard let cellPtr = aether_get_cell(terminal, r, c) else { continue }
                 let cell = cellPtr.pointee
@@ -345,26 +369,41 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 let y = Float(r) * rowHeight + padPx
                 
                 let bgColorVal = cell.bg_color
-                let isSelected = aether_selection_contains(terminal, r, c)
                 
-                // Draw cell BG if not default black
-                if bgColorVal != 0xFF000000 {
-                     let cellBG = colorFromARGB(bgColorVal)
+                // Cursor Background Logic
+                // We draw the cursor as a solid background block here in Pass 1
+                // to cover the full cell area (unlike glyphs which only cover the char).
+                var effectiveCellBG = colorFromARGB(bgColorVal)
+                var shouldDrawBG = (bgColorVal != 0xFF000000)
+                var bgH = rowHeight
+                
+                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
+                    // Cursor Block: Force draw background with Cursor Color (Theme FG)
+                    shouldDrawBG = true
+                    effectiveCellBG = themeFgColor
+                    effectiveCellBG.w = 1.0 // Ensure Opacity
+                    // Limit height to text height as requested
+                    bgH = textHeight
+                }
+                
+                // Draw cell BG
+                if shouldDrawBG {
                      let width = isWide ? cw * 2.0 : cw
                      
                      let bgInst = GlyphInstance(
                          position: SIMD2<Float>(x, y),
-                         size: SIMD2<Float>(width, rowHeight),
+                         size: SIMD2<Float>(width, bgH),
                          texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
                          texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                         fgColor: cellBG,
-                         bgColor: cellBG,
+                         fgColor: effectiveCellBG,
+                         bgColor: effectiveCellBG,
                          flags: 0
                      )
                      instances.append(bgInst)
                 }
                 
                 // Draw selection overlay (semi-transparent blue on top of content)
+                let isSelected = aether_selection_contains(terminal, r, c)
                 if isSelected {
                      let width = isWide ? cw * 2.0 : cw
                      let selInst = GlyphInstance(
@@ -391,10 +430,6 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 let isSpacer = (flags & 0x0100) != 0
                 if isSpacer { continue }
                 
-                // Flags handling for shader
-                // We pass `flags` cast to UInt32.
-                // Powerline flags logic needs to be preserved or re-implemented.
-                
                 let x = Float(c) * cw + padPx
                 let y = Float(r) * rowHeight + padPx
                 
@@ -403,65 +438,35 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 var bg = SIMD4<Float>(0, 0, 0, 0) // Default transparent
                 
                 // Cursor Rendering Logic
-                // 1. Only draw/invert cursor if we are at the bottom of the history (offset 0)
-                //    This prevents the cursor from "floating" over history when scrolling up.
                 let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
                 
-                // Determine effective cursor style
-                // Priority: LibAether state (dynamic) -> Config (default)
-                // But LibAether default is 0 (Block).
-                // Let's use LibAether style mapping: 0=Block, 1=Underline, 2=Bar
                 var effectiveStyle = ConfigManager.shared.config.cursor.style
-                
-                // Map dynamic style from Zig
                 switch cursor.style {
                 case 1: effectiveStyle = .underline
                 case 2: effectiveStyle = .beam
-                default: break // 0 is Block, or fallback
+                default: break 
                 }
                 
-                let currentStyle = effectiveStyle // derived from state
+                let currentStyle = effectiveStyle
                 let isBlock = (currentStyle == .block)
 
-                // Handle Block Cursor Inversion
+                // Handle Block Cursor (Fixed Color)
                 if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
-                    // Invert:
-                    // New FG = Effective BG (default to black if valid)
-                    // New BG = Effective FG
-                    
-                    let bgVal = cell.bg_color
-                    let effectiveBG = (bgVal == 0xFF000000) ? colorFromARGB(0xFF000000) : colorFromARGB(bgVal)
-                    let effectiveFG = fg
-                    
-                    var newFG = effectiveBG
-                    var newBG = effectiveFG
+                    // Use fixed Theme Color for the block
+                    var newBG = themeFgColor
                     
                     if !isActive {
-                         // Inactive Cursor: Grey Hollow-ish look (Stroke?) 
-                         // Or just Grey Block.
-                         newBG = SIMD4<Float>(0.5, 0.5, 0.5, 1.0) // Grey
-                         newFG = effectiveFG // Keep text color mostly same? Or invert against grey?
-                         // Let's force text to simple black or white for readability
-                         newFG = SIMD4<Float>(0, 0, 0, 1)
+                         newBG = SIMD4<Float>(0.5, 0.5, 0.5, 1.0)
                     }
                     
-                    // Fix for "Transparent Lens": If newFG (Old BG) is transparent, text becomes invisible.
-                    // Force newFG to be opaque contrast color.
-                    // Also ensure the cursor block itself (newBG) is opaque.
+                    // Ensure opacity
+                    newBG.w = 1.0
                     
-                    var safeNewBG = newBG
-                    if safeNewBG.w < 1.0 {
-                        safeNewBG.w = 1.0 
-                    }
-                    
-                    // Contrast check skipped for inactive grey cursor to keep it simple
-                    if isActive && (newFG.w < 0.1 || (safeNewBG.w > 0.9 && distance(newFG, safeNewBG) < 0.1)) {
-                        let lum = 0.299 * newBG.x + 0.587 * newBG.y + 0.114 * newBG.z
-                        if lum > 0.5 {
-                            newFG = SIMD4<Float>(0, 0, 0, 1) // Black Text on Light Block
-                        } else {
-                            newFG = SIMD4<Float>(1, 1, 1, 1) // White Text on Dark Block
-                        }
+                    // Calculate High Contrast Text Color
+                    var newFG = SIMD4<Float>(0, 0, 0, 1) // Default Black
+                    let lum = 0.299 * newBG.x + 0.587 * newBG.y + 0.114 * newBG.z
+                    if lum < 0.5 {
+                        newFG = SIMD4<Float>(1, 1, 1, 1) // White Text if cursor is dark
                     }
                     
                     fg = newFG
@@ -527,19 +532,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 // Centering in rowHeight causes misalignment if line spacing is large.
                 let textOffsetY: Float = 0.0
                 
-                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col && (cell.codepoint == 0 || cell.codepoint == 32) {
-                    // Empty cell block cursor
-                    let blockInst = GlyphInstance(
-                        position: SIMD2<Float>(x, y + textOffsetY),
-                        size: SIMD2<Float>(cw, textHeight),
-                        texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
-                        texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                        fgColor: bg, 
-                        bgColor: bg,
-                        flags: 0
-                    )
-                    instances.append(blockInst)
-                }
+                // Block Cursor is handled by Background Pass (Pass 1) + Text Tinting (Pass 2 above)
+                // So we do NOT need to draw an "Empty Block" here.
                 
                 // Cursor Rendering (Beam / Underline)
                 if isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
@@ -615,11 +609,14 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let atlasW = Float(fontAtlas.cellWidth)
         let atlasH = Float(fontAtlas.cellHeight)
+        
+        let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.font.lineHeight))
+        
         let effectiveW = Double(atlasW * ratio / scaleFactor) // Points
-        let effectiveH = Double(atlasH * ratio / scaleFactor) // Points
+        let effectiveRowH = Double(atlasH * ratio * Float(lineSpacing) / scaleFactor) // Points
         
         let c = Int(Double(x) / effectiveW)
-        let r = Int(Double(y) / effectiveH)
+        let r = Int(Double(y) / effectiveRowH)
         
         if c >= 0 && c < cols && r >= 0 && r < rows {
              return (0, UInt32(r), UInt32(c))

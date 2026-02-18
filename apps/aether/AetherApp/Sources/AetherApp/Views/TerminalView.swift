@@ -41,6 +41,10 @@ class TerminalView: MTKView {
 
     private var savedFrame: NSRect = .zero
     
+    // Keyboard Selection State
+    private var keyboardSelectionAnchor: (row: UInt32, col: UInt32)?
+    private var keyboardSelectionActive: (row: UInt32, col: UInt32)?
+    
     // Resize Debounce
     private var resizeWorkItem: DispatchWorkItem?
     // Static queue to serialize resize operations across ALL terminal instances to prevent thread explosion/lock contention
@@ -101,10 +105,10 @@ class TerminalView: MTKView {
         
         // Autoscroll check
         let loc = convert(event.locationInWindow, from: nil)
-        if loc.y > self.bounds.height {
+        if loc.y < 0 {
              // Above view -> Scroll History (Up)
              aether_scroll_view(terminal, -1)
-        } else if loc.y < 0 {
+        } else if loc.y > self.bounds.height {
              // Below view -> Scroll Bottom (Down)
              aether_scroll_view(terminal, 1)
         }
@@ -150,9 +154,27 @@ class TerminalView: MTKView {
     // Helper for grid coordinates
     private func pointToGrid(_ point: CGPoint) -> (Int, Int) {
         let loc = self.convert(point, from: nil)
-        if let renderer = renderer, let (_, r, c) = renderer.convertPointToGrid(loc) {
+        
+        // Clamp location to bounds to ensure we get a valid grid cell even if dragging outside
+        let clampedX = max(0, min(loc.x, self.bounds.width - 1))
+        let clampedY = max(0, min(loc.y, self.bounds.height - 1))
+        
+        // Use renderer to convert valid point
+        if let renderer = renderer, let (_, r, c) = renderer.convertPointToGrid(CGPoint(x: clampedX, y: clampedY)) {
             return (Int(r), Int(c))
         }
+        
+        // Fallback: If renderer fails (e.g. in padding), snap to nearest edge
+        if let terminal = terminal {
+            let matchesBottom = loc.y > self.bounds.height / 2
+            let matchesRight = loc.x > self.bounds.width / 2
+            
+            let r = matchesBottom ? Int(aether_get_rows(terminal)) - 1 : 0
+            let c = matchesRight ? Int(aether_get_cols(terminal)) - 1 : 0
+            
+            return (max(0, r), max(0, c))
+        }
+        
         return (0, 0)
     }
     
@@ -396,10 +418,24 @@ class TerminalView: MTKView {
              if isCustomFullScreen { toggleCustomFullScreen(nil); return }
              sendBytes([0x1B])
         case 48:  sendBytes([0x09])
-        case 126: sendBytes([0x1B, 0x5B, 0x41])
-        case 125: sendBytes([0x1B, 0x5B, 0x42])
-        case 124: sendBytes([0x1B, 0x5B, 0x43])
-        case 123: sendBytes([0x1B, 0x5B, 0x44])
+        case 126, 125, 124, 123: // Arrow Keys
+            if modifiers.contains(.shift) && ConfigManager.shared.config.behavior.keyboardSelection {
+                handleKeyboardSelection(keyCode: event.keyCode)
+                return
+            }
+            // Clear selection on normal arrow move
+            aether_selection_clear(terminal)
+            keyboardSelectionAnchor = nil
+            keyboardSelectionActive = nil
+            renderer?.cursorOverride = nil
+            
+            switch event.keyCode {
+            case 126: sendBytes([0x1B, 0x5B, 0x41])
+            case 125: sendBytes([0x1B, 0x5B, 0x42])
+            case 124: sendBytes([0x1B, 0x5B, 0x43])
+            case 123: sendBytes([0x1B, 0x5B, 0x44])
+            default: break
+            }
         case 115: sendBytes([0x1B, 0x5B, 0x48])
         case 119: sendBytes([0x1B, 0x5B, 0x46])
         case 116: sendBytes([0x1B, 0x5B, 0x35, 0x7E])
@@ -427,6 +463,53 @@ class TerminalView: MTKView {
         self.setNeedsDisplay(self.bounds)
     }
     
+    private func handleKeyboardSelection(keyCode: UInt16) {
+        terminalSession.lock.lock()
+        defer { terminalSession.lock.unlock() }
+        
+        guard let terminal = terminal else { return }
+        
+        // Initialize anchor if needed
+        if keyboardSelectionAnchor == nil {
+            let cursor = aether_get_cursor(terminal)
+            keyboardSelectionAnchor = (cursor.row, cursor.col)
+            keyboardSelectionActive = (cursor.row, cursor.col)
+            aether_selection_start(terminal, cursor.row, cursor.col)
+        }
+        
+        guard var active = keyboardSelectionActive else { return }
+        
+        // Update active point
+        let maxRows = aether_get_rows(terminal)
+        let maxCols = aether_get_cols(terminal)
+        
+        switch keyCode {
+        case 126: // Up
+            if active.row > 0 { active.row -= 1 }
+        case 125: // Down
+            if active.row < maxRows - 1 { active.row += 1 }
+        case 124: // Right
+            if active.col < maxCols - 1 { active.col += 1 }
+            else if active.row < maxRows - 1 {
+                active.col = 0
+                active.row += 1
+            }
+        case 123: // Left
+            if active.col > 0 { active.col -= 1 }
+            else if active.row > 0 {
+                active.col = maxCols - 1
+                active.row -= 1
+            }
+        default: break
+        }
+        
+        keyboardSelectionActive = active
+        // Override cursor position for visual feedback
+        renderer?.cursorOverride = active
+        aether_selection_drag(terminal, active.row, active.col)
+        self.setNeedsDisplay(self.bounds)
+    }
+    
     private func sendBytes(_ bytes: [UInt8]) {
         terminalSession.lock.lock()
         defer { terminalSession.lock.unlock() }
@@ -448,6 +531,10 @@ class TerminalView: MTKView {
         
         terminalSession.lock.lock()
         defer { terminalSession.lock.unlock() }
+        
+        keyboardSelectionAnchor = nil
+        keyboardSelectionActive = nil
+        renderer?.cursorOverride = nil
         
         let point = self.convert(event.locationInWindow, from: nil)
         guard let terminal = terminal, let renderer = renderer else { return }

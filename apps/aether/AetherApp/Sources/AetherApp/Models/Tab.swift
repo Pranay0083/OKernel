@@ -16,8 +16,8 @@ class Tab: Identifiable, ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init(root: PaneNode) {
-        self.id = UUID()
+    init(root: PaneNode, id: UUID = UUID()) {
+        self.id = id
         self.title = "Terminal"
         self.root = root
         

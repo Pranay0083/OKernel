@@ -10,6 +10,8 @@ struct AetherApp: App {
     // First Run Experience
     @AppStorage("hasSeenStartup") private var hasSeenStartup = false
     @State private var showStartup = false
+    
+    @Environment(\.scenePhase) var scenePhase
 
     // Leader Key State
     @State private var isWindowMode = false
@@ -110,9 +112,34 @@ struct AetherApp: App {
             }
             .background(Color.clear) // Ensure window background doesn't bleed if possible
             .onAppear {
+                // Register TabManager for saving
+                SessionManager.shared.tabManager = tabManager
+                
                 if !hasSeenStartup {
                     showStartup = true
                 }
+                
+                // Auto-restore session?
+                // Logic: If we have a saved session and we are fresh (only 1 empty tab), restore it.
+                if let saved = SessionManager.shared.restoreLastSession() {
+                    // Check if current state is "fresh" (1 tab, default title)
+                    // Or just overwrite?
+                    // Let's prompt or just restore if configured.
+                    // For now: Just restore if it exists.
+                    print("[AetherApp] Restoring last session...")
+                    tabManager.restore(from: saved)
+                }
+            }
+            .onChange(of: scenePhase) { newPhase in
+                if newPhase == .background || newPhase == .inactive {
+                    print("[AetherApp] Saving session...")
+                    // Save current session state
+                    SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                print("[AetherApp] App terminating, saving session...")
+                SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
             }
             .frame(minWidth: 800, minHeight: 600)
             // Global key listener for window mode arrows? 
