@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
 import { Download, Package, Calendar, FileText, CheckCircle, AlertTriangle, ShieldAlert, ArrowDown } from 'lucide-react';
@@ -130,7 +131,9 @@ export const AetherDownload = () => {
                                         <div className="mt-8 pt-6 border-t border-zinc-800/50">
                                             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Release Notes</h4>
                                             <div className="text-sm text-zinc-400 font-mono whitespace-pre-wrap bg-black/40 p-6 rounded-xl border border-zinc-900/50 leading-relaxed">
-                                                {v.changelog}
+                                            <ReactMarkdown>
+                                                {v.changelog.replace(/\\n/g, '\n')}
+                                            </ReactMarkdown>
                                             </div>
                                         </div>
                                     )}
