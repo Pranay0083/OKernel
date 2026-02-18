@@ -105,16 +105,20 @@ export class Memory {
     }
 
     async readString(addr: number): Promise<string> {
-        let str = "";
+        if (addr < 0 || addr >= Memory.SIZE) {
+            throw new RangeError("Memory read out of bounds");
+        }    
+
+        const bytes: number[] = [];
         let ptr = addr;
-        while (true) {
+        while (ptr < Memory.SIZE) {
             const char = this.localBuffer[ptr];
             if (char === 0) break;
-            str += String.fromCharCode(char);
+            bytes.push(char);
             ptr++;
-            if (ptr - addr > 1000) break;
         }
-        return str;
+        const decoder = new TextDecoder();
+        return decoder.decode(new Uint8Array(bytes));
     }
 
     async malloc(size: number): Promise<number> {
