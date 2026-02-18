@@ -24,8 +24,20 @@ struct AetherApp: App {
                         .ignoresSafeArea()
                     
                     VStack(spacing: 0) {
-                        // Spacer for Title Bar
-                        Color.clear.frame(height: 28)
+                        // Custom Centered Title Bar
+                        ZStack {
+                            Color.clear.frame(height: 28)
+                            
+                            if let session = tabManager.activeSession {
+                                Text(session.windowTitle)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                    .id(session.id.uuidString + session.windowTitle) // Redraw on session/title change
+                            }
+                        }
+                        .frame(height: 28)
+                        .contentShape(Rectangle()) // Make draggable? Usually done via window settings
                         
                         TabBarView(
                             tabManager: tabManager,

@@ -17,6 +17,9 @@ class TerminalView: MTKView {
         didSet {
             if oldValue != isActive {
                 renderer?.isActive = isActive
+                if isActive {
+                    self.window?.title = terminalSession.windowTitle
+                }
                 self.setNeedsDisplay(self.bounds)
             }
         }
@@ -219,7 +222,8 @@ class TerminalView: MTKView {
         // Observe window title changes
         self.terminalSession.$windowTitle
             .sink { [weak self] newTitle in
-                self?.window?.title = newTitle
+                guard let self = self, self.isActive else { return }
+                self.window?.title = newTitle
             }
             .store(in: &cancellables)
         
@@ -259,9 +263,9 @@ class TerminalView: MTKView {
         // Title bar is transparent (we draw a blur view behind it in SwiftUI)
         window.titlebarAppearsTransparent = true
         window.styleMask.insert(.fullSizeContentView)
-        window.titleVisibility = .visible 
+        window.titleVisibility = .hidden 
         
-        // Initial title sync
+        // Initial title sync (we still set it for system features like Window menu)
         window.title = terminalSession.windowTitle
         
         window.isOpaque = false
@@ -294,7 +298,7 @@ class TerminalView: MTKView {
             window.titleVisibility = .visible
             window.titlebarAppearsTransparent = false
         case .transparent:
-            window.titleVisibility = .visible
+            window.titleVisibility = .hidden // Changed from .visible to support custom centered title
             window.titlebarAppearsTransparent = true
         }
     }

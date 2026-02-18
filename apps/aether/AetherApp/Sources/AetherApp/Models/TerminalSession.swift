@@ -177,8 +177,12 @@ class TerminalSession: Identifiable, ObservableObject {
                 }
                 
                 DispatchQueue.main.async {
-                    self.title = tabTitle
-                    self.windowTitle = longTitle
+                    if self.title != tabTitle {
+                        self.title = tabTitle
+                    }
+                    if self.windowTitle != longTitle {
+                        self.windowTitle = longTitle
+                    }
                 }
             }
         }
