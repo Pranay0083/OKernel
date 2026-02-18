@@ -90,9 +90,10 @@ pub export fn aether_scroll_to_bottom(term: ?*Terminal) void {
 pub export fn aether_selection_start(term: ?*Terminal, row: u32, col: u32) void {
     if (term) |t| {
         t.selection.active = true;
-        t.selection.start_row = row;
+        const stable_r = @as(i32, @intCast(row)) - @as(i32, @intCast(t.scroll_offset));
+        t.selection.start_row = stable_r;
         t.selection.start_col = col;
-        t.selection.end_row = row;
+        t.selection.end_row = stable_r;
         t.selection.end_col = col;
         t.dirty = true;
     }
@@ -101,7 +102,8 @@ pub export fn aether_selection_start(term: ?*Terminal, row: u32, col: u32) void 
 pub export fn aether_selection_drag(term: ?*Terminal, row: u32, col: u32) void {
     if (term) |t| {
         if (t.selection.active) {
-            t.selection.end_row = row;
+            const stable_r = @as(i32, @intCast(row)) - @as(i32, @intCast(t.scroll_offset));
+            t.selection.end_row = stable_r;
             t.selection.end_col = col;
             t.dirty = true;
         }
@@ -111,11 +113,10 @@ pub export fn aether_selection_drag(term: ?*Terminal, row: u32, col: u32) void {
 pub export fn aether_selection_end(term: ?*Terminal, row: u32, col: u32) void {
     if (term) |t| {
         if (t.selection.active) {
-             t.selection.end_row = row;
+             const stable_r = @as(i32, @intCast(row)) - @as(i32, @intCast(t.scroll_offset));
+             t.selection.end_row = stable_r;
              t.selection.end_col = col;
              t.dirty = true;
-             // Ensure we are normalized or not?
-             // Struct keeps raw values. contains/getText normalizes.
         }
     }
 }
@@ -134,7 +135,7 @@ pub export fn aether_selection_is_active(term: ?*Terminal) bool {
 
 pub export fn aether_selection_contains(term: ?*Terminal, row: u32, col: u32) bool {
     if (term) |t| {
-        return t.selection.contains(row, col);
+        return t.selection.contains(row, col, t.scroll_offset);
     }
     return false;
 }

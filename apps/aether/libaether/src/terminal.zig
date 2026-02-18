@@ -12,14 +12,20 @@ pub var cb_set_clipboard: ?*const fn ([*]const u8, usize) callconv(.c) void = nu
 pub var cb_get_clipboard: ?*const fn () callconv(.c) ?[*:0]const u8 = null;
 
 pub const Selection = struct {
-    start_row: u32 = 0,
+    start_row: i32 = 0,
     start_col: u32 = 0,
-    end_row: u32 = 0,
+    end_row: i32 = 0,
     end_col: u32 = 0,
     active: bool = false,
 
-    pub fn contains(self: Selection, row: u32, col: u32) bool {
+    pub fn contains(self: Selection, view_row: u32, view_col: u32, scroll_offset: u32) bool {
         if (!self.active) return false;
+        
+        // Convert viewport row to stable row
+        // Stable Row = Viewport Row - Scroll Offset
+        // e.g. If Offset=10, Viewport 0 is Stable -10.
+        const r_stable = @as(i32, @intCast(view_row)) - @as(i32, @intCast(scroll_offset));
+        
         // Normalize selection direction
         var min_row = self.start_row;
         var max_row = self.end_row;
@@ -27,36 +33,22 @@ pub const Selection = struct {
         var max_col = self.end_col;
 
         if (min_row > max_row) {
-            std.mem.swap(u32, &min_row, &max_row);
+            std.mem.swap(i32, &min_row, &max_row);
             std.mem.swap(u32, &min_col, &max_col);
         } else if (min_row == max_row and min_col > max_col) {
              std.mem.swap(u32, &min_col, &max_col);
         }
         
-        // However, if rows differ, cols logic is different per row.
-        // Start: (min_row, min_col)
-        // End: (max_row, max_col) (Assuming normalized)
-        
-        // Wait, standard normalization:
-        // Selection is from (r1, c1) to (r2, c2).
-        // If r1 < r2: ok.
-        // If r1 > r2: swap.
-        // If r1 == r2: ensure c1 <= c2.
-        
-        // My swap logic above swaps points entirely.
-        
-        if (row < min_row or row > max_row) return false;
+        if (r_stable < min_row or r_stable > max_row) return false;
         
         if (min_row == max_row) {
-            return col >= min_col and col <= max_col;
+            return view_col >= min_col and view_col <= max_col;
         }
         
-        if (row == min_row) {
-            return col >= min_col;
-        } else if (row == max_row) {
-             // Use original end_col if we swapped?
-             // If we swapped points, max_col is the col of the bottom-most point.
-             return col <= max_col;
+        if (r_stable == min_row) {
+            return view_col >= min_col;
+        } else if (r_stable == max_row) {
+             return view_col <= max_col;
         }
         return true;
     }
@@ -222,134 +214,81 @@ pub const Terminal = struct {
         var c2 = self.selection.end_col;
 
         if (r1 > r2 or (r1 == r2 and c1 > c2)) {
-            std.mem.swap(u32, &r1, &r2);
+            std.mem.swap(i32, &r1, &r2);
             std.mem.swap(u32, &c1, &c2);
         }
 
         var r = r1;
+        
         while (r <= r2) : (r += 1) {
-             const row_ptr = self.getRenderRow(r) orelse break;
+             // Stable Row 'r' to Internal Lookup
+             // Stable 0 = Active[0].
+             // Stable -1 = Scrollback[0] (Most recent).
+             // Stable -N = Scrollback[N-1].
              
-             const start_col = if (r == r1) c1 else 0;
-             const end_col = if (r == r2) c2 else self.grid.cols - 1;
+             var row_ptr: ?*const Row = null;
              
-             // Clamp
-             const actual_end = @min(end_col, row_ptr.cells.len - 1);
-             const actual_start = @min(start_col, row_ptr.cells.len);
-
-             var effective_end = actual_end;
-             if (!row_ptr.wrapped) {
+             if (r >= 0) {
+                 const active_idx = @as(u32, @intCast(r));
+                 if (active_idx < self.grid.rows) {
+                     row_ptr = &self.grid.active[active_idx];
+                 }
+             } else {
+                 // Scrollback
+                 // r = -1 -> sb_idx = 0.
+                 // r = -k -> sb_idx = k-1.
+                 // r = -k. -r = k. k-1 = -r - 1.
+                 // Check bounds against scrollback len
+                 const abs_r = -r; // positive
+                 if (abs_r > 0) {
+                     const sb_idx = @as(u32, @intCast(abs_r - 1));
+                     // getScrollbackRow handles scaling/wrapping internally?
+                     // Grid.getScrollbackRow usually takes index 0..len-1.
+                     // 0 is most recent? Yes usually.
+                     row_ptr = self.grid.getScrollbackRow(sb_idx);
+                 }
+             }
+             
+             if (row_ptr) |rp| {
+                 const start_col = if (r == r1) c1 else 0;
+                 const end_col = if (r == r2) c2 else self.grid.cols - 1;
+                 
+                 // Clamp
+                 const actual_end = @min(end_col, rp.cells.len - 1);
+                 const actual_start = @min(start_col, rp.cells.len);
+                 
                  // Trim trailing spaces
-                 while (effective_end >= actual_start and effective_end < row_ptr.cells.len) {
-                     const cell = row_ptr.cells[effective_end];
-                     if (cell.codepoint != ' ' or cell.flags.wide_spacer) { // Treat wide_spacer as part of char before it?
-                         // If it's a wide spacer, the previous char is the wide char.
-                         // If we are at a wide spacer, we should keep it? No, we skip spacers in the loop.
-                         // If we are at space, trim.
-                         // But if we have wide char + spacer, and we are at spacer...
-                         // Spacer has codepoint? Usually 0 or same?
-                         // Assuming spacer codepoint is ignored.
-                         break;
-                     }
-                     if (effective_end == 0) break; // Avoid underflow if usize is unsigned
-                     effective_end -= 1;
+                 var print_limit = actual_start;
+                 if (!rp.wrapped) {
+                      var count = actual_end + 1 - actual_start;
+                      var k = actual_end;
+                      while (count > 0) : (count -= 1) {
+                          if (rp.cells[k].codepoint != ' ') {
+                              print_limit = k + 1;
+                              break;
+                          }
+                          if (k > 0) k -= 1;
+                      }
+                 } else {
+                     print_limit = actual_end + 1;
                  }
-                 // If loop finished because effective_end < actual_start, we print nothing.
-                 // But wait, if effective_end became actual_start - 1...
-                 // The check `effective_end >= actual_start` handles the loop condition.
-                 // But `effective_end -= 1` with usize 0 will wrap.
-                 // I added check `if (effective_end == 0) break`.
-                 // But if `effective_end` was 0 and it was space, we break, keeping 0?
-                 // No, if it was space, we want to exclude 0.
-                 // Logic:
-                 // if cell[0] is space, we want effective_end to be "invalid" or such that loop doesn't run.
-                 // Loop runs `while (i <= effective_end)`.
-                 // If we want empty, we need `effective_end < i`.
-                 // If effective_end is 0 and we want empty, we can't represent -1 with usize.
-                 
-                 // Better: use `count` or `limit`.
-             }
-             
-             // Re-eval check
-             if (!row_ptr.wrapped and effective_end < row_ptr.cells.len and row_ptr.cells[effective_end].codepoint == ' ') {
-                 // It means we stopped at 0 and it was space.
-                 // We should verify if we should output index 0.
-                 // If actual_start=0, effective_end=0, cell[0]=' '. We want output empty.
-                 // Loop `i <= 0` runs once.
-                 // So we need a flag or signed int?
-                 // Or just modify the loop.
-             }
-             
-             // Let's use a simpler loop.
-             var i = actual_start;
-             while (i <= actual_end) : (i += 1) {
-                 // Check if we are in the "trailing space zone"
-                 if (!row_ptr.wrapped and i > effective_end) break;
-                 
-                 // Wait, I need to calculate effective_end correctly first.
-                 // If 0 is space, effective_end calculation above stops at 0.
-                 // So we still print 0.
-             }
-             
-             // Correct logic for trimming:
-             var print_limit = actual_end + 1; // Exclusive
-             if (!row_ptr.wrapped) {
-                 var curr = actual_end;
-                 while (curr >= actual_start) {
-                     // Check cell
-                     const cell = row_ptr.cells[curr];
-                     if (cell.codepoint != ' ') {
-                         print_limit = curr + 1;
-                         break;
+    
+                 var i = actual_start;
+                 while (i < print_limit) : (i += 1) {
+                     const cell = rp.cells[i];
+                     if (cell.flags.wide_spacer) continue;
+                     
+                     var buf: [4]u8 = undefined;
+                     const cp: u21 = if (cell.codepoint <= 0x10FFFF) @intCast(cell.codepoint) else 0xFFFD;
+                     const len = std.unicode.utf8Encode(cp, &buf) catch 0;
+                     if (len > 0) {
+                        try list.appendSlice(allocator, buf[0..len]);
                      }
-                     if (curr == 0) {
-                         print_limit = 0; // All spaces
-                         break;
-                     }
-                     curr -= 1;
                  }
-                 // If we exited while because curr < actual_start (loop finish), it means all spaces found?
-                 // Wait, `curr` is usize. `curr >= actual_start`.
-                 // If `actual_start` is 0. `curr` goes to 0.
-                 // If cell[0] is space: `if (curr == 0) { print_limit = 0; break; }` -> Correct.
-                 // If `actual_start` is 5. `curr` goes to 5.
-                 // If cell[5] is space: `if (curr == 0)` fails. `curr -= 1` -> 4. Loop terminates.
-                 // `print_limit` remains `actual_end + 1`. WRONG.
-                 // `print_limit` was init to `actual_end + 1`.
-                 // If we find NO non-spaces, `print_limit` should be `actual_start` (print nothing).
-                 
-                 // Refined:
-                 print_limit = actual_start;
-                 // Backward scan with optionals/signed?
-                 // Iterate `len` count down to 0.
-                 var count = actual_end + 1 - actual_start;
-                 var k = actual_end;
-                 while (count > 0) : (count -= 1) {
-                     if (row_ptr.cells[k].codepoint != ' ') {
-                         print_limit = k + 1;
-                         break;
-                     }
-                     if (k > 0) k -= 1;
+    
+                 if (!rp.wrapped and r < r2) {
+                     try list.append(allocator, '\n');
                  }
-             }
-
-             i = actual_start;
-             while (i < print_limit) : (i += 1) {
-                 const cell = row_ptr.cells[i];
-                 if (cell.flags.wide_spacer) continue;
-                 
-                 // Encode codepoint to utf8
-                 var buf: [4]u8 = undefined;
-                 const cp: u21 = if (cell.codepoint <= 0x10FFFF) @intCast(cell.codepoint) else 0xFFFD;
-                 const len = std.unicode.utf8Encode(cp, &buf) catch 0;
-                 if (len > 0) {
-                    try list.appendSlice(allocator, buf[0..len]);
-                 }
-             }
-
-             // Add newline if not wrapped and not last line of selection
-             if (!row_ptr.wrapped and r < r2) {
-                 try list.append(allocator, '\n');
              }
         }
         
