@@ -7,8 +7,8 @@ class Pane: Identifiable, ObservableObject {
     let id: UUID
     @Published var session: TerminalSession
     
-    init(session: TerminalSession) {
-        self.id = UUID()
+    init(session: TerminalSession, id: UUID = UUID()) {
+        self.id = id
         self.session = session
     }
 }

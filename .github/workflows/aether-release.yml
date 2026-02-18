@@ -5,7 +5,7 @@ on:
     inputs:
       version:
         description: 'Version (e.g., 0.1.0)'
-        required: true
+        required: false # Optional if triggered by tag, or we can fallback
         type: string
       description:
         description: 'Release Description'
@@ -15,12 +15,33 @@ on:
         description: 'Changelog'
         required: false
         type: string
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build-and-publish:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      
+      # Determine Version
+      - name: Set Version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+            echo "DESCRIPTION=${{ inputs.description }}" >> $GITHUB_ENV
+            echo "CHANGELOG=${{ inputs.changelog }}" >> $GITHUB_ENV
+          else
+            # Extract from tag v0.3.0 -> 0.3.0
+            TAG_NAME=${{ github.ref_name }}
+            VERSION=${TAG_NAME#v}
+            echo "VERSION=$VERSION" >> $GITHUB_ENV
+            echo "DESCRIPTION=Automated Release $VERSION" >> $GITHUB_ENV
+            # Get commit message as changelog or leave empty
+            echo "CHANGELOG=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          fi
 
       - uses: goto-bus-stop/setup-zig@v2
         with:
@@ -45,25 +66,14 @@ jobs:
             exit 1
           fi
 
-          echo "Publishing version ${{ inputs.version }}..."
+          echo "Publishing version $VERSION..."
           
           # Upload via curl
-          # Using specific endpoint logic for file upload with metadata
-          response=$(curl -s -w "%{http_code}" -X POST \
-            -H "Authorization: Bearer ${{ secrets.AETHER_UPLOAD_KEY }}" \
-            -F "file=@$DMG_PATH" \
-            -F "version=${{ inputs.version }}" \
-            -F "description=${{ inputs.description }}" \
-            -F "changelog=${{ inputs.changelog }}" \
-            https://api.hackmist.tech/api/v1/aether)
-
-          http_code=$(tail -n1 <<< "$response")  # Correctly capture extraction of http_code logic if response contains body
-          # Simplified curl for clearer logic in CI:
-          
+          echo "Uploading to API..."
           curl --fail -v -X POST \
             -H "Authorization: Bearer ${{ secrets.AETHER_UPLOAD_KEY }}" \
             -F "file=@$DMG_PATH" \
-            -F "version=${{ inputs.version }}" \
-            -F "description=${{ inputs.description }}" \
-            -F "changelog=${{ inputs.changelog }}" \
-            https://api.hackmist.tech/api/v1/aether
+            -F "version=$VERSION" \
+            -F "description=$DESCRIPTION" \
+            -F "changelog=$CHANGELOG" \
+            "https://api.hackmist.tech/api/v1/aether"

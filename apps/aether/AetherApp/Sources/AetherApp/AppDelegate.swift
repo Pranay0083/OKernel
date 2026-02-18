@@ -16,4 +16,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
     }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        // Ensure session is saved on quit
+        if let tabManager = SessionManager.shared.tabManager {
+            print("[AppDelegate] Saving session on terminate")
+            SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
+        }
+    }
 }

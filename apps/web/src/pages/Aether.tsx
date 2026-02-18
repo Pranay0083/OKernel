@@ -27,7 +27,7 @@ export const Aether = () => {
                 <div className="container mx-auto px-4 text-center relative z-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-full mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></span>
-                        SYSTEM ONLINE: v0.1.0 ALPHA
+                        SYSTEM ONLINE: v0.3.0 ALPHA
                     </div>
 
                     <h1 className="text-6xl md:text-9xl font-bold tracking-tight text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 leading-tight">
