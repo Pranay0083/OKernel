@@ -119,7 +119,10 @@ export const tick = (state: SimulationState): SimulationState => {
             // Update Gantt Chart
             const lastBlock = newState.ganttChart[newState.ganttChart.length - 1];
             if (lastBlock && lastBlock.processId === updatedProc.id && lastBlock.endTime === newState.currentTime) {
-                lastBlock.endTime++;
+                newState.ganttChart[newState.ganttChart.length - 1] = {
+                    ...lastBlock,
+                    endTime: lastBlock.endTime + 1
+                }
             } else {
                 // New block
                 newState.ganttChart.push({
@@ -150,7 +153,10 @@ export const tick = (state: SimulationState): SimulationState => {
         // Idle Time
         const lastBlock = newState.ganttChart[newState.ganttChart.length - 1];
         if (lastBlock && lastBlock.processId === null && lastBlock.endTime === newState.currentTime) {
-            lastBlock.endTime++;
+            newState.ganttChart[newState.ganttChart.length - 1] = {
+                ...lastBlock,
+                endTime: lastBlock.endTime + 1
+            }
         } else {
             newState.ganttChart.push({
                 processId: null,
