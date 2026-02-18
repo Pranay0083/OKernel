@@ -340,6 +340,8 @@ pub const Parser = struct {
             's' => terminal.saveCursor(),
             'u' => terminal.restoreCursor(),
             'r' => terminal.setScrollRegion(getParam(params, 0, 0), getParam(params, 1, 0)),
+            'n' => terminal.deviceStatusReport(getParam(params, 0, 0)),
+            'c' => terminal.deviceAttributes(),
             'q' => {
                  // DECSCUSR: CSI Ps SP q
                  if (self.intermediate_count > 0 and self.intermediates[0] == ' ') {
