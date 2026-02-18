@@ -91,8 +91,11 @@ export class Memory {
     }
 
     async writeString(addr: number, str: string) {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(str);
+
         for (let i = 0; i < str.length; i++) {
-            this.localBuffer[addr + i] = str.charCodeAt(i);
+            this.localBuffer[addr + i] = bytes[i];
         }
         this.localBuffer[addr + str.length] = 0;
 
