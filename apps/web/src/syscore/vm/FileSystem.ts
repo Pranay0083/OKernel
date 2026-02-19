@@ -38,7 +38,7 @@ export class MockFileSystem {
 
     async createFile(name: string) {
         try {
-            await fetch(`${API_BASE}/create`, {
+            const response = await fetch(`${API_BASE}/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -47,6 +47,16 @@ export class MockFileSystem {
                     name: name
                 })
             });
+            if(!response.ok) {
+                const error = await response.text;
+                throw new Error(`FS create failed (${response.status}): ${error}`);
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || "File creation failed");
+            }
+
             if (!this.files.includes(name)) {
                 this.files.push(name);
             }
