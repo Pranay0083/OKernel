@@ -91,10 +91,18 @@ export class Memory {
     }
 
     async writeString(addr: number, str: string) {
+        if (addr < 0 || addr + str.length + 1 > Memory.SIZE) {
+            throw new RangeError("Memory write out of bounds");
+        }
+
+        const end = addr + str.length;
+        if(end < 0 || end >= Memory.SIZE) {
+            throw new RangeError("Memory write out of bounds");
+        }
         for (let i = 0; i < str.length; i++) {
             this.localBuffer[addr + i] = str.charCodeAt(i);
         }
-        this.localBuffer[addr + str.length] = 0;
+        this.localBuffer[end] = 0;
 
         await this.callApi('/write', {
             state: this.getState(),
