@@ -81,6 +81,7 @@ struct WindowConfig: Codable {
 // MARK: - UI Settings
 struct UIConfig: Codable {
     var scrollbar: ScrollbarConfig = ScrollbarConfig()
+    var showTooltips: Bool = true
     
     struct ScrollbarConfig: Codable {
         var width: CGFloat = 12
@@ -96,8 +97,14 @@ struct UIConfig: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.scrollbar = try container.decodeIfPresent(ScrollbarConfig.self, forKey: .scrollbar) ?? ScrollbarConfig()
+        self.showTooltips = try container.decodeIfPresent(Bool.self, forKey: .showTooltips) ?? true
         self.scroll = try container.decodeIfPresent(ScrollConfig.self, forKey: .scroll) ?? ScrollConfig()
         self.tabs = try container.decodeIfPresent(TabsConfig.self, forKey: .tabs) ?? TabsConfig()
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case scrollbar, scroll, tabs
+        case showTooltips = "show_tooltips"
     }
     
     struct ScrollConfig: Codable {
@@ -292,6 +299,7 @@ struct BehaviorConfig: Codable {
 // MARK: - Session Settings
 struct SessionConfig: Codable {
     var restoreStrategy: RestoreStrategy = .ask
+    var restoreShortcut: String = "cmd+shift+r"
     
     enum RestoreStrategy: String, Codable {
         case ask, always, never
@@ -299,6 +307,15 @@ struct SessionConfig: Codable {
     
     enum CodingKeys: String, CodingKey {
         case restoreStrategy = "restore_strategy"
+        case restoreShortcut = "restore_shortcut"
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.restoreStrategy = try container.decodeIfPresent(RestoreStrategy.self, forKey: .restoreStrategy) ?? .ask
+        self.restoreShortcut = try container.decodeIfPresent(String.self, forKey: .restoreShortcut) ?? "cmd+shift+r"
     }
 }
 
@@ -387,6 +404,7 @@ class ConfigManager: ObservableObject {
         // Checking for [ui] or direct keys if minimal TOML parser is used
         // [ui.scroll] & [ui.tabs]
         if let ui = doc["ui"] as? [String: Any] {
+            if let st = ui["show_tooltips"] as? Bool { cfg.ui.showTooltips = st }
             if let scroll = ui["scroll"] as? [String: Any] {
                  if let spd = scroll["speed"] as? Double { cfg.ui.scroll.speed = Float(spd) }
             }
@@ -440,6 +458,9 @@ class ConfigManager: ObservableObject {
         if let session = doc["session"] as? [String: Any] {
             if let s = session["restore_strategy"] as? String, let strategy = SessionConfig.RestoreStrategy(rawValue: s) {
                 cfg.session.restoreStrategy = strategy
+            }
+            if let shortcut = session["restore_shortcut"] as? String {
+                cfg.session.restoreShortcut = shortcut
             }
         }
         

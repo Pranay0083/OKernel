@@ -1,5 +1,6 @@
 
 import SwiftUI
+import Combine
 
 @main
 struct AetherApp: App {
@@ -11,7 +12,9 @@ struct AetherApp: App {
     @AppStorage("hasSeenStartup") private var hasSeenStartup = false
     @State private var showStartup = false
     
-    @State private var showSessionRestore = false
+    @State private var showRestoreToast = false
+    @State private var restoreTimer: Timer? = nil
+    @State private var interactionCancellable: AnyCancellable?
     
     @Environment(\.scenePhase) var scenePhase
 
@@ -112,23 +115,21 @@ struct AetherApp: App {
                         .transition(.opacity)
                 }
                 
-                // Session Restore Dialog
-                if showSessionRestore {
-                    SessionRestoreView(
-                        isPresented: $showSessionRestore,
-                        onRestore: {
-                            if let saved = SessionManager.shared.restoreLastSession() {
-                                print("[AetherApp] User restored session.")
-                                tabManager.restore(from: saved)
-                            }
-                        },
-                        onFresh: {
-                            print("[AetherApp] User chose fresh session.")
-                            // Do nothing, default state is fresh
+                // Session Restore Toast
+                if showRestoreToast {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            RestoreToastView(shortcut: configManager.config.session.restoreShortcut)
+                                .onTapGesture {
+                                    handleRestore()
+                                }
                         }
-                    )
+                    }
+                    .padding()
                     .zIndex(101)
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
             .background(Color.clear) // Ensure window background doesn't bleed if possible
@@ -152,10 +153,20 @@ struct AetherApp: App {
                             tabManager.restore(from: saved)
                         }
                     case .ask:
-                        // Only ask if we verify there's something to restore
-                        print("[AetherApp] Asking to restore session.")
-                        // Delay slightly to let startup animation finish if needed, or just show
-                        showSessionRestore = true
+                        if configManager.config.ui.showTooltips {
+                            print("[AetherApp] Showing restore toast.")
+                            showRestoreToast = true
+                            // Auto-hide after 7 seconds
+                            restoreTimer?.invalidate()
+                            restoreTimer = Timer.scheduledTimer(withTimeInterval: 7.0, repeats: false) { _ in
+                                withAnimation(.easeOut(duration: 2.0)) { // Smooth fade out
+                                    showRestoreToast = false
+                                }
+                            }
+                            
+                            // Listen for ANY interaction to cancel restore possibility
+                            setupInteractionListener()
+                        }
                     case .never:
                         print("[AetherApp] Starting fresh session (Never).")
                     }
@@ -170,19 +181,22 @@ struct AetherApp: App {
                     SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-                print("[AetherApp] App terminating, saving session...")
+            .onChange(of: tabManager.activeTabId) { _ in
+                // Re-setup listener if active session changed while toast is visible
+                if showRestoreToast {
+                    setupInteractionListener()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
+                print("[AetherApp] Window closing, saving session...")
                 SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
             }
             .frame(minWidth: 800, minHeight: 600)
-            // Global key listener for window mode arrows? 
-            // It's tricky to capture arrows at the Scene level if TerminalView consumes them.
-            // TerminalView consumes keys via keyDown. 
-            // Since TerminalView calls handleAction for mapped keys, we can handle it there.
         }
         // Force minimum window size at the App/Scene level
         .windowResizability(.contentSize)
         .commands {
+            // ... (keep existing commands)
             CommandGroup(replacing: .newItem) {
                 Button("New Tab") { tabManager.addTab() }
                     .keyboardShortcut("t", modifiers: .command)
@@ -229,8 +243,46 @@ struct AetherApp: App {
         }
     }
     
+    func setupInteractionListener() {
+        interactionCancellable?.cancel()
+        if let session = tabManager.activeSession {
+            interactionCancellable = session.userInteractionOccurred
+                .receive(on: RunLoop.main)
+                .sink {
+                    if self.showRestoreToast {
+                        print("[AetherApp] Interaction detected. Disabling session restore.")
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            self.showRestoreToast = false
+                        }
+                        self.restoreTimer?.invalidate()
+                        self.interactionCancellable?.cancel()
+                    }
+                }
+        }
+    }
+    
+    func handleRestore() {
+        if let saved = SessionManager.shared.restoreLastSession() {
+            print("[AetherApp] User restored session via toast/shortcut.")
+            tabManager.restore(from: saved)
+            withAnimation {
+                showRestoreToast = false
+            }
+            restoreTimer?.invalidate()
+            interactionCancellable?.cancel()
+        }
+    }
+    
     // Returns true if action was handled, false if it should fall through (e.g. to terminal input)
     func handleAction(_ action: String, in session: TerminalSession) -> Bool {
+        if action == "restore_session" {
+            if showRestoreToast {
+                handleRestore()
+                return true
+            }
+            return false
+        }
+        
         if isWindowMode {
             // In window mode, we hijack navigation keys
             switch action {
@@ -278,6 +330,70 @@ struct AetherApp: App {
             // Return FALSE so TerminalView sends the key event to the shell.
             return false
         }
+    }
+}
+
+struct RestoreToastView: View {
+    let shortcut: String
+    @ObservedObject var config = ConfigManager.shared
+    
+    var body: some View {
+        let theme = config.config.colors.resolveTheme()
+        let accentColor = Color(hex: theme.palette[2]) // index 2 is usually green/success in our themes
+        let bgColor = Color(hex: theme.background).opacity(0.8)
+        let fgColor = Color(hex: theme.foreground)
+
+        HStack(spacing: 8) {
+            Text("RESTORE SESSION?")
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundColor(fgColor)
+            
+            Text(shortcut.uppercased())
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(fgColor.opacity(0.1))
+                .cornerRadius(3)
+                .foregroundColor(accentColor)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(bgColor)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(accentColor.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+}
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
 

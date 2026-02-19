@@ -241,6 +241,11 @@ class TabManager: ObservableObject {
             // Session title is dynamic based on shell, but we can start with saved title.
             session.title = savedPane.title
             
+            // Restore History
+            if let history = savedPane.history {
+                session.restoreHistory(history)
+            }
+            
             let pane = Pane(session: session, id: savedPane.id)
              
              return .pane(pane)
