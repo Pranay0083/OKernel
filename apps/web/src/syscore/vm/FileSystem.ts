@@ -25,15 +25,30 @@ export class MockFileSystem {
                     path: "/home/user"
                 })
             });
-            const result = await response.json();
-            if (result.success) {
-                this.files = result.files;
-                return this.files;
+
+            if(!response.ok) {
+                const error = await response.text();
+                throw new Error(`FS API Error (${response.status}): ${error}`);
             }
+
+            let result: any;
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error("Invalid JSON response from FS API");
+            }
+
+            if (!result.success) {
+                throw new Error(result.error || "File listing failed");
+            }
+
+            this.files = result.files;
+            return this.files;
+
         } catch (e) {
             console.error("FS API Error:", e);
+            throw e;
         }
-        return this.files;
     }
 
     async createFile(name: string) {
@@ -48,7 +63,7 @@ export class MockFileSystem {
                 })
             });
             if(!response.ok) {
-                const error = await response.text;
+                const error = await response.text();
                 throw new Error(`FS create failed (${response.status}): ${error}`);
             }
 
@@ -62,6 +77,7 @@ export class MockFileSystem {
             }
         } catch (e) {
             console.error("FS API Error:", e);
+            throw e;
         }
     }
 }
