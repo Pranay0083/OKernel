@@ -87,6 +87,18 @@ size_t aether_get_cwd(int32_t pid, char* buf, size_t len);
 uint32_t aether_get_cols(const AetherTerminal* term);
 uint32_t aether_get_rows(const AetherTerminal* term);
 
+// History
+typedef struct {
+    bool wrapped;
+    bool semantic_prompt;
+} AetherRowMetadata;
+
+uint32_t aether_terminal_get_history_count(const AetherTerminal* term);
+bool aether_terminal_get_history_row(const AetherTerminal* term, uint32_t idx, AetherCell* cells);
+AetherRowMetadata aether_terminal_get_row_metadata(const AetherTerminal* term, uint32_t idx);
+void aether_terminal_clear_history(AetherTerminal* term);
+bool aether_terminal_append_history_row(AetherTerminal* term, const AetherCell* cells, uint32_t cells_len, bool wrapped, bool semantic_prompt);
+
 // Version
 const char* aether_version(void);
 

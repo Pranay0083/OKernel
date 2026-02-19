@@ -10,6 +10,7 @@
     }
   },
   "ui": {
+    "show_tooltips": true,
     "scrollbar": {
       "width": 12,
       "padding": {
@@ -65,5 +66,9 @@
   "behavior": {
     "ctrlc_sends_sigint": true,
     "keyboard_selection": true
+  },
+  "session": {
+    "restore_strategy": "ask",
+    "restore_shortcut": "cmd+shift+r"
   }
 }

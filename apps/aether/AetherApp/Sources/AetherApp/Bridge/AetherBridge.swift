@@ -7,7 +7,9 @@ private func titleCallback(data: UnsafePointer<UInt8>?, len: Int) {
     guard let data = data else { return }
     let title = String(bytes: UnsafeBufferPointer(start: data, count: len), encoding: .utf8) ?? ""
     DispatchQueue.main.async {
-        NSApp.keyWindow?.title = title
+        if let window = NSApp.keyWindow, NSApp.isRunning {
+            window.title = title
+        }
     }
 }
 
@@ -15,8 +17,11 @@ private func clipboardSetCallback(data: UnsafePointer<UInt8>?, len: Int) {
     guard let data = data else { return }
     let str = String(bytes: UnsafeBufferPointer(start: data, count: len), encoding: .utf8) ?? ""
     DispatchQueue.main.async {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(str, forType: .string)
+        // NSPasteboard is generally safe, but we'll wrap it in a sanity check
+        if NSApp.isRunning {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(str, forType: .string)
+        }
     }
 }
 

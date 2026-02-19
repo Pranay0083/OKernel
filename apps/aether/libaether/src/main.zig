@@ -290,6 +290,98 @@ pub export fn aether_get_rows(term: ?*const Terminal) u32 {
     return 24;
 }
 
+// --- History API ---
+
+pub export fn aether_terminal_get_history_count(term: ?*const Terminal) u32 {
+    if (term) |t| return t.getHistoryCount();
+    return 0;
+}
+
+pub export fn aether_terminal_get_history_row(term: ?*const Terminal, idx: u32, cells: [*]Cell) bool {
+    if (term) |t| {
+        if (t.getHistoryRow(idx)) |row| {
+            @memcpy(cells[0..t.grid.cols], row.cells[0..t.grid.cols]);
+            return true;
+        }
+    }
+    return false;
+}
+
+pub export fn aether_terminal_get_row_metadata(term: ?*const Terminal, idx: u32) extern struct { wrapped: bool, semantic_prompt: bool } {
+    if (term) |t| {
+        if (t.getHistoryRow(idx)) |row| {
+            return .{ .wrapped = row.wrapped, .semantic_prompt = row.semantic_prompt };
+        }
+    }
+    return .{ .wrapped = false, .semantic_prompt = false };
+}
+
+pub export fn aether_terminal_clear_history(term: ?*Terminal) void {
+    if (term) |t| t.clearHistory();
+}
+
+pub export fn aether_terminal_append_history_row(term: ?*Terminal, cells: [*]const Cell, cells_len: u32, wrapped: bool, semantic_prompt: bool) bool {
+    if (term) |t| {
+        // We want to fill the grid from top to bottom during restoration.
+        // To avoid black space, we fill the active grid first, then scroll.
+        
+        const cols = t.grid.cols;
+        const rows = t.grid.rows;
+        const to_copy = @min(cols, cells_len);
+        
+        if (t.cursor_row < rows) {
+            // Still filling the initial screen
+            const row_idx = t.cursor_row;
+            @memcpy(t.grid.active[row_idx].cells[0..to_copy], cells[0..to_copy]);
+            
+            // Fill remaining columns with empty cells if input was shorter
+            if (to_copy < cols) {
+                for (t.grid.active[row_idx].cells[to_copy..]) |*cell| {
+                    cell.* = Cell{};
+                }
+            }
+            
+            t.grid.active[row_idx].wrapped = wrapped;
+            t.grid.active[row_idx].semantic_prompt = semantic_prompt;
+            t.grid.active[row_idx].dirty = true;
+            
+            // Move cursor to next line for next append, or stay at bottom
+            if (t.cursor_row + 1 < rows) {
+                t.cursor_row += 1;
+            } else {
+                // We just filled the last row.
+                // Keep cursor at last row.
+                t.cursor_row = rows - 1;
+            }
+        } else {
+            // Screen is full, push top row to history and append at bottom
+            t.grid.scrollUp(1);
+            const last_idx = rows - 1;
+            @memcpy(t.grid.active[last_idx].cells[0..to_copy], cells[0..to_copy]);
+            
+            if (to_copy < cols) {
+                for (t.grid.active[last_idx].cells[to_copy..]) |*cell| {
+                    cell.* = Cell{};
+                }
+            }
+            
+            t.grid.active[last_idx].wrapped = wrapped;
+            t.grid.active[last_idx].semantic_prompt = semantic_prompt;
+            t.grid.active[last_idx].dirty = true;
+            
+            t.cursor_row = rows - 1;
+        }
+        
+        // Sync Grid cursor (important for some internal operations)
+        t.grid.cursor_row = t.cursor_row;
+        t.grid.cursor_col = 0;
+        
+        t.dirty = true;
+        return true;
+    }
+    return false;
+}
+
 pub export fn aether_version() [*:0]const u8 {
     return "0.1.0";
 }

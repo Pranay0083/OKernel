@@ -11,6 +11,10 @@ class TerminalSession: Identifiable, ObservableObject {
     
     private(set) var terminal: OpaquePointer?
     let scrollState: TerminalScrollState
+    private var isClosing = false
+    
+    // Notify when user does something (typing, clicking)
+    let userInteractionOccurred = PassthroughSubject<Void, Never>()
     
     // Shared lock for synchronizing access to the terminal pointer (Zig backend)
     // Used by both TerminalSession (polling) and TerminalRenderer (drawing/resizing)
@@ -49,17 +53,30 @@ class TerminalSession: Identifiable, ObservableObject {
     
     deinit {
         print("[TerminalSession] Deinit \(self.id)")
+        
+        lock.lock()
+        isClosing = true
+        let termToFree = terminal
+        self.terminal = nil
+        self.currentCwd = nil
+        lock.unlock()
+        
         stopPolling()
-        if let term = terminal {
+        
+        if let term = termToFree {
             aether_terminal_free(term)
         }
     }
     
+    func notifyInteraction() {
+        userInteractionOccurred.send()
+    }
+
     func resize(cols: Int, rows: Int) {
         lock.lock()
         defer { lock.unlock() }
         
-        guard let term = terminal else { return }
+        guard !isClosing, let term = terminal else { return }
         _ = aether_resize(term, UInt32(rows), UInt32(cols))
     }
 
@@ -70,7 +87,8 @@ class TerminalSession: Identifiable, ObservableObject {
     func startPolling() {
         // Title Polling (Low Frequency)
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateTitle()
+            guard let self = self, !self.isClosing else { return }
+            self.updateTitle()
         }
         
         // I/O Polling (High Frequency / Continuous)
@@ -78,9 +96,10 @@ class TerminalSession: Identifiable, ObservableObject {
         // This decouples parsing from the UI thread (Renderer).
         let workItem = DispatchWorkItem { [weak self] in
             while let self = self {
+                if self.isClosing { break }
                 if let item = self.ioWorkItem, item.isCancelled { break }
                 self.processIO()
-                Thread.sleep(forTimeInterval: 0.005) // ~200Hz Poll Rate (Adaptive sleep could be better, but this is simple)
+                Thread.sleep(forTimeInterval: 0.005)
             }
         }
         self.ioWorkItem = workItem
@@ -162,7 +181,7 @@ class TerminalSession: Identifiable, ObservableObject {
         
          if !cleanTty.isEmpty {
             DispatchQueue.global(qos: .background).async { [weak self] in
-                guard let self = self else { return }
+                guard let self = self, !self.isClosing else { return }
                 
                 // Tab Title Logic
                 // User wants "only the last folder name" for path-based titles.
@@ -193,6 +212,7 @@ class TerminalSession: Identifiable, ObservableObject {
                 }
                 
                 DispatchQueue.main.async {
+                    guard !self.isClosing else { return }
                     if self.title != tabTitle {
                         self.title = tabTitle
                     }
@@ -249,5 +269,55 @@ class TerminalSession: Identifiable, ObservableObject {
             print("Failed to run ps: \(error)")
         }
         return nil
+    }
+    
+    // MARK: - History
+    
+    func getHistory() -> [SavedRow] {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard let term = terminal else { return [] }
+        
+        let count = aether_terminal_get_history_count(term)
+        let cols = aether_get_cols(term)
+        var history: [SavedRow] = []
+        
+        // Performance: limit history to 1000 lines for now to avoid huge JSON
+        let limit: UInt32 = 1000
+        let start = count > limit ? count - limit : 0
+        
+        var cellBuf = [AetherCell](repeating: AetherCell(), count: Int(cols))
+        
+        for i in start..<count {
+            if aether_terminal_get_history_row(term, i, &cellBuf) {
+                let metadata = aether_terminal_get_row_metadata(term, i)
+                
+                let savedCells = cellBuf.map { cell in
+                    SavedCell(cp: cell.codepoint, fg: cell.fg_color, bg: cell.bg_color, f: cell.flags)
+                }
+                
+                history.append(SavedRow(cells: savedCells, wrapped: metadata.wrapped))
+            }
+        }
+        
+        return history
+    }
+    
+    func restoreHistory(_ history: [SavedRow]) {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard let term = terminal else { return }
+        
+        aether_terminal_clear_history(term)
+        
+        for row in history {
+            let aetherCells = row.cells.map { cell in
+                AetherCell(codepoint: cell.cp, fg_color: cell.fg, bg_color: cell.bg, flags: cell.f, semantic_id: 0)
+            }
+            
+            _ = aether_terminal_append_history_row(term, aetherCells, UInt32(aetherCells.count), row.wrapped, false)
+        }
     }
 }
