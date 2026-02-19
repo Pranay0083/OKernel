@@ -100,7 +100,7 @@ export class Memory {
             throw new RangeError("Memory write out of bounds");
         }
         for (let i = 0; i < str.length; i++) {
-            this.localBuffer[addr + i] = bytes[i];
+            this.localBuffer[addr + i] = str.charCodeAt(i);
         }
         this.localBuffer[end] = 0;
 

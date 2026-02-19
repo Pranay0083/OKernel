@@ -52,5 +52,10 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^5.4.0",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "minimatch": "^10.0.0",
+    "ajv": "^8.18.0",
+    "esbuild": "^0.25.0"
   }
 }
