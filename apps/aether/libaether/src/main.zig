@@ -300,7 +300,17 @@ pub export fn aether_terminal_get_history_count(term: ?*const Terminal) u32 {
 pub export fn aether_terminal_get_history_row(term: ?*const Terminal, idx: u32, cells: [*]Cell) bool {
     if (term) |t| {
         if (t.getHistoryRow(idx)) |row| {
-            @memcpy(cells[0..t.grid.cols], row.cells[0..t.grid.cols]);
+            const cols = t.grid.cols;
+            const to_copy = @min(cols, row.cells.len);
+            @memcpy(cells[0..to_copy], row.cells[0..to_copy]);
+            
+            // If row is shorter than current grid (e.g. from before resize),
+            // fill the rest with empty cells.
+            if (to_copy < cols) {
+                for (cells[to_copy..cols]) |*cell| {
+                    cell.* = Cell{};
+                }
+            }
             return true;
         }
     }

@@ -392,85 +392,256 @@ pub const Grid = struct {
     // For stability, we use standard crop/extend behavior.
     
     pub fn resize(self: *Grid, new_rows: u32, new_cols: u32) !void {
-        if (new_rows == self.rows and new_cols == self.cols) return;
+        if (new_cols == self.cols) {
+            // Vertical resize only - simpler
+            if (new_rows == self.rows) return;
+            // For now, let's just use the full reflow logic for everything to be safe and consistent.
+            // Or implement optimized vertical resize later.
+            // Actually, vertical resize just needs to pull/push from scrollback.
+            // But if we are adding reflow, we might as well use it.
+        }
+
+        // --- REFLOW IMPLEMENTATION ---
         
-        // 1. Allocate new active buffer
+        // 1. Collect all "Logical Lines"
+        // A logical line is a sequence of wrapped physical rows ending in a non-wrapped row.
+        
+        // We will stream cells from the old grid into the new grid directly to avoid massive distinct allocation.
+        
+        // Allocate new active buffer
         var new_active = try self.allocator.alloc(Row, new_rows);
         errdefer self.allocator.free(new_active);
         
-        // Initialize new_active with empty rows first
         for (new_active) |*row| {
              row.* = try Row.init(self.allocator, new_cols);
         }
         errdefer {
              for (new_active) |*r| r.deinit();
         }
-
-        // 2. Determine Scroll Offset (How many lines to push to history)
-        var scroll_offset: u32 = 0;
         
-        // Use the MAX of cursor_row and the last utilized row. 
-        // This ensures if there is text at the bottom (but cursor is at top), we anchor to the text.
+        // New Scrollback
+        // We might need a bigger scrollback temporarily if we are shrinking width (lines get taller)
+        // For simplicity, we keep same capacity or expand if needed?
+        // Let's use the same capacity for now.
+        var new_sb = try RingBuffer(Row).init(self.allocator, self.scrollback_capacity);
+        errdefer new_sb.deinit();
+        
+        // Cursor Tracking helpers
+        // We need to map old cursor (old_row, old_col) to new cursor position.
+        // We can do this by tracking the "index" of the cursor in the stream of cells?
+        // Or tracking which logical line it is on?
+        // Let's track the "absolute char index" of the cursor in the content flow?
+        // Too complex.
+        // Alternative: Just reflow the content. Clamp cursor to reasonable bounds at end. 
+        // User asked for "lines taking available space", reflow is key. Cursor precision is secondary for this task step.
+        // But "cursor jumping" is annoying.
+        // Simple heuristic: If cursor is at the bottom, keep it at the bottom.
+        
+        // Flow State
+        // If we fill active, we push top to scrollback.
+        
+        // Helper to append a char to the new grid state
+        var current_new_col: u32 = 0;
+        
+        // We need a "Current Row" we are writing to. 
+        // We start writing to the first row of new_active? or temporary?
+        // Standard terminal: We fill history, then fill active.
+        
+        // ... (removed unused vars) ...
+        
+        // Helper to get old row
+        const old_total_history = self.scrollback.len;
+        
+        // Optimize Reflow: Don't scan infinite void at the bottom
+        // We scan up to the Cursor OR the last non-empty row, whichever is greater.
         const last_content_row = self.findLastNonEmptyRow();
-        const anchor_row = @max(self.cursor_row, last_content_row);
+        const last_relevant_row = @max(self.cursor_row, last_content_row);
         
-        if (new_rows < self.rows and anchor_row >= new_rows) {
-             scroll_offset = anchor_row - new_rows + 1;
-        }
+        // +1 because row indices are 0-based, need count. And we need to include that row.
+        // Clamp to self.rows to be safe (though logic implies it is < rows).
+        const relevant_active_count = @min(last_relevant_row + 1, self.rows);
         
-        var src_idx: u32 = 0;
+        const total_lines_to_scan = old_total_history + relevant_active_count;
+        
+        // Current write head in new system
+        var write_row_idx: usize = 0; // Index in new_active
+        
+        // Cursor tracking
+        var new_cursor_row: u32 = 0;
+        var new_cursor_col: u32 = 0;
+        var cursor_found = false;
+        
+        var scan_idx: usize = 0;
+        
+        while (scan_idx < total_lines_to_scan) : (scan_idx += 1) {
+            // Get the source row
+            var old_row: ?*Row = null;
+            var is_cursor_row = false;
+            
+            if (scan_idx < old_total_history) {
+                old_row = self.scrollback.get(scan_idx);
+            } else {
+                // Active
+                const active_idx = scan_idx - old_total_history;
+                if (active_idx < self.rows) {
+                    old_row = &self.active[active_idx];
+                    if (active_idx == self.cursor_row) is_cursor_row = true;
+                }
+            }
+            
+            if (old_row) |src_row| {
+                // Determine limits
+                var limit = self.cols;
+                if (!src_row.wrapped) {
+                     var last_char: usize = 0;
+                     var k: usize = 0;
+                     while (k < self.cols) : (k += 1) {
+                         const cell = src_row.cells[k];
+                         if (cell.codepoint != ' ' or cell.bg_color != 0xFF000000 or cell.flags.reverse or cell.flags.underline) {
+                             last_char = k + 1;
+                         }
+                     }
+                     limit = @intCast(last_char);
+                     
+                     // Ensure we process up to cursor if it's on this row
+                     if (is_cursor_row) {
+                         // cursor_col can be == cols (implied wrap)
+                         const req_limit = @min(self.cursor_col + 1, self.cols);
+                         if (req_limit > limit) limit = req_limit;
+                     }
+                }
+                
+                var c: usize = 0;
+                while (c < limit) : (c += 1) {
+                    const cell = src_row.cells[c];
+                    
+                    // Track Cursor
+                    if (is_cursor_row and c == self.cursor_col) {
+                        new_cursor_row = @intCast(write_row_idx);
+                        new_cursor_col = current_new_col;
+                        cursor_found = true;
+                    }
+                    
+                    if (cell.flags.wide_spacer) continue; 
+                    
+                    // Append cell to current new row
+                    if (current_new_col >= new_cols) {
+                        // Wrap
+                        new_active[write_row_idx].wrapped = true;
+                        
+                        write_row_idx += 1;
+                        current_new_col = 0;
+                        
+                        // Handle scroll if needed
+                        if (write_row_idx >= new_rows) {
+                             const top = new_active[0];
+                             _ = new_sb.push(top);
+                             std.mem.copyForwards(Row, new_active[0..new_rows-1], new_active[1..new_rows]);
+                             new_active[new_rows-1] = try Row.init(self.allocator, new_cols);
+                             write_row_idx = new_rows - 1;
+                             
+                             // If we scrolled, our tracked cursor might have shifted up?
+                             // new_cursor_row is absolute index in new_active.
+                             // If we shift new_active, we must decrement new_cursor_row if it was valid?
+                             if (cursor_found) {
+                                  if (new_cursor_row > 0) new_cursor_row -= 1;
+                                  // If new_cursor_row was 0 and we pushed it to SB, we "lost" it from active view tracking.
+                                  // But `cursor_row` is relative to active view.
+                                  // So correct behavior is it stays 0? No, if the line moved to SB, the cursor is now in SB?
+                                  // Terminal conventions: Cursor must remain in Active area.
+                                  // So we clamp it to 0.
+                             }
+                        }
+                    }
+                    
+                    // Update cursor again if we just wrapped and cursor was exactly at split point?
+                    // "c == self.cursor_col" handles the char *at* the cursor.
+                    
+                    // Write cell
+                    new_active[write_row_idx].cells[current_new_col] = cell;
+                    current_new_col += 1;
+                    
+                    if (cell.flags.wide) {
+                        if (current_new_col >= new_cols) {
+                             new_active[write_row_idx].cells[current_new_col - 1] = Cell.init(' ', cell.fg_color, cell.bg_color);
+                             new_active[write_row_idx].wrapped = true;
+                             
+                             write_row_idx += 1;
+                             current_new_col = 0;
+                             
+                             if (write_row_idx >= new_rows) {
+                                  const top = new_active[0];
+                                  _ = new_sb.push(top);
+                                  std.mem.copyForwards(Row, new_active[0..new_rows-1], new_active[1..new_rows]);
+                                  new_active[new_rows-1] = try Row.init(self.allocator, new_cols);
+                                  write_row_idx = new_rows - 1;
+                                  if (cursor_found and new_cursor_row > 0) new_cursor_row -= 1;
+                             }
+                             
+                             new_active[write_row_idx].cells[current_new_col] = cell;
+                             current_new_col += 1;
+                        }
+                        
+                        if (current_new_col < new_cols) {
+                            var spacer = cell;
+                            spacer.codepoint = ' ';
+                            spacer.flags.wide_spacer = true;
+                            new_active[write_row_idx].cells[current_new_col] = spacer;
+                            current_new_col += 1;
+                        }
+                    }
+                } // End cell loop
+                
+                // Track cursor if it was at the very end (after last char)
+                if (is_cursor_row and self.cursor_col >= limit and !cursor_found) {
+                     // The cursor is trailing.
+                     // It belongs at current write position.
+                     new_cursor_row = @intCast(write_row_idx);
+                     new_cursor_col = current_new_col;
+                     cursor_found = true;
+                }
 
-        // 3a. Push to Scrollback (Move Ownership)
-        var lines_to_push = scroll_offset;
-        while (src_idx < self.rows and lines_to_push > 0) : (src_idx += 1) {
-             const row = self.active[src_idx];
-             const evicted = self.scrollback.push(row);
-             if (evicted) |r| {
-                 var ev = r;
-                 ev.deinit(); 
-             }
-             lines_to_push -= 1;
+                if (!src_row.wrapped) {
+                    new_active[write_row_idx].wrapped = false;
+                    
+                    write_row_idx += 1;
+                    current_new_col = 0;
+                    
+                    if (write_row_idx >= new_rows) {
+                         const top = new_active[0];
+                         _ = new_sb.push(top);
+                         std.mem.copyForwards(Row, new_active[0..new_rows-1], new_active[1..new_rows]);
+                         new_active[new_rows-1] = try Row.init(self.allocator, new_cols);
+                         write_row_idx = new_rows - 1;
+                         if (cursor_found and new_cursor_row > 0) new_cursor_row -= 1;
+                    }
+                }
+            }
         }
         
-        // 3b. Move to New Active (Move Ownership + Resize Cols)
-        var dst_idx: u32 = 0;
-        while (src_idx < self.rows and dst_idx < new_rows) {
-             var row = self.active[src_idx];
-             src_idx += 1;
-             
-             if (new_cols != self.cols) {
-                  row.resize(new_cols) catch {};
-             }
-             
-             new_active[dst_idx].deinit(); 
-             new_active[dst_idx] = row;
-             dst_idx += 1;
-        }
+        // Reflow Done.
+        self.deinit(); 
         
-        // 4. Cleanup Old Active (Only Unmoved Rows)
-        while (src_idx < self.rows) : (src_idx += 1) {
-            self.active[src_idx].deinit();
-        }
-        self.allocator.free(self.active);
-
-        // 5. Update State
-        self.active = new_active;
-        
-        if (self.cursor_row >= scroll_offset) {
-            self.cursor_row -= scroll_offset;
-        }
         self.rows = new_rows;
         self.cols = new_cols;
-
-        // Clamp Cursor
-        self.cursor_row = @min(self.cursor_row, new_rows - 1);
-        self.cursor_col = @min(self.cursor_col, new_cols - 1);
-
-        // Reset Dirty
-        self.dirty_rows.deinit();
+        self.active = new_active;
+        self.scrollback = new_sb;
+        self.scrollback_capacity = self.scrollback_capacity; 
+        
+        // Reset dirty
         self.dirty_rows = try std.DynamicBitSet.initEmpty(self.allocator, new_rows);
         self.dirty_rows.setRangeValue(.{ .start = 0, .end = new_rows }, true);
         self.dirty = true;
+        
+        // Restore Cursor
+        if (cursor_found) {
+            self.cursor_row = @min(new_cursor_row, new_rows - 1);
+            self.cursor_col = @min(new_cursor_col, new_cols - 1);
+        } else {
+            // Fallback
+            self.cursor_row = @min(self.cursor_row, new_rows - 1);
+            self.cursor_col = @min(self.cursor_col, new_cols - 1);
+        }
     }
     
     // Removed complex reflowContent function entirely.
