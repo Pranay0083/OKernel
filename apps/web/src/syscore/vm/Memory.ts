@@ -99,7 +99,7 @@ export class Memory {
         }
 
         for (let i = 0; i < bytes.length; i++) {
-            this.localBuffer[addr + i] = str.charCodeAt(i);
+            this.localBuffer[addr + i] = bytes[i];
         }
         this.localBuffer[addr + bytes.length] = 0;
 
