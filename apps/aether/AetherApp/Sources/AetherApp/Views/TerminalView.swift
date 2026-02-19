@@ -402,6 +402,13 @@ class TerminalView: MTKView {
         
         // 1. Resolve Key Binding
         if let keyStr = keyString(for: event) {
+            // Priority: Session Restore Shortcut
+            if keyStr == ConfigManager.shared.config.session.restoreShortcut {
+                if performAction("restore_session") {
+                    return
+                }
+            }
+            
             if let action = ConfigManager.shared.config.keys.bindings[keyStr] {
                 if performAction(action) {
                     return
@@ -511,6 +518,7 @@ class TerminalView: MTKView {
     }
     
     private func sendBytes(_ bytes: [UInt8]) {
+        terminalSession.notifyInteraction()
         terminalSession.lock.lock()
         defer { terminalSession.lock.unlock() }
         
@@ -613,6 +621,8 @@ class TerminalView: MTKView {
         case "new_window":
             print("Action not implemented yet: \(action)")
             return true
+        case "restore_session":
+            return onAction?("restore_session") ?? false
         case "split_horizontal", "split_vertical", "close_pane", "enter_window_mode", 
              "focus_left", "focus_right", "focus_up", "focus_down":
             return onAction?(action) ?? false

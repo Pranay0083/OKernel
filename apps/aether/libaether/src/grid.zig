@@ -507,4 +507,57 @@ pub const Grid = struct {
         }
         return 0;
     }
+
+    // --- History Export/Import ---
+
+    pub fn getTotalRows(self: *const Grid) u32 {
+        return self.rows + @as(u32, @intCast(self.scrollback.len));
+    }
+
+    pub fn getHistoryRow(self: *const Grid, idx: u32) ?*const Row {
+        const sb_len = @as(u32, @intCast(self.scrollback.len));
+        if (idx < sb_len) {
+            // It's in scrollback. 
+            // offset 0 is MOST RECENT.
+            // So for history export, we want OLDEST first.
+            // Oldest is sb_len - 1.
+            const sb_offset = sb_len - 1 - idx;
+            return self.getScrollbackRow(sb_offset);
+        } else {
+            const active_idx = idx - sb_len;
+            if (active_idx < self.rows) {
+                return &self.active[active_idx];
+            }
+        }
+        return null;
+    }
+
+    pub fn clearHistory(self: *Grid) void {
+        // Clear scrollback
+        var i: usize = 0;
+        while (i < self.scrollback.len) : (i += 1) {
+            if (self.scrollback.get(i)) |row| {
+                row.deinit();
+            }
+        }
+        self.scrollback.len = 0;
+        self.scrollback.head = 0;
+        self.scrollback.tail = 0;
+        
+        // Clear active
+        self.clearScreen();
+    }
+
+    pub fn appendHistoryRow(self: *Grid, cells: []const Cell, wrapped: bool) !void {
+        // This is used for restoration. We append to history, which effectively pushes current lines up.
+        // Actually, if we are restoring, we probably want to fill the scrollback first, then the active buffer.
+        
+        // Simple strategy: Always push current active[0] to scrollback and put new row at active[rows-1]
+        // But if we are restoring, we are starting from empty.
+        
+        // Let's implement a more direct 'restore' that fills the grid.
+        _ = self;
+        _ = cells;
+        _ = wrapped;
+    }
 };

@@ -1237,6 +1237,23 @@ pub const Terminal = struct {
     pub fn markClean(self: *Terminal) void {
         self.dirty = false;
     }
+
+    // --- History ---
+
+    pub fn getHistoryCount(self: *const Terminal) u32 {
+        return self.grid.getTotalRows();
+    }
+
+    pub fn getHistoryRow(self: *const Terminal, idx: u32) ?*const Row {
+        return self.grid.getHistoryRow(idx);
+    }
+
+    pub fn clearHistory(self: *Terminal) void {
+        self.grid.clearHistory();
+        self.cursor_row = 0;
+        self.cursor_col = 0;
+        self.dirty = true;
+    }
     
     pub fn setTitle(self: *Terminal, title: []const u8) void {
         _ = self;

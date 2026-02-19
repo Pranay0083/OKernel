@@ -28,10 +28,21 @@ struct SavedPane: Codable, Identifiable {
     let id: UUID
     let cwd: String
     let title: String
-    // We can't save process state easily, but we can save:
-    // - Env vars?
-    // - Command that was running? (maybe not robust to restore)
+    // History data
+    var history: [SavedRow]?
+}
+
+struct SavedRow: Codable {
+    let cells: [SavedCell]
+    let wrapped: Bool
+}
+
+struct SavedCell: Codable {
+    let cp: UInt32
+    let fg: UInt32
+    let bg: UInt32
+    let f: UInt16
 }
 
 // Axis needs to be Codable
-extension Axis: Codable { }
+extension Axis: @retroactive Codable { }

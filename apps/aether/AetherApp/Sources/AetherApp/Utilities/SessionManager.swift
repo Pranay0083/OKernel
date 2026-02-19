@@ -12,6 +12,8 @@ class SessionManager: ObservableObject {
     
     private let maxSessions: Int = 10
     private let fileName = "sessions.json"
+    private let lock = NSLock()
+    private var isSaving = false
     
     private var fileURL: URL? {
         guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
@@ -31,11 +33,10 @@ class SessionManager: ObservableObject {
     // MARK: - Save
     
     func saveSession(tabs: [Tab], activeTabId: UUID?) {
-        let savedTabs = tabs.map { convert(tab: $0) }
+        lock.lock()
+        defer { lock.unlock() }
         
-        // Remove existing "auto-saved" session if we want to overwrite it?
-        // Or just push new session to top.
-        // Let's implement a simple stack: Newest first.
+        let savedTabs = tabs.map { convert(tab: $0) }
         
         let newState = SavedSessionState(
             timestamp: Date(),
@@ -43,15 +44,14 @@ class SessionManager: ObservableObject {
             activeTabId: activeTabId
         )
         
-        // Filter out very old sessions or duplicate logic if needed
-        // For now, simple prepend & trim
-        var newSessions = [newState] + savedSessions
-        if newSessions.count > maxSessions {
-            newSessions = Array(newSessions.prefix(maxSessions))
+        // Update state and persist immediately
+        var newSessions = [newState] + self.savedSessions
+        if newSessions.count > self.maxSessions {
+            newSessions = Array(newSessions.prefix(self.maxSessions))
         }
         
-        savedSessions = newSessions
-        persistToDisk()
+        self.savedSessions = newSessions
+        self.persistToDisk()
     }
     
     private func persistToDisk() {
@@ -76,7 +76,9 @@ class SessionManager: ObservableObject {
         
         do {
             let data = try Data(contentsOf: url)
-            savedSessions = try JSONDecoder().decode([SavedSessionState].self, from: data)
+            let decoded = try JSONDecoder().decode([SavedSessionState].self, from: data)
+            // Sort by timestamp descending to ensure the newest is first
+            savedSessions = decoded.sorted { $0.timestamp > $1.timestamp }
             print("[SessionManager] Loaded \(savedSessions.count) sessions from disk.")
         } catch {
             print("[SessionManager] Failed to load: \(error)")
@@ -84,7 +86,7 @@ class SessionManager: ObservableObject {
     }
     
     func restoreLastSession() -> SavedSessionState? {
-        return savedSessions.first
+        return savedSessions.sorted { $0.timestamp > $1.timestamp }.first
     }
     
     // MARK: - Converters
@@ -104,7 +106,8 @@ class SessionManager: ObservableObject {
             return .pane(SavedPane(
                 id: pane.id,
                 cwd: getCwd(for: pane.session),
-                title: pane.session.title
+                title: pane.session.title,
+                history: pane.session.getHistory()
             ))
         case .split(let id, let axis, let first, let second, let loc):
             return .split(

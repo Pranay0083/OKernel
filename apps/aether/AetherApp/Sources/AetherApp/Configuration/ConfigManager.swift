@@ -10,6 +10,7 @@ struct AetherConfig: Codable {
     var colors: ColorConfig
     var keys: KeyBindingConfig
     var behavior: BehaviorConfig
+    var session: SessionConfig = SessionConfig()
     
     // Default Configuration
     static let `default` = AetherConfig(
@@ -19,8 +20,32 @@ struct AetherConfig: Codable {
         cursor: CursorConfig(),
         colors: ColorConfig(),
         keys: KeyBindingConfig(),
-        behavior: BehaviorConfig()
+        behavior: BehaviorConfig(),
+        session: SessionConfig()
     )
+    
+    init(window: WindowConfig, ui: UIConfig, font: FontConfig, cursor: CursorConfig, colors: ColorConfig, keys: KeyBindingConfig, behavior: BehaviorConfig, session: SessionConfig) {
+        self.window = window
+        self.ui = ui
+        self.font = font
+        self.cursor = cursor
+        self.colors = colors
+        self.keys = keys
+        self.behavior = behavior
+        self.session = session
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.window = try container.decodeIfPresent(WindowConfig.self, forKey: .window) ?? WindowConfig()
+        self.ui = try container.decodeIfPresent(UIConfig.self, forKey: .ui) ?? UIConfig()
+        self.font = try container.decodeIfPresent(FontConfig.self, forKey: .font) ?? FontConfig()
+        self.cursor = try container.decodeIfPresent(CursorConfig.self, forKey: .cursor) ?? CursorConfig()
+        self.colors = try container.decodeIfPresent(ColorConfig.self, forKey: .colors) ?? ColorConfig()
+        self.keys = try container.decodeIfPresent(KeyBindingConfig.self, forKey: .keys) ?? KeyBindingConfig()
+        self.behavior = try container.decodeIfPresent(BehaviorConfig.self, forKey: .behavior) ?? BehaviorConfig()
+        self.session = try container.decodeIfPresent(SessionConfig.self, forKey: .session) ?? SessionConfig()
+    }
 }
 
 // MARK: - Window Settings
@@ -56,6 +81,7 @@ struct WindowConfig: Codable {
 // MARK: - UI Settings
 struct UIConfig: Codable {
     var scrollbar: ScrollbarConfig = ScrollbarConfig()
+    var showTooltips: Bool = true
     
     struct ScrollbarConfig: Codable {
         var width: CGFloat = 12
@@ -71,8 +97,14 @@ struct UIConfig: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.scrollbar = try container.decodeIfPresent(ScrollbarConfig.self, forKey: .scrollbar) ?? ScrollbarConfig()
+        self.showTooltips = try container.decodeIfPresent(Bool.self, forKey: .showTooltips) ?? true
         self.scroll = try container.decodeIfPresent(ScrollConfig.self, forKey: .scroll) ?? ScrollConfig()
         self.tabs = try container.decodeIfPresent(TabsConfig.self, forKey: .tabs) ?? TabsConfig()
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case scrollbar, scroll, tabs
+        case showTooltips = "show_tooltips"
     }
     
     struct ScrollConfig: Codable {
@@ -264,6 +296,29 @@ struct BehaviorConfig: Codable {
     }
 }
 
+// MARK: - Session Settings
+struct SessionConfig: Codable {
+    var restoreStrategy: RestoreStrategy = .ask
+    var restoreShortcut: String = "cmd+shift+r"
+    
+    enum RestoreStrategy: String, Codable {
+        case ask, always, never
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case restoreStrategy = "restore_strategy"
+        case restoreShortcut = "restore_shortcut"
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.restoreStrategy = try container.decodeIfPresent(RestoreStrategy.self, forKey: .restoreStrategy) ?? .ask
+        self.restoreShortcut = try container.decodeIfPresent(String.self, forKey: .restoreShortcut) ?? "cmd+shift+r"
+    }
+}
+
 // MARK: - Config Manager
 class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
@@ -349,6 +404,7 @@ class ConfigManager: ObservableObject {
         // Checking for [ui] or direct keys if minimal TOML parser is used
         // [ui.scroll] & [ui.tabs]
         if let ui = doc["ui"] as? [String: Any] {
+            if let st = ui["show_tooltips"] as? Bool { cfg.ui.showTooltips = st }
             if let scroll = ui["scroll"] as? [String: Any] {
                  if let spd = scroll["speed"] as? Double { cfg.ui.scroll.speed = Float(spd) }
             }
@@ -396,6 +452,16 @@ class ConfigManager: ObservableObject {
         if let behavior = doc["behavior"] as? [String: Any] {
             if let sigint = behavior["ctrlc_sends_sigint"] as? Bool { cfg.behavior.ctrlcSendsSigint = sigint }
             if let ks = behavior["keyboard_selection"] as? Bool { cfg.behavior.keyboardSelection = ks }
+        }
+        
+        // [session]
+        if let session = doc["session"] as? [String: Any] {
+            if let s = session["restore_strategy"] as? String, let strategy = SessionConfig.RestoreStrategy(rawValue: s) {
+                cfg.session.restoreStrategy = strategy
+            }
+            if let shortcut = session["restore_shortcut"] as? String {
+                cfg.session.restoreShortcut = shortcut
+            }
         }
         
         return cfg

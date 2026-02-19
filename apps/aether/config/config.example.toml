@@ -15,6 +15,8 @@ visible = true
 top = 4
 bottom = 4
 
+[ui]
+show_tooltips = true
 [ui.scroll]
 naturalScrolling = true
 speed = 1.0
@@ -48,3 +50,7 @@ foreground = "#F8F8F2"
 [behavior]
 ctrlc_sends_sigint = true
 keyboard_selection = true
+
+[session]
+restore_strategy = "ask"
+restore_shortcut = "cmd+shift+r"
