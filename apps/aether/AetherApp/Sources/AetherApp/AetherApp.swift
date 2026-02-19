@@ -33,26 +33,32 @@ struct AetherApp: App {
                     VStack(spacing: 0) {
                         // Custom Centered Title Bar
                         ZStack {
-                            Color.clear.frame(height: 28)
+                            DraggableTitleBarView()
+                                .frame(height: 28)
                             
                             if let session = tabManager.activeSession {
                                 Text(session.windowTitle)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.secondary)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                    .id(session.id.uuidString + session.windowTitle) // Redraw on session/title change
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                        .id(session.id.uuidString + session.windowTitle) // Redraw on session/title change
                             }
+                            
+                            // Custom Button Removed
+                            HStack {
+                                Spacer()
+                            }
+                            .frame(height: 28)
                         }
                         .frame(height: 28)
-                        .contentShape(Rectangle()) // Make draggable? Usually done via window settings
-                        
-                        TabBarView(
-                            tabManager: tabManager,
-                            onNewTab: { tabManager.addTab() },
-                            onCloseTab: { id in tabManager.closeTab(id: id) }
-                        )
-                        .frame(height: 28)
-                        .background(Color.clear)
+                            
+                            TabBarView(
+                                tabManager: tabManager,
+                                onNewTab: { tabManager.addTab() },
+                                onCloseTab: { id in tabManager.closeTab(id: id) }
+                            )
+                            .frame(height: 28)
+                            .background(Color.clear)
                         
                         if let tab = tabManager.activeTab {
                             TabContentView(
@@ -191,9 +197,14 @@ struct AetherApp: App {
                 print("[AetherApp] Window closing, saving session...")
                 SessionManager.shared.saveSession(tabs: tabManager.tabs, activeTabId: tabManager.activeTabId)
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
+                tabManager.isFullScreen = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
+                tabManager.isFullScreen = false
+            }
             .frame(minWidth: 800, minHeight: 600)
         }
-        // Force minimum window size at the App/Scene level
         .windowResizability(.contentSize)
         .commands {
             // ... (keep existing commands)
@@ -206,6 +217,15 @@ struct AetherApp: App {
                     }
                 }
                 .keyboardShortcut("w", modifiers: .command)
+                
+                Divider()
+                
+                Button("Toggle Full Screen") {
+                    NSApp.sendAction(#selector(NSWindow.toggleFullScreen(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("f", modifiers: [.command, .control])
+                
+                Divider()
                 
                 // Split Commands
                 Button("Split Horizontally") {
@@ -297,6 +317,9 @@ struct AetherApp: App {
         }
         
         switch action {
+        case "toggle_fullscreen":
+            NSApp.sendAction(#selector(NSWindow.toggleFullScreen(_:)), to: nil, from: nil)
+            return true
         case "enter_window_mode":
             isWindowMode = true
             return true
@@ -457,5 +480,28 @@ struct VisualEffectView: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
+    }
+}
+
+struct DraggableTitleBarView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = DraggableNSView()
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+class DraggableNSView: NSView {
+    override var mouseDownCanMoveWindow: Bool { true }
+    
+    override func mouseDown(with event: NSEvent) {
+        // Double click to toggle fullscreen or zoom?
+        if event.clickCount == 2 {
+            // Find window and zoom/toggle
+            self.window?.zoom(nil)
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 }

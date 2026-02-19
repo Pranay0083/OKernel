@@ -103,11 +103,14 @@ class SessionManager: ObservableObject {
     private func convert(node: PaneNode) -> SavedPaneNode {
         switch node {
         case .pane(let pane):
+            // Safety check: if session is still loading or terminal is gone, don't try to get history
+            let history = pane.session.isLoading ? [] : pane.session.getHistory()
+            
             return .pane(SavedPane(
                 id: pane.id,
                 cwd: getCwd(for: pane.session),
                 title: pane.session.title,
-                history: pane.session.getHistory()
+                history: history
             ))
         case .split(let id, let axis, let first, let second, let loc):
             return .split(

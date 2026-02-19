@@ -10,6 +10,7 @@ enum MoveDirection {
 class TabManager: ObservableObject {
     @Published var tabs: [Tab] = []
     @Published var activeTabId: UUID?
+    @Published var isFullScreen: Bool = false
     
     init() {
         // Start with one tab
@@ -71,7 +72,7 @@ class TabManager: ObservableObject {
         
         // Inherit CWD?
         // Basic inherited CWD
-        if let currentSession = tab.activePane?.session {
+        if tab.activePane?.session != nil {
             // Need a way to extract CWD from session if we want to inherit, 
             // but TerminalSession tracks it via polling.
             // But we don't have an easy way to pass it to new pty yet without modifying `TerminalSession.init`.

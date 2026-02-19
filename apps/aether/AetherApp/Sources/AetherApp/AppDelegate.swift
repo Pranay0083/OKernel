@@ -1,6 +1,8 @@
 import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var savedFrames: [Int: NSRect] = [:]
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Config
         _ = ConfigManager.shared

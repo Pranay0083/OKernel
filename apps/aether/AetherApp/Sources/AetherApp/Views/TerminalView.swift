@@ -36,11 +36,6 @@ class TerminalView: MTKView {
     
     private var cancellables = Set<AnyCancellable>()
     
-    // Custom Fullscreen State
-    private var isCustomFullScreen = false
-
-    private var savedFrame: NSRect = .zero
-    
     // Keyboard Selection State
     private var keyboardSelectionAnchor: (row: UInt32, col: UInt32)?
     private var keyboardSelectionActive: (row: UInt32, col: UInt32)?
@@ -84,7 +79,7 @@ class TerminalView: MTKView {
                   resizeWorkItem = item
                   
                   // Use serial background queue to prevent thread explosion during rapid resize
-                  Self.resizeQueue.asyncAfter(deadline: .now() + 0.1, execute: item) // Increased debounce to 100ms
+                  Self.resizeQueue.asyncAfter(deadline: .now() + 0.05, execute: item) // Reduced debounce to 50ms for better responsiveness
              }
              
              // Maintain focus logic should NOT be here as it causes infinite loops
@@ -293,21 +288,19 @@ class TerminalView: MTKView {
         window.isOpaque = false
         window.backgroundColor = .clear
         
-        // Disable Native Fullscreen to prevent SkyLight crash on transparent windows
-        window.collectionBehavior = [.fullScreenNone, .managed]
+        // Enable Native Fullscreen on separate desktop
+        window.collectionBehavior = [.fullScreenPrimary, .managed]
         
-        // Intercept Green Button -> Maximize (Zoom) instead of Fullscreen
-        if let zoomButton = window.standardWindowButton(.zoomButton) {
-            zoomButton.target = window
-            zoomButton.action = #selector(NSWindow.zoom(_:))
-        }
+        // Standard Green Button Behavior (Native Fullscreen)
+        // Enabled by default if .resizable is in styleMask and .fullScreenPrimary collectionBehavior
+        // We previously disabled it here, now we just let it be.
         
         // Enforce Minimum Window Size to prevent layout crashes
         window.minSize = NSSize(width: 800, height: 600)
         
         self.layer?.isOpaque = false
     }
-    
+        
     func updateConfig(_ config: AetherConfig) {
         guard let window = self.window else { return }
         window.alphaValue = CGFloat(config.window.opacity)
@@ -325,49 +318,7 @@ class TerminalView: MTKView {
         }
     }
     
-    // MARK: - Custom Fullscreen (With Title Bar)
-    
-    @objc func toggleCustomFullScreen(_ sender: Any?) {
-        guard let window = self.window, let screen = window.screen ?? NSScreen.main else { return }
-        
-        if isCustomFullScreen {
-            exitCustomFullScreen(window: window)
-        } else {
-            enterCustomFullScreen(window: window, screen: screen)
-        }
-    }
-    
-    private func enterCustomFullScreen(window: NSWindow, screen: NSScreen) {
-        savedFrame = window.frame
-        isCustomFullScreen = true
-        
-        // Hide Dock/Menu Bar
-        NSApp.presentationOptions = [.autoHideMenuBar, .autoHideDock]
-        
-        // Maximize to Screen Frame
-        // IMPORTANT: We keep .titled so the title bar stays visible!
-        window.setFrame(screen.frame, display: true, animate: true)
-    }
-    
-    private func exitCustomFullScreen(window: NSWindow) {
-        isCustomFullScreen = false
-        
-        // Restore Dock/Menu Bar
-        NSApp.presentationOptions = []
-        
-        // Restore Frame
-        window.setFrame(savedFrame, display: true, animate: true)
-    }
-    
-    required init(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-        // Terminal lifecycle is managed by TerminalSession
-    }
-    
+    // Observer for theme changes
     @objc private func handleThemeChange(_ notification: Notification) {
         guard let name = notification.object as? String, let renderer = renderer else { return }
         renderer.setTheme(name)
@@ -382,6 +333,15 @@ class TerminalView: MTKView {
         }
         
         self.setNeedsDisplay(self.bounds)
+    }
+    
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        // Terminal lifecycle is managed by TerminalSession
     }
     
     // Helper to reuse ConfigManager's parsing logic logic locally or just adding minimal one here
@@ -421,9 +381,7 @@ class TerminalView: MTKView {
         switch event.keyCode {
         case 36:  sendBytes([0x0D])
         case 51:  sendBytes([0x7F])
-        case 53:  
-             if isCustomFullScreen { toggleCustomFullScreen(nil); return }
-             sendBytes([0x1B])
+        case 53:  sendBytes([0x1B])
         case 48:  sendBytes([0x09])
         case 126, 125, 124, 123: // Arrow Keys
             if modifiers.contains(.shift) && ConfigManager.shared.config.behavior.keyboardSelection {
@@ -612,8 +570,7 @@ class TerminalView: MTKView {
             }
             return true
         case "toggle_fullscreen":
-            toggleCustomFullScreen(nil)
-            return true
+            return onAction?("toggle_fullscreen") ?? false
         case "new_tab":
             return onAction?("new_tab") ?? false
         case "close_tab":
