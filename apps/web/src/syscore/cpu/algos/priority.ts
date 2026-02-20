@@ -12,14 +12,16 @@ export const priority = (readyQueue: number[], processes: Process[]): number | n
         }
     }
 
-    let highestPriorityId = readyQueue[0];
-    // Lower number means higher priority
-    let bestPriority = processMap.get(readyQueue[0])?.priority;
-    if (bestPriority === undefined) bestPriority = Infinity;
+    const validQueue = readyQueue.filter(pid => processMap.has(pid));
+    if(validQueue.length === 0) return null;
 
-    for (const pid of readyQueue) {
-        const process = processMap.get(pid);
-        if (process && process.priority < bestPriority) {
+    let highestPriorityId = validQueue[0];
+    // Lower number means higher priority
+    let bestPriority = processMap.get(highestPriorityId)!.priority;
+
+    for (const pid of validQueue) {
+        const process = processMap.get(pid)!;
+        if (process.priority < bestPriority) {
             bestPriority = process.priority;
             highestPriorityId = pid;
         }
