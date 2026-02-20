@@ -9,6 +9,8 @@ pub const Config = struct {
     theme: ThemeConfig = .{},
     // Behavior settings
     behavior: BehaviorConfig = .{},
+    // Terminal settings
+    terminal: TerminalConfig = .{},
 
     pub fn load(allocator: std.mem.Allocator, path: []const u8) !Config {
         const file = try std.fs.cwd().openFile(path, .{});
@@ -79,6 +81,10 @@ pub const ThemeConfig = struct {
 
 pub const BehaviorConfig = struct {
     ctrlc_sends_sigint: bool = true,
+};
+
+pub const TerminalConfig = struct {
+    scrollback_limit: u32 = 50_000,
 };
 
 // TOML Parser
@@ -208,6 +214,8 @@ pub const TomlParser = struct {
             if (std.mem.eql(u8, kv.key, "name")) config.theme.name = kv.value;
         } else if (std.mem.eql(u8, self.current_section, "behavior")) {
             if (std.mem.eql(u8, kv.key, "ctrlc_sends_sigint")) config.behavior.ctrlc_sends_sigint = std.mem.eql(u8, kv.value, "true");
+        } else if (std.mem.eql(u8, self.current_section, "terminal")) {
+            if (std.mem.eql(u8, kv.key, "scrollback_limit")) config.terminal.scrollback_limit = try std.fmt.parseInt(u32, kv.value, 10);
         }
     }
 };

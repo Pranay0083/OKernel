@@ -39,11 +39,12 @@ class TerminalSession: Identifiable, ObservableObject {
         let initialCwd = cwd ?? home
         
         let ctrlcSigint = ConfigManager.shared.config.behavior.ctrlcSendsSigint
+        let scrollbackLimit = ConfigManager.shared.config.terminal.scrollbackLimit
         
         // Convert cwd to unsafe pointer if needed or just pass string
         // aether_terminal_with_pty takes [*:0]const u8
         self.terminal = initialCwd.withCString { cwdPtr in
-             return aether_terminal_with_pty(24, 80, nil, cwdPtr, ctrlcSigint)
+             return aether_terminal_with_pty(24, 80, UInt32(scrollbackLimit), nil, cwdPtr, ctrlcSigint)
         }
         
         self.currentCwd = initialCwd
@@ -283,8 +284,8 @@ class TerminalSession: Identifiable, ObservableObject {
         let cols = aether_get_cols(term)
         var history: [SavedRow] = []
         
-        // Performance: limit history to 1000 lines for now to avoid huge JSON
-        let limit: UInt32 = 1000
+        // Performance: limit history to scrollbackLimit lines
+        let limit = UInt32(ConfigManager.shared.config.terminal.scrollbackLimit)
         let start = count > limit ? count - limit : 0
         
         var cellBuf = [AetherCell](repeating: AetherCell(), count: Int(cols))

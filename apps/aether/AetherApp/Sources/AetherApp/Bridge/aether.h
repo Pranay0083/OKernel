@@ -38,8 +38,8 @@ void aether_set_clipboard_callback(AetherClipboardSetCallback cb);
 void aether_set_get_clipboard_callback(AetherClipboardGetCallback cb);
 
 // Lifecycle
-AetherTerminal* aether_terminal_new(uint32_t rows, uint32_t cols);
-AetherTerminal* aether_terminal_with_pty(uint32_t rows, uint32_t cols, const char* shell, const char* cwd, bool ctrlc_sends_sigint);
+AetherTerminal* aether_terminal_new(uint32_t rows, uint32_t cols, uint32_t scrollback_limit);
+AetherTerminal* aether_terminal_with_pty(uint32_t rows, uint32_t cols, uint32_t scrollback_limit, const char* shell, const char* cwd, bool ctrlc_sends_sigint);
 void aether_terminal_free(AetherTerminal* term);
 
 // I/O
@@ -78,6 +78,7 @@ bool aether_mouse_event(AetherTerminal* term, uint8_t button, bool pressed, uint
 
 AetherCursor aether_get_cursor(const AetherTerminal* term);
 bool aether_is_dirty(const AetherTerminal* term);
+bool aether_is_bracketed_paste(const AetherTerminal* term);
 void aether_mark_clean(AetherTerminal* term);
 
 // Queue

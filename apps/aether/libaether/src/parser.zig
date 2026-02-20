@@ -487,7 +487,7 @@ fn rgb(r: u16, g: u16, b: u16) u32 {
 
 test "Parser CSI Cursor" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 24, 80);
+    var term = try Terminal.init(allocator, 24, 80, 10000);
     defer term.deinit();
     
     // Move cursor to 10,10
@@ -503,7 +503,7 @@ test "Parser CSI Cursor" {
 
 test "Parser Colors" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 24, 80);
+    var term = try Terminal.init(allocator, 24, 80, 10000);
     defer term.deinit();
     
     // Set Red

@@ -218,6 +218,13 @@ pub const Terminal = struct {
             std.mem.swap(u32, &c1, &c2);
         }
 
+        // Clamp rows to valid range (oldest scrollback to bottom of active grid)
+        const oldest_sb = -@as(i32, @intCast(self.grid.scrollback.len));
+        const bottom_active = @as(i32, @intCast(self.grid.rows)) - 1;
+        
+        r1 = @max(oldest_sb, r1);
+        r2 = @min(bottom_active, r2);
+
         var r = r1;
         
         while (r <= r2) : (r += 1) {
@@ -296,7 +303,7 @@ pub const Terminal = struct {
     }
 
 
-    pub fn init(allocator: std.mem.Allocator, rows: u32, cols: u32) !Terminal {
+    pub fn init(allocator: std.mem.Allocator, rows: u32, cols: u32, scrollback_limit: u32) !Terminal {
         var tabs = try std.DynamicBitSet.initEmpty(allocator, cols);
         var i: usize = 0;
         while (i < cols) : (i += 8) {
@@ -305,7 +312,7 @@ pub const Terminal = struct {
 
         return Terminal{
             .allocator = allocator,
-            .grid = try Grid.init(allocator, rows, cols, 10000),
+            .grid = try Grid.init(allocator, rows, cols, scrollback_limit),
             // Alt grid usually doesn't need scrollback, but for simplicity we give it minimal or same?
             // Let's give it 0 scrollback as per xterm standard for alt buffer.
             .inactive_grid = try Grid.init(allocator, rows, cols, 0),
@@ -316,8 +323,8 @@ pub const Terminal = struct {
         };
     }
 
-    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) !Terminal {
-        var term = try init(allocator, rows, cols);
+    pub fn initWithPty(allocator: std.mem.Allocator, rows: u32, cols: u32, scrollback_limit: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) !Terminal {
+        var term = try init(allocator, rows, cols, scrollback_limit);
         // Pty.init might fail, so we need to handle cleanup if it does
         term.pty = Pty.init(allocator, shell, cwd, ctrlc_sends_sigint) catch |err| {
             term.deinit();

@@ -48,22 +48,26 @@ class AetherBridge {
         // Register callbacks before creating terminal
         Self.registerCallbacks()
         
+        let scrollbackLimit: UInt32 = 10000
+        
         if let shell = shell {
             terminal = shell.withCString { cShell in
-                aether_terminal_with_pty(rows, cols, cShell, nil, true)
+                aether_terminal_with_pty(rows, cols, scrollbackLimit, cShell, nil, true)
             }
         } else {
-            terminal = aether_terminal_with_pty(rows, cols, nil, nil, true)
+            terminal = aether_terminal_with_pty(rows, cols, scrollbackLimit, nil, nil, true)
         }
     }
     
     init(rows: UInt32, cols: UInt32, withPty: Bool) {
         Self.registerCallbacks()
         
+        let scrollbackLimit: UInt32 = 10000
+        
         if withPty {
-            terminal = aether_terminal_with_pty(rows, cols, nil, nil, true)
+            terminal = aether_terminal_with_pty(rows, cols, scrollbackLimit, nil, nil, true)
         } else {
-            terminal = aether_terminal_new(rows, cols)
+            terminal = aether_terminal_new(rows, cols, scrollbackLimit)
         }
     }
 

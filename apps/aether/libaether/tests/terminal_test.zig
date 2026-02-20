@@ -3,7 +3,7 @@ const Terminal = @import("aether_lib").Terminal;
 const Grid = @import("aether_lib").Grid;
 
 test "Terminal initialization" {
-    var term = try Terminal.init(std.testing.allocator, 24, 80);
+    var term = try Terminal.init(std.testing.allocator, 24, 80, 10000);
     defer term.deinit();
 
     try std.testing.expectEqual(@as(u32, 24), term.grid.rows);
@@ -13,7 +13,7 @@ test "Terminal initialization" {
 }
 
 test "Write characters" {
-    var term = try Terminal.init(std.testing.allocator, 24, 80);
+    var term = try Terminal.init(std.testing.allocator, 24, 80, 10000);
     defer term.deinit();
 
     term.putChar('A');
@@ -32,7 +32,7 @@ test "Write characters" {
 }
 
 test "Newline behavior" {
-    var term = try Terminal.init(std.testing.allocator, 24, 80);
+    var term = try Terminal.init(std.testing.allocator, 24, 80, 10000);
     defer term.deinit();
 
     term.putChar('A');
@@ -55,7 +55,7 @@ test "Newline behavior" {
 }
 
 test "Scrolling behavior" {
-    var term = try Terminal.init(std.testing.allocator, 2, 5); // 2 rows
+    var term = try Terminal.init(std.testing.allocator, 2, 5, 10000); // 2 rows
     defer term.deinit();
 
     // Row 0
@@ -81,7 +81,7 @@ test "Scrolling behavior" {
 }
 
 test "Resize" {
-    var term = try Terminal.init(std.testing.allocator, 5, 5);
+    var term = try Terminal.init(std.testing.allocator, 5, 5, 10000);
     defer term.deinit();
 
     term.putChar('X');

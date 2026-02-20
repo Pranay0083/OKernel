@@ -71,5 +71,8 @@
   "session": {
     "restore_strategy": "ask",
     "restore_shortcut": "cmd+shift+r"
+  },
+  "terminal": {
+    "scrollback_limit": 50000
   }
 }
