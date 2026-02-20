@@ -93,7 +93,10 @@ export const tick = (state: SimulationState): SimulationState => {
                 }
 
                 newState.runningProcessId = nextId;
-                newState.readyQueue = newState.readyQueue.filter(id => id !== nextId);
+                const index = newState.readyQueue.indexOf(nextId);
+                if (index !== -1) {
+                    newState.readyQueue.splice(index, 1);
+                }
                 processToRunId = nextId;
             }
         }
