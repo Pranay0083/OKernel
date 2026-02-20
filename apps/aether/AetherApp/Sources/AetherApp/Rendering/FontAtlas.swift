@@ -9,8 +9,9 @@ class FontAtlas {
     let device: MTLDevice
     
     private var glyphCache: [GlyphKey: GlyphInfo] = [:]
+    private var charToGlyphCache: [UInt32: CGGlyph] = [:]
     private let packer: ShelfPacker
-    private let ctFont: CTFont
+    let ctFont: CTFont
     
     let cellWidth: CGFloat
     let cellHeight: CGFloat
@@ -19,7 +20,8 @@ class FontAtlas {
     let scale: CGFloat
     
     struct GlyphKey: Hashable {
-        let character: UInt32
+        let glyph: CGGlyph
+        let fontName: String // PostScript name
         let bold: Bool
         let italic: Bool
     }
@@ -85,12 +87,37 @@ class FontAtlas {
         self.ascent = CTFontGetAscent(ctFont)
         self.descent = CTFontGetDescent(ctFont)
         
-        // Calculate cell metrics based on 'M'
-        var glyph = CTFontGetGlyphWithName(ctFont, "M" as CFString)
-        var advance = CGSize.zero
-        CTFontGetAdvancesForGlyphs(ctFont, .horizontal, &glyph, &advance, 1)
-        self.cellWidth = advance.width
-        self.cellHeight = ascent + descent + CTFontGetLeading(ctFont)
+        // Calculate cell metrics
+        // For monospaced fonts, all advances are the same so averaging doesn't matter.
+        // For proportional/cursive fonts, averaging gives a representative cell width
+        // that keeps the grid tight and text naturally connected.
+        let sampleChars = "abcdefghijklmnopqrstuvwxyz0123456789"
+        var totalAdvance: CGFloat = 0
+        var sampleCount: CGFloat = 0
+        for char in sampleChars.unicodeScalars {
+            var g = CTFontGetGlyphWithName(ctFont, String(char) as CFString)
+            if g == 0 {
+                // Fallback: get glyph via character
+                var ch = UniChar(char.value)
+                CTFontGetGlyphsForCharacters(ctFont, &ch, &g, 1)
+            }
+            if g != 0 {
+                var adv = CGSize.zero
+                CTFontGetAdvancesForGlyphs(ctFont, .horizontal, &g, &adv, 1)
+                totalAdvance += adv.width
+                sampleCount += 1
+            }
+        }
+        if sampleCount > 0 {
+            self.cellWidth = ceil(totalAdvance / sampleCount)
+        } else {
+            // Fallback to 'M'
+            var glyph = CTFontGetGlyphWithName(ctFont, "M" as CFString)
+            var advance = CGSize.zero
+            CTFontGetAdvancesForGlyphs(ctFont, .horizontal, &glyph, &advance, 1)
+            self.cellWidth = ceil(advance.width)
+        }
+        self.cellHeight = ceil(ascent + descent + CTFontGetLeading(ctFont))
         
         // Initialize atlas texture
         let textureDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: 2048, height: 2048, mipmapped: false)
@@ -141,53 +168,49 @@ class FontAtlas {
     }
     
     func getGlyph(_ char: UInt32, bold: Bool, italic: Bool) -> GlyphInfo {
-        let key = GlyphKey(character: char, bold: bold, italic: italic)
+        // Fallback to primary font if no font provided
+        return getGlyph(char, font: ctFont, bold: bold, italic: italic)
+    }
+    
+    func getGlyph(_ char: UInt32, font: CTFont, bold: Bool, italic: Bool) -> GlyphInfo {
+        let glyph = CTFontGetGlyphWithName(font, String(UnicodeScalar(char)!) as CFString)
+        return getGlyph(glyph, font: font, bold: bold, italic: italic)
+    }
+    
+    func getGlyph(_ glyph: CGGlyph, bold: Bool, italic: Bool) -> GlyphInfo {
+        return getGlyph(glyph, font: ctFont, bold: bold, italic: italic)
+    }
+    
+    func getGlyph(_ glyph: CGGlyph, font: CTFont, bold: Bool, italic: Bool) -> GlyphInfo {
+        let fontName = CTFontCopyPostScriptName(font) as String
+        let key = GlyphKey(glyph: glyph, fontName: fontName, bold: bold, italic: italic)
+        
         if let info = glyphCache[key] {
             return info
         }
         
-        let info = rasterizeGlyph(char, bold: bold, italic: italic)
+        let info = rasterizeGlyph(glyph, font: font, bold: bold, italic: italic)
         glyphCache[key] = info
         return info
     }
     
-    private func rasterizeGlyph(_ char: UInt32, bold: Bool, italic: Bool) -> GlyphInfo {
-        // Create variations if needed (bold/italic)
-        // For simplicity, we currently just use the base font. 
-        // Real implementation would use CTFontCreateCopyWithSymbolicTraits.
+    private func rasterizeGlyph(_ glyph: CGGlyph, font: CTFont, bold: Bool, italic: Bool) -> GlyphInfo {
+        // Create a single-glyph run
+        var glyph = glyph
         
-        guard let scalar = UnicodeScalar(char) else {
-            return GlyphInfo(u: 0, v: 0, width: 0, height: 0, bearingX: 0, bearingY: 0)
-        }
+        // We'll use CTRunDraw but we need to create a run with the specific glyph.
+        // Actually, it's easier to just use CTFontDrawGlyphs if we have the context.
         
-        let string = String(scalar)
-        let cfString = string as CFString
-        let range = CFRangeMake(0, CFStringGetLength(cfString))
-        // Find best font for this character (cascading)
-        let glyphFont = CTFontCreateForString(ctFont, cfString, range)
-        
-        // Use the fallback font (glyphFont) instead of the base font (ctFont)
-        let attrString = NSAttributedString(string: string, attributes: [.font: glyphFont, .foregroundColor: NSColor.white])
-        let line = CTLineCreateWithAttributedString(attrString)
-        
-        let runArray = CTLineGetGlyphRuns(line)
-        guard CFArrayGetCount(runArray) > 0 else {
-            return GlyphInfo(u: 0, v: 0, width: 0, height: 0, bearingX: 0, bearingY: 0)
-        }
-        
-        let run = unsafeBitCast(CFArrayGetValueAtIndex(runArray, 0), to: CTRun.self)
-        var glyph = CGGlyph()
-        var position = CGPoint.zero
-        CTRunGetGlyphs(run, CFRangeMake(0, 1), &glyph)
-        CTRunGetPositions(run, CFRangeMake(0, 1), &position)
-        
-        let bounds = CTRunGetImageBounds(run, nil, CFRangeMake(0, 1))
+        let bounds = CTFontGetBoundingRectsForGlyphs(font, .horizontal, &glyph, nil, 1)
         let width = Int(ceil(bounds.width))
         let height = Int(ceil(bounds.height))
         
-        guard width > 0 && height > 0 else {
-             return GlyphInfo(u: 0, v: 0, width: 0, height: 0, bearingX: 0, bearingY: 0)
+        if width == 0 || height == 0 {
+            // print("FontAtlas: Zero size glyph \(glyph) for font \(CTFontCopyFullName(ctFont) as String)")
+            return GlyphInfo(u: 0, v: 0, width: 0, height: 0, bearingX: 0, bearingY: 0)
         }
+        
+        // print("FontAtlas: Rasterizing glyph \(glyph), size \(width)x\(height), bearing (\(bounds.origin.x), \(bounds.origin.y))")
         
         // Pack into atlas
         guard let (x, y) = packer.pack(width: width, height: height) else {
@@ -201,8 +224,17 @@ class FontAtlas {
             return GlyphInfo(u: 0, v: 0, width: 0, height: 0, bearingX: 0, bearingY: 0)
         }
         
+        // Clear context to zero (alpha 0 in atlas)
+        ctx.setFillColor(gray: 0.0, alpha: 1.0)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        
+        // Use white for font drawing (alpha 1 in atlas)
+        ctx.setFillColor(gray: 1.0, alpha: 1.0)
         ctx.translateBy(x: -bounds.origin.x, y: -bounds.origin.y)
-        CTRunDraw(run, ctx, CFRangeMake(0, 1))
+        
+        var g = glyph
+        var p = CGPoint.zero
+        CTFontDrawGlyphs(font, &g, &p, 1, ctx)
         
         // Upload to texture
         if let data = ctx.data {

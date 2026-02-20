@@ -135,10 +135,15 @@ struct FontConfig: Codable {
     var size: Float = 14.0
     var lineHeight: Float = 1.2
     var weight: FontWeight = .regular
-    var downloadUrl: String? = nil
+    var ligatures: Bool = true
     
     enum FontWeight: String, Codable {
         case regular, bold, light, thin, medium, semibold, heavy, black
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case family, size, weight, ligatures
+        case lineHeight = "lineHeight"
     }
 }
 
@@ -422,7 +427,7 @@ class ConfigManager: ObservableObject {
         if let font = doc["font"] as? [String: Any] {
             if let family = font["family"] as? String { cfg.font.family = family }
             if let size = font["size"] as? Double { cfg.font.size = Float(size) }
-            // Ligatures not supported yet, ignoring
+            if let ligs = font["ligatures"] as? Bool { cfg.font.ligatures = ligs }
         }
         
         // [theme] -> [colors]

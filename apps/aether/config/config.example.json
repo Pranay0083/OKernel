@@ -5,8 +5,8 @@
     "blurType": "sidebar",
     "titleBar": "transparent",
     "padding": {
-      "x": 10,
-      "y": 10
+      "x": 20,
+      "y": 20
     }
   },
   "ui": {
@@ -34,7 +34,8 @@
     "family": "JetBrains Mono",
     "size": 14.0,
     "lineHeight": 1.2,
-    "weight": "regular"
+    "weight": "regular",
+    "ligatures": true
   },
   "cursor": {
     "style": "block",

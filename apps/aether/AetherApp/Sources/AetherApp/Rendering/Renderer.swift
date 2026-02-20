@@ -92,7 +92,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         // Initialize FontAtlas with proper scale
         let scale = metalView.window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
         let fontConfig = ConfigManager.shared.config.font
-        self.fontAtlas = try FontAtlas(device: device, fontName: fontConfig.family, fontSize: CGFloat(fontConfig.size), scale: scale)
+        let family = fontConfig.family
+        self.fontAtlas = try FontAtlas(device: device, fontName: family, fontSize: CGFloat(fontConfig.size), scale: scale)
         self.scaleFactor = Float(scale)
         
         super.init()
@@ -114,10 +115,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         
         do {
             let fontConfig = ConfigManager.shared.config.font
+            let family = fontConfig.family
             let scale = CGFloat(scaleFactor)
-            self.fontAtlas = try FontAtlas(device: device, fontName: fontConfig.family, fontSize: CGFloat(fontConfig.size), scale: scale)
+            self.fontAtlas = try FontAtlas(device: device, fontName: family, fontSize: CGFloat(fontConfig.size), scale: scale)
             forceNextFrame = true
-            print("Renderer: Font reloaded - \(fontConfig.family)")
+            print("Renderer: Font reloaded - \(family)")
         } catch {
             print("Renderer: Failed to reload font: \(error)")
         }
@@ -316,6 +318,11 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let ascentScaled = Float(fontAtlas.ascent) * ratio
         let solidRect = fontAtlas.getSolidRect()
         
+        if !loggedMetrics {
+            // print("Renderer: Metrics - rows: \(rows), cols: \(cols), cw: \(cw), ch: \(ch), ratio: \(ratio)")
+            loggedMetrics = true
+        }
+        
         // Cursor Config
         let cursorLimit = ConfigManager.shared.config.cursor
         let style = cursorLimit.style
@@ -330,7 +337,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let selB = Float(selRaw & 0xFF) / 255.0
         let selectionBG = SIMD4<Float>(selR, selG, selB, selA)
         
-        let padPx = PADDING * scaleFactor
+        let padX = Float(ConfigManager.shared.config.window.padding.x) * scaleFactor
+        let padY = Float(ConfigManager.shared.config.window.padding.y) * scaleFactor
         
         // Pass 1: Backgrounds
         let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
@@ -365,8 +373,8 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
                 
                 if isSpacer { continue } // Skip spacers, let the wide char cover it
                 
-                let x = Float(c) * cw + padPx
-                let y = Float(r) * rowHeight + padPx
+                let x = Float(c) * cw + padX
+                let y = Float(r) * rowHeight + padY
                 
                 let bgColorVal = cell.bg_color
                 
@@ -421,190 +429,215 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         }
         
         // Pass 2: Foregrounds & Cursor
+        let ligaturesEnabled = ConfigManager.shared.config.font.ligatures
+        
         for r in 0..<UInt32(rows) {
-            for c in 0..<UInt32(cols) {
-                guard let cellPtr = aether_get_cell(terminal, r, c) else { continue }
-                let cell = cellPtr.pointee
+            var c: UInt32 = 0
+            while c < UInt32(cols) {
+                guard let cellPtr = aether_get_cell(terminal, r, c) else { c += 1; continue }
+                let firstCell = cellPtr.pointee
                 
-                let flags = cell.flags
-                let isSpacer = (flags & 0x0100) != 0
-                if isSpacer { continue }
-                
-                let x = Float(c) * cw + padPx
-                let y = Float(r) * rowHeight + padPx
-                
-                let fgColorVal = cell.fg_color
-                var fg = colorFromARGB(fgColorVal)
-                var bg = SIMD4<Float>(0, 0, 0, 0) // Default transparent
-                
-                // Cursor Rendering Logic
-                let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
-                
-                var effectiveStyle = ConfigManager.shared.config.cursor.style
-                switch cursor.style {
-                case 1: effectiveStyle = .underline
-                case 2: effectiveStyle = .beam
-                default: break 
-                }
-                
-                let currentStyle = effectiveStyle
-                let isBlock = (currentStyle == .block)
-
-                // Handle Block Cursor (Fixed Color)
-                if isCursorBlinkOn && isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
-                    // Use fixed Theme Color for the block
-                    var newBG = themeFgColor
+                // Group contiguous cells with same style
+                var runCells = [firstCell]
+                var nextC = c + 1
+                while nextC < UInt32(cols) {
+                    guard let nextCellPtr = aether_get_cell(terminal, r, nextC) else { break }
+                    let nextCell = nextCellPtr.pointee
                     
-                    if !isActive {
-                         newBG = SIMD4<Float>(0.5, 0.5, 0.5, 1.0)
-                    }
-                    
-                    // Ensure opacity
-                    newBG.w = 1.0
-                    
-                    // Calculate High Contrast Text Color
-                    var newFG = SIMD4<Float>(0, 0, 0, 1) // Default Black
-                    let lum = 0.299 * newBG.x + 0.587 * newBG.y + 0.114 * newBG.z
-                    if lum < 0.5 {
-                        newFG = SIMD4<Float>(1, 1, 1, 1) // White Text if cursor is dark
-                    }
-                    
-                    fg = newFG
-                    bg = newBG
-                }
-                
-                if cell.codepoint != 0 && cell.codepoint != 32 {
-                     let isPowerline = (cell.codepoint >= 0xE0B0 && cell.codepoint <= 0xE0B3)
-                     var shaderFlags: UInt32 = UInt32(flags)
-                     
-                     if isPowerline {
-                         switch cell.codepoint {
-                         case 0xE0B0: shaderFlags |= 0x80000000 | (0 << 28)
-                         case 0xE0B1: shaderFlags |= 0x80000000 | (1 << 28)
-                         case 0xE0B2: shaderFlags |= 0x80000000 | (2 << 28)
-                         case 0xE0B3: shaderFlags |= 0x80000000 | (3 << 28)
-                         default: break
-                         }
-                         
-                         let plInst = GlyphInstance(
-                             position: SIMD2<Float>(x, y),
-                             size: SIMD2<Float>(cw, ch),
-                             texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
-                             texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                             fgColor: fg,
-                             bgColor: bg,
-                             flags: shaderFlags
-                         )
-                         instances.append(plInst)
+                    // Style matching: colors + certain flags (bold, italic, etc.)
+                    // Note: We don't have bold/italic flags exposed in aether_cell yet besides the bitmask.
+                    if nextCell.fg_color == firstCell.fg_color &&
+                       nextCell.bg_color == firstCell.bg_color &&
+                       nextCell.flags == firstCell.flags {
+                        runCells.append(nextCell)
+                        nextC += 1
                      } else {
-                         // Normal Glyph
-                         let glyph = fontAtlas.getGlyph(cell.codepoint, bold: false, italic: false)
-                         let glyphPixelW = glyph.width * Float(fontAtlas.texture.width)
-                         let glyphPixelH = glyph.height * Float(fontAtlas.texture.height)
-                         // Scale glyph visually
-                         let glyphW = glyphPixelW * ratio
-                         let glyphH = glyphPixelH * ratio
-                         
-                         let glyphX = x + glyph.bearingX * ratio
-                         let glyphOriginY = y + ascentScaled - (glyph.bearingY * ratio + glyphH)
-                         
-                         let fgInst = GlyphInstance(
-                             position: SIMD2<Float>(glyphX, glyphOriginY),
-                             size: SIMD2<Float>(glyphW, glyphH),
-                             texCoord: SIMD2<Float>(glyph.u, glyph.v),
-                             texSize: SIMD2<Float>(glyph.width, glyph.height),
-                             fgColor: fg,
-                             bgColor: bg,
-                             flags: shaderFlags
-                         )
-                         instances.append(fgInst)
+                         break
                      }
+                 }
+                 
+                 let y = Float(r) * rowHeight + padY
+                
+                let fgColorVal = firstCell.fg_color
+                let fg = colorFromARGB(fgColorVal)
+                let bg = SIMD4<Float>(0, 0, 0, 0)
+                
+                // Cursor logic for the start of the run (Simplified: we'll handle cursor overlaps later or split runs at cursor)
+                // For now, let's just draw the shaped text. If the cursor is in the middle of a run, 
+                // we might want to split the run to ensure high-contrast text works.
+                
+                let runChars = runCells.compactMap { (cell) -> Character? in
+                    if cell.codepoint == 0 { return nil }
+                    return UnicodeScalar(cell.codepoint).map { Character($0) }
+                }
+                let runText = String(runChars)
+                
+                if !runText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty {
+                    // print("Renderer: Row \(r) Col \(c) runText: '\(runText)' (count: \(runText.count))")
                 }
                 
-                // Cursor Geometry Logic
-                // User wants cursor to match "text height" (ascent + descent) and be centered.
-                
-                let ascent = Float(fontAtlas.ascent) * ratio
-                let descent = Float(fontAtlas.descent) * ratio
-                let textHeight = ascent + descent
-                
-                // Text is rendered from the top (y), so we should align cursor to top (y) to match.
-                // Centering in rowHeight causes misalignment if line spacing is large.
-                let textOffsetY: Float = 0.0
-                
-                // Block Cursor is handled by Background Pass (Pass 1) + Text Tinting (Pass 2 above)
-                // So we do NOT need to draw an "Empty Block" here.
-                
-                // Cursor Rendering (Beam / Underline)
-                if isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
-                    let cursorColor = colorFromARGB(0xFFFFFFFF) // White
+                if !runText.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty || runCells.contains(where: { $0.codepoint >= 0xE0B0 && $0.codepoint <= 0xE0B3 }) {
+                    // Split runs if they contain Powerline or if there's a cursor in the middle for high contrast?
+                    // For now, let's just handle Powerline within the run iteration if possible, 
+                    // or better, treat Powerline as separate runs.
                     
-                    var rectSize: SIMD2<Float> = .zero
-                    var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
+                    // Actually, let's keep it simple: if a cell is Powerline, we draw it separately.
+                    // If a cell is normal, we group it.
                     
-                    if currentStyle == .beam {
-                        rectSize = SIMD2<Float>(2.0, textHeight) // Match text height
-                        rectPos.y = y + textOffsetY // Center it
-                    } else if currentStyle == .underline {
-                        rectSize = SIMD2<Float>(cw, 2.0)
-                        rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
+                    var currentC = c
+                    for cell in runCells {
+                        let cellX = Float(currentC) * cw + padX
+                        let isPowerline = (cell.codepoint >= 0xE0B0 && cell.codepoint <= 0xE0B3)
+                        
+                        if isPowerline {
+                            var shaderFlags: UInt32 = UInt32(cell.flags)
+                            switch cell.codepoint {
+                            case 0xE0B0: shaderFlags |= 0x80000000 | (0 << 28)
+                            case 0xE0B1: shaderFlags |= 0x80000000 | (1 << 28)
+                            case 0xE0B2: shaderFlags |= 0x80000000 | (2 << 28)
+                            case 0xE0B3: shaderFlags |= 0x80000000 | (3 << 28)
+                            default: break
+                            }
+                            
+                            let plInst = GlyphInstance(
+                                position: SIMD2<Float>(cellX, y),
+                                size: SIMD2<Float>(cw, ch),
+                                texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
+                                texSize: SIMD2<Float>(solidRect.width, solidRect.height),
+                                fgColor: fg,
+                                bgColor: bg,
+                                flags: shaderFlags
+                            )
+                            instances.append(plInst)
+                        }
+                        currentC += 1
                     }
                     
-                    if rectSize.x > 0 {
-                        let cursorInst = GlyphInstance(
-                            position: rectPos,
-                            size: rectSize,
-                            texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
-                            texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                            fgColor: cursorColor,
-                            bgColor: cursorColor,
-                            flags: 0
-                        )
-                        instances.append(cursorInst)
-                    }
-                } else if !isActive && isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && c == cursor.col {
-                    // Inactive Beam/Underline -> Draw Hollow/Grey
-                    let cursorColor = SIMD4<Float>(0.5, 0.5, 0.5, 1.0)
-                     
-                    var rectSize: SIMD2<Float> = .zero
-                    var rectPos: SIMD2<Float> = SIMD2<Float>(x, y)
+                    // Filter out Powerline from text shaping
+                    let shapedText = String(runCells.compactMap { cell in
+                        let isPowerline = (cell.codepoint >= 0xE0B0 && cell.codepoint <= 0xE0B3)
+                        if isPowerline { return Character(" ") }
+                        if cell.codepoint == 0 { return nil } // CRITICAL: Filter nulls
+                        return UnicodeScalar(cell.codepoint).map { Character($0) }
+                    })
                     
-                    if currentStyle == .beam {
-                        rectSize = SIMD2<Float>(2.0, textHeight) // Match text height
-                        rectPos.y = y + textOffsetY // Center it
-                    } else if currentStyle == .underline {
-                        rectSize = SIMD2<Float>(cw, 2.0)
-                        rectPos.y = y + rowHeight - 2.0 // Keep at bottom of ROW
-                    }
-                    
-                    if rectSize.x > 0 {
-                        let cursorInst = GlyphInstance(
-                            position: rectPos,
-                            size: rectSize,
-                            texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
-                            texSize: SIMD2<Float>(solidRect.width, solidRect.height),
-                            fgColor: cursorColor,
-                            bgColor: cursorColor,
-                            flags: 0
-                        )
-                        instances.append(cursorInst)
+                    if !shapedText.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty {
+                        let attrString = NSMutableAttributedString(string: shapedText, attributes: [.font: fontAtlas.ctFont])
+                        if !ligaturesEnabled {
+                            attrString.addAttribute(NSAttributedString.Key(kCTLigatureAttributeName as String), value: 0, range: NSRange(location: 0, length: shapedText.count))
+                        }
+                        
+                        let line = CTLineCreateWithAttributedString(attrString)
+                        let runArray = CTLineGetGlyphRuns(line)
+                        
+                        for runIdx in 0..<CFArrayGetCount(runArray) {
+                            let run = unsafeBitCast(CFArrayGetValueAtIndex(runArray, runIdx), to: CTRun.self)
+                            let glyphCount = CTRunGetGlyphCount(run)
+                            
+                            var glyphs = [CGGlyph](repeating: 0, count: glyphCount)
+                            var stringIndices = [CFIndex](repeating: 0, count: glyphCount)
+                            CTRunGetGlyphs(run, CFRangeMake(0, glyphCount), &glyphs)
+                            CTRunGetStringIndices(run, CFRangeMake(0, glyphCount), &stringIndices)
+                            
+                            let attributes = CTRunGetAttributes(run) as? [NSAttributedString.Key: Any]
+                            let runFont = (attributes?[.font] as AnyObject?) as! CTFont? ?? fontAtlas.ctFont
+                            
+                            for i in 0..<glyphCount {
+                                let g = glyphs[i]
+                                let charIdx = stringIndices[i]
+                                
+                                let glyphInfo = fontAtlas.getGlyph(g, font: runFont, bold: false, italic: false)
+                                if glyphInfo.width == 0 { continue }
+                                
+                                let glyphPixelW = glyphInfo.width * Float(fontAtlas.texture.width)
+                                let glyphPixelH = glyphInfo.height * Float(fontAtlas.texture.height)
+                                let glyphW = glyphPixelW * ratio
+                                let glyphH = glyphPixelH * ratio
+                                
+                                // Terminal grid positioning: each character at its grid cell.
+                                // This is required for column alignment (ls, tables, etc.).
+                                let glyphCol = c + UInt32(charIdx)
+                                let cellX = Float(glyphCol) * cw + padX
+                                let gx = cellX + glyphInfo.bearingX * ratio
+                                let gy = y + ascentScaled - (glyphInfo.bearingY * ratio + glyphH)
+                                
+                                let inst = GlyphInstance(
+                                    position: SIMD2<Float>(gx, gy),
+                                    size: SIMD2<Float>(glyphW, glyphH),
+                                    texCoord: SIMD2<Float>(glyphInfo.u, glyphInfo.v),
+                                    texSize: SIMD2<Float>(glyphInfo.width, glyphInfo.height),
+                                    fgColor: fg,
+                                    bgColor: bg,
+                                    flags: UInt32(firstCell.flags)
+                                )
+                                instances.append(inst)
+                            }
+                        }
                     }
                 }
+                
+                // Cursor Geometry Logic (Beam / Underline)
+                for currentC in c..<nextC {
+                    let cellX = Float(currentC) * cw + padX
+                    let isCursorVisibleInViewport = (scrollState.viewportOffset == 0)
+                    
+                    var effectiveStyle = ConfigManager.shared.config.cursor.style
+                    switch cursor.style {
+                    case 1: effectiveStyle = .underline
+                    case 2: effectiveStyle = .beam
+                    default: break 
+                    }
+                    
+                    let currentStyle = effectiveStyle
+                    let isBlock = (currentStyle == .block)
+                    
+                    if isCursorBlinkOn && !isBlock && isCursorVisibleInViewport && r == cursor.row && currentC == cursor.col {
+                        let cursorColor = isActive ? colorFromARGB(0xFFFFFFFF) : SIMD4<Float>(0.5, 0.5, 0.5, 1.0)
+                        
+                        var rectSize: SIMD2<Float> = .zero
+                        var rectPos: SIMD2<Float> = SIMD2<Float>(cellX, y)
+                        
+                        let textHeight = ascentScaled + descentScaled
+                        
+                        if currentStyle == .beam {
+                            rectSize = SIMD2<Float>(2.0, textHeight)
+                        } else if currentStyle == .underline {
+                            rectSize = SIMD2<Float>(cw, 2.0)
+                            rectPos.y = y + rowHeight - 2.0
+                        }
+                        
+                        if rectSize.x > 0 {
+                            let cursorInst = GlyphInstance(
+                                position: rectPos,
+                                size: rectSize,
+                                texCoord: SIMD2<Float>(solidRect.u, solidRect.v),
+                                texSize: SIMD2<Float>(solidRect.width, solidRect.height),
+                                fgColor: cursorColor,
+                                bgColor: cursorColor,
+                                flags: 0
+                            )
+                            instances.append(cursorInst)
+                        }
+                    }
+                }
+                
+                c = nextC
             }
         }
         
         return instances
     }
     
-    private let PADDING: Float = 10.0
+    private var paddingX: Float { Float(ConfigManager.shared.config.window.padding.x) }
+    private var paddingY: Float { Float(ConfigManager.shared.config.window.padding.y) }
     
     /// Convert view point (local coords) to Grid (row, col)
     func convertPointToGrid(_ point: CGPoint) -> (uint: UInt32, row: UInt32, col: UInt32)? {
         guard viewportSize.x > 0 && viewportSize.y > 0 else { return nil }
         
         // Adjust for padding (in points)
-        let x = point.x - CGFloat(PADDING)
-        let y = point.y - CGFloat(PADDING)
+        let x = point.x - CGFloat(paddingX)
+        let y = point.y - CGFloat(paddingY)
         
         let ratio = scaleFactor / Float(fontAtlas.scale)
         let atlasW = Float(fontAtlas.cellWidth)
@@ -650,9 +683,10 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
         let lineSpacing = max(1.0, min(3.0, ConfigManager.shared.config.font.lineHeight))
         let rowH = cellH * lineSpacing
         
-        let padPx = PADDING * scaleFactor
-        let availableW = max(0, viewportSize.x - (padPx * 2))
-        let availableH = max(0, viewportSize.y - (padPx * 2))
+        let padX = paddingX * scaleFactor
+        let padY = paddingY * scaleFactor
+        let availableW = max(0, viewportSize.x - (padX * 2))
+        let availableH = max(0, viewportSize.y - (padY * 2))
         
         // Enforce minimum dimensions (e.g. 2x2) to prevent core crashes
         let newCols = max(2, Int(availableW / cellW))
@@ -674,6 +708,7 @@ class TerminalRenderer: NSObject, MTKViewDelegate {
     // ... (init, etc.) ...
     
     private var forceNextFrame = false
+    private var loggedMetrics = false
 
     private func applyInitialState() {
         guard let terminal = terminal else { return }
