@@ -9,6 +9,17 @@ import { config } from '../../config';
 
 const API_BASE = `${config.apiUrl}/api/vm/fs`;
 
+interface FsListResponse {
+    success: boolean;
+    files?: string[];
+    error?: string;
+}
+
+interface FsCreateResponse {
+    success: boolean;
+    error?: string;
+}
+
 export class MockFileSystem {
     // We maintain a local representation for the UI, but operations go to backend
     private files: string[] = ['README.txt', 'secret.c'];
@@ -31,7 +42,7 @@ export class MockFileSystem {
                 throw new Error(`FS API Error (${response.status}): ${error}`);
             }
 
-            let result: any;
+            let result: FsListResponse;
             try {
                 result = await response.json();
             } catch {
@@ -42,7 +53,7 @@ export class MockFileSystem {
                 throw new Error(result.error || "File listing failed");
             }
 
-            this.files = result.files;
+            this.files = result.files ?? [];
             return this.files;
 
         } catch (e) {
@@ -67,7 +78,7 @@ export class MockFileSystem {
                 throw new Error(`FS create failed (${response.status}): ${error}`);
             }
 
-            let result: any;
+            let result: FsCreateResponse;
             try {
                 result = await response.json();
             } catch {
