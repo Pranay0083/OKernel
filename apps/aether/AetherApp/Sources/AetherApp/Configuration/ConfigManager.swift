@@ -11,6 +11,7 @@ struct AetherConfig: Codable {
     var keys: KeyBindingConfig
     var behavior: BehaviorConfig
     var session: SessionConfig = SessionConfig()
+    var terminal: TerminalConfig = TerminalConfig()
     
     // Default Configuration
     static let `default` = AetherConfig(
@@ -21,10 +22,11 @@ struct AetherConfig: Codable {
         colors: ColorConfig(),
         keys: KeyBindingConfig(),
         behavior: BehaviorConfig(),
-        session: SessionConfig()
+        session: SessionConfig(),
+        terminal: TerminalConfig()
     )
     
-    init(window: WindowConfig, ui: UIConfig, font: FontConfig, cursor: CursorConfig, colors: ColorConfig, keys: KeyBindingConfig, behavior: BehaviorConfig, session: SessionConfig) {
+    init(window: WindowConfig, ui: UIConfig, font: FontConfig, cursor: CursorConfig, colors: ColorConfig, keys: KeyBindingConfig, behavior: BehaviorConfig, session: SessionConfig, terminal: TerminalConfig) {
         self.window = window
         self.ui = ui
         self.font = font
@@ -33,6 +35,7 @@ struct AetherConfig: Codable {
         self.keys = keys
         self.behavior = behavior
         self.session = session
+        self.terminal = terminal
     }
     
     init(from decoder: Decoder) throws {
@@ -45,6 +48,7 @@ struct AetherConfig: Codable {
         self.keys = try container.decodeIfPresent(KeyBindingConfig.self, forKey: .keys) ?? KeyBindingConfig()
         self.behavior = try container.decodeIfPresent(BehaviorConfig.self, forKey: .behavior) ?? BehaviorConfig()
         self.session = try container.decodeIfPresent(SessionConfig.self, forKey: .session) ?? SessionConfig()
+        self.terminal = try container.decodeIfPresent(TerminalConfig.self, forKey: .terminal) ?? TerminalConfig()
     }
 }
 
@@ -324,6 +328,22 @@ struct SessionConfig: Codable {
     }
 }
 
+// MARK: - Terminal Settings
+struct TerminalConfig: Codable {
+    var scrollbackLimit: Int = 50000
+    
+    enum CodingKeys: String, CodingKey {
+        case scrollbackLimit = "scrollback_limit"
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.scrollbackLimit = try container.decodeIfPresent(Int.self, forKey: .scrollbackLimit) ?? 50000
+    }
+}
+
 // MARK: - Config Manager
 class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
@@ -466,6 +486,13 @@ class ConfigManager: ObservableObject {
             }
             if let shortcut = session["restore_shortcut"] as? String {
                 cfg.session.restoreShortcut = shortcut
+            }
+        }
+        
+        // [terminal]
+        if let terminal = doc["terminal"] as? [String: Any] {
+            if let limit = terminal["scrollback_limit"] as? Int {
+                cfg.terminal.scrollbackLimit = limit
             }
         }
         

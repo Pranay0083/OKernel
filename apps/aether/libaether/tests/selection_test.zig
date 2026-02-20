@@ -4,7 +4,7 @@ const Cell = @import("libaether").Cell;
 
 test "Selection: Simple word selection" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 10, 20);
+    var term = try Terminal.init(allocator, 10, 20, 10000);
     defer term.deinit();
 
     try term.writeInput("Hello World");
@@ -24,7 +24,7 @@ test "Selection: Simple word selection" {
 
 test "Selection: Multi-line hard newline" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 10, 20);
+    var term = try Terminal.init(allocator, 10, 20, 10000);
     defer term.deinit();
 
     try term.writeInput("Line 1\r\nLine 2");
@@ -44,7 +44,7 @@ test "Selection: Multi-line hard newline" {
 
 test "Selection: Wrapped line (no newline)" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 10, 5); // 5 cols wide
+    var term = try Terminal.init(allocator, 10, 5, 10000); // 5 cols wide
     defer term.deinit();
 
     // "123456789" -> "12345" (wrapped) / "6789 "
@@ -66,7 +66,7 @@ test "Selection: Wrapped line (no newline)" {
 
 test "Selection: Scrollback" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 4, 10); // 4 rows
+    var term = try Terminal.init(allocator, 4, 10, 10000); // 4 rows
     defer term.deinit();
 
     // Fill screen and scroll
@@ -86,11 +86,11 @@ test "Selection: Scrollback" {
     // Now visual row 0 should be "Row 0" (from scrollback)
     // Visual row 1 should be "Row 1" (from active[0])
     
-    // Select "Row 0"
+    // Select "Row 0" (which is at stable index -1)
     term.selection.active = true;
-    term.selection.start_row = 0;
+    term.selection.start_row = -1;
     term.selection.start_col = 0;
-    term.selection.end_row = 0;
+    term.selection.end_row = -1;
     term.selection.end_col = 4;
 
     const text = try term.getSelectionText(allocator);
@@ -101,7 +101,7 @@ test "Selection: Scrollback" {
 
 test "Selection: Reverse direction" {
     const allocator = std.testing.allocator;
-    var term = try Terminal.init(allocator, 10, 20);
+    var term = try Terminal.init(allocator, 10, 20, 10000);
     defer term.deinit();
 
     try term.writeInput("Hello");

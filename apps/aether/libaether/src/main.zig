@@ -28,18 +28,18 @@ pub export fn aether_set_clipboard_callback(cb: ?*const fn ([*]const u8, usize) 
 pub export fn aether_set_get_clipboard_callback(cb: ?*const fn () callconv(.c) ?[*:0]const u8) void {
     terminal_mod.cb_get_clipboard = cb;
 }
-pub export fn aether_terminal_new(rows: u32, cols: u32) ?*Terminal {
+pub export fn aether_terminal_new(rows: u32, cols: u32, scrollback_limit: u32) ?*Terminal {
     const term = gpa.create(Terminal) catch return null;
-    term.* = Terminal.init(gpa, rows, cols) catch {
+    term.* = Terminal.init(gpa, rows, cols, scrollback_limit) catch {
         gpa.destroy(term);
         return null;
     };
     return term;
 }
 
-pub export fn aether_terminal_with_pty(rows: u32, cols: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) ?*Terminal {
+pub export fn aether_terminal_with_pty(rows: u32, cols: u32, scrollback_limit: u32, shell: ?[*:0]const u8, cwd: ?[*:0]const u8, ctrlc_sends_sigint: bool) ?*Terminal {
     const term = gpa.create(Terminal) catch return null;
-    term.* = Terminal.initWithPty(gpa, rows, cols, shell, cwd, ctrlc_sends_sigint) catch {
+    term.* = Terminal.initWithPty(gpa, rows, cols, scrollback_limit, shell, cwd, ctrlc_sends_sigint) catch {
         gpa.destroy(term);
         return null;
     };
@@ -230,6 +230,11 @@ pub export fn aether_is_dirty(term: ?*const Terminal) bool {
     return false;
 }
 
+pub export fn aether_is_bracketed_paste(term: ?*const Terminal) bool {
+    if (term) |t| return t.mode.bracketed_paste;
+    return false;
+}
+
 pub export fn aether_mark_clean(term: ?*Terminal) void {
     if (term) |t| t.markClean();
 }
@@ -327,7 +332,13 @@ pub export fn aether_terminal_get_row_metadata(term: ?*const Terminal, idx: u32)
 }
 
 pub export fn aether_terminal_clear_history(term: ?*Terminal) void {
-    if (term) |t| t.clearHistory();
+    if (term) |t| {
+        t.clearHistory();
+        t.cursor_row = 0;
+        t.cursor_col = 0;
+        t.grid.cursor_row = 0;
+        t.grid.cursor_col = 0;
+    }
 }
 
 pub export fn aether_terminal_append_history_row(term: ?*Terminal, cells: [*]const Cell, cells_len: u32, wrapped: bool, semantic_prompt: bool) bool {

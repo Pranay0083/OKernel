@@ -566,7 +566,17 @@ class TerminalView: MTKView {
         case "paste":
             let board = NSPasteboard.general
             if let str = board.string(forType: .string) {
-                sendBytes(Array(str.utf8))
+                terminalSession.lock.lock()
+                let bracketed = aether_is_bracketed_paste(terminal)
+                terminalSession.lock.unlock()
+                
+                var payload = str
+                if bracketed {
+                    // Security: Strip existing bracketed-paste-end markers to prevent injection
+                    let clean = str.replacingOccurrences(of: "\u{1b}[201~", with: "")
+                    payload = "\u{1b}[200~\(clean)\u{1b}[201~"
+                }
+                sendBytes(Array(payload.utf8))
             }
             return true
         case "toggle_fullscreen":

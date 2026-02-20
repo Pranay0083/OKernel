@@ -135,17 +135,15 @@ test "Resize preserves content" {
     try std.testing.expectEqual(@as(u32, 3), grid.rows);
     try std.testing.expectEqual(@as(u32, 3), grid.cols);
 
-    // Verify content preserved (Simplified Resize: No Reflow)
-    // Original: A B
-    //           C D
-    // New (3 cols): A B .
-    //               C D
+    // Verify content PRESERVED WITH REFLOW
+    // Original (2 cols): A B (wrapped)
+    //                    C D
+    // New (3 cols):      A B C (wrapped)
+    //                    D
     if (grid.getCellConst(0, 0)) |c| try std.testing.expectEqual(@as(u32, 'A'), c.codepoint);
     if (grid.getCellConst(0, 1)) |c| try std.testing.expectEqual(@as(u32, 'B'), c.codepoint);
-    // (0, 2) is now empty because we don't reflow
-    // if (grid.getCellConst(0, 2)) |c| try std.testing.expectEqual(@as(u32, ' '), c.codepoint); // Optional check for space
+    if (grid.getCellConst(0, 2)) |c| try std.testing.expectEqual(@as(u32, 'C'), c.codepoint);
     
-    // C stays on row 1
-    if (grid.getCellConst(1, 0)) |c| try std.testing.expectEqual(@as(u32, 'C'), c.codepoint);
-    if (grid.getCellConst(1, 1)) |c| try std.testing.expectEqual(@as(u32, 'D'), c.codepoint);
+    // D moves to row 1
+    if (grid.getCellConst(1, 0)) |c| try std.testing.expectEqual(@as(u32, 'D'), c.codepoint);
 }
