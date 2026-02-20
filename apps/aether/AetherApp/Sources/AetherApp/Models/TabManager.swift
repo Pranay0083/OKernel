@@ -26,7 +26,8 @@ class TabManager: ObservableObject {
     }
     
     func addTab() {
-        let session = TerminalSession()
+        let currentCwd = activeSession?.currentCwd
+        let session = TerminalSession(cwd: currentCwd)
         let pane = Pane(session: session)
         let root = PaneNode.pane(pane)
         let newTab = Tab(root: root)
@@ -67,16 +68,10 @@ class TabManager: ObservableObject {
     func splitPane(axis: Axis) {
         guard let tab = activeTab, let activePaneId = tab.activePaneId else { return }
         
-        let newSession = TerminalSession()
+        // Inherit CWD from the currently active pane
+        let currentCwd = tab.activePane?.session.currentCwd
+        let newSession = TerminalSession(cwd: currentCwd)
         let newPane = Pane(session: newSession)
-        
-        // Inherit CWD?
-        // Basic inherited CWD
-        if tab.activePane?.session != nil {
-            // Need a way to extract CWD from session if we want to inherit, 
-            // but TerminalSession tracks it via polling.
-            // But we don't have an easy way to pass it to new pty yet without modifying `TerminalSession.init`.
-        }
         
         guard let currentPane = tab.root.findPane(id: activePaneId) else { return }
         

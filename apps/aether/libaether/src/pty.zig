@@ -88,6 +88,9 @@ pub const Pty = struct {
             return error.OpenPtyFailed;
         }
 
+        _ = c.fcntl(master, c.F_SETFD, c.FD_CLOEXEC);
+        _ = c.fcntl(slave, c.F_SETFD, c.FD_CLOEXEC);
+
         errdefer _ = c.close(master);
         errdefer _ = c.close(slave);
 
@@ -172,6 +175,12 @@ pub const Pty = struct {
             }
 
             const argv_ptr: [*c]const [*c]u8 = @ptrCast(&argv[0]);
+            
+            // Close all file descriptors above 2 to prevent leaks into new shell
+            var fd: c_int = 3;
+            while (fd < 256) : (fd += 1) {
+                _ = c.close(fd);
+            }
             
             // Use execve with the inherited (and modified) environment
             _ = c.execve(shell, argv_ptr, ns_get_environ().*);
