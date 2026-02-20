@@ -67,7 +67,13 @@ export class MockFileSystem {
                 throw new Error(`FS create failed (${response.status}): ${error}`);
             }
 
-            const result = await response.json();
+            let result: any;
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error("Invalid JSON response from FS API");
+            }
+
             if (!result.success) {
                 throw new Error(result.error || "File creation failed");
             }
