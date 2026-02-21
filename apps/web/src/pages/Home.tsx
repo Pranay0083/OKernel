@@ -142,13 +142,16 @@ export const Home = () => {
 
                     <div className="space-y-10">
                         <div className="flex items-center gap-2">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md animate-in">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                </span>
-                                V{config.version.replace('v', '')} SYSCORE ENGINE 2 {config.status}
-                            </div>
+                            <Link to="/algo-wiki">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-mono rounded-md animate-in">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                    </span>
+                                    UNDERSTAND OPERATING SYSTEMS
+                                </div>
+                            </Link>
+                            
                             <Link to="/sponsor" className="inline-flex items-center gap-2 px-3 py-1 bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-mono rounded-md hover:bg-pink-500/20 transition-colors animate-in">
                                 <Heart size={10} className="fill-current" />
                                 <span>SPONSOR</span>
@@ -540,7 +543,7 @@ int main() {
                             <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.1)] transition-shadow">
                                 <Cpu size={24} className="text-zinc-400 group-hover:text-green-500 transition-colors" />
                             </div>
-                            <h3 className="text-xl font-bold font-mono text-white mb-2">/dev/scheduler</h3>
+                            <h3 className="text-xl font-bold font-mono text-white mb-2">/cpu-scheduler</h3>
                             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
                                 Core processing unit simulation. Handles context switching, interrupt vectors, and process queue management.
                             </p>
@@ -564,7 +567,7 @@ int main() {
                             <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-shadow">
                                 <Terminal size={24} className="text-zinc-400 group-hover:text-blue-500 transition-colors" />
                             </div>
-                            <h3 className="text-xl font-bold font-mono text-white mb-2">/dev/shell</h3>
+                            <h3 className="text-xl font-bold font-mono text-white mb-2">/shell-maker</h3>
                             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
                                 Interactive C-Shell Kernel. Write custom shell logic in C and execute it in a simulated environment.
                             </p>
@@ -574,7 +577,7 @@ int main() {
                             </div>
                         </div>
                         <div className="p-4 border-t border-zinc-900 bg-zinc-900/30 flex justify-between items-center">
-                            <span className="text-[10px] font-mono text-blue-500 uppercase tracking-widest">● v1.0 New</span>
+                            <span className="text-[10px] font-mono text-green-500 uppercase tracking-widest">● Online</span>
                             <ArrowRight size={14} className="text-zinc-600 group-hover:text-white transition-colors" />
                         </div>
                     </Link>

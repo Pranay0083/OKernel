@@ -14,7 +14,7 @@ export const Architecture = () => {
                     <div className="container mx-auto px-6 py-24">
                         <div className="flex items-center gap-3 text-green-500 font-mono text-xs mb-6 uppercase tracking-widest">
                             <span className="w-2 h-2 bg-green-500 animate-pulse"></span>
-                            System Internals v{config.version.replace('v', '')}
+                            System Internals
                         </div>
                         <h1 className="text-5xl md:text-6xl font-bold text-white tracking-tight mb-8 leading-tight">
                             FULL STACK<br />
