@@ -8,43 +8,53 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         if (config.enableMockAuth) {
-            // Mock User for Dev Mode
-            console.log('[useAuth] Dev Mode: Using Mock User');
-            setUser({
-                id: 'mock-user-123',
-                email: 'dev@hackmist.tech',
-                user_metadata: {
-                    full_name: 'Dev Operator'
-                },
-                aud: 'authenticated',
-                role: 'authenticated'
-            });
-            setLoading(false);
+            if (isMounted) {
+                setUser({
+                    id: 'mock-user-123',
+                    email: 'dev@hackmist.tech',
+                    user_metadata: {
+                        full_name: 'Dev Operator'
+                    },
+                    aud: 'authenticated',
+                    role: 'authenticated'
+                });
+                setLoading(false);
+            }
             return;
         }
 
-        // Real Auth Logic
         const checkSession = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                setUser(session?.user ?? null);
+                if (isMounted) {
+                    setUser(session?.user ?? null);
+                }
             } catch (error) {
-                console.error('[useAuth] Error checking session:', error);
-                setUser(null);
+                if (isMounted) {
+                    console.error('[useAuth] Error checking session:', error);
+                    setUser(null);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         checkSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
+            if (isMounted) {
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }
         });
 
         return () => {
+            isMounted = false;
             subscription.unsubscribe();
         };
     }, []);
