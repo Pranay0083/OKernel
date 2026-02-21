@@ -77,8 +77,29 @@ struct WindowConfig: Codable {
     }
     
     struct Padding: Codable {
-        var x: Int
-        var y: Int
+        var x: Int = 10
+        var y: Int = 10
+        
+        init(x: Int = 10, y: Int = 10) {
+            self.x = x
+            self.y = y
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.x = try container.decodeIfPresent(Int.self, forKey: .x) ?? 10
+            self.y = try container.decodeIfPresent(Int.self, forKey: .y) ?? 10
+        }
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.opacity = try container.decodeIfPresent(Float.self, forKey: .opacity) ?? 0.95
+        self.blurType = try container.decodeIfPresent(BlurType.self, forKey: .blurType) ?? .sidebar
+        self.titleBar = try container.decodeIfPresent(TitleBarMode.self, forKey: .titleBar) ?? .transparent
+        self.padding = try container.decodeIfPresent(Padding.self, forKey: .padding) ?? Padding()
     }
 }
 
@@ -91,6 +112,15 @@ struct UIConfig: Codable {
         var width: CGFloat = 12
         var padding: VerticalPadding = VerticalPadding(top: 4, bottom: 4)
         var visible: Bool = true
+        
+        init() {}
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.width = try container.decodeIfPresent(CGFloat.self, forKey: .width) ?? 12
+            self.padding = try container.decodeIfPresent(VerticalPadding.self, forKey: .padding) ?? VerticalPadding()
+            self.visible = try container.decodeIfPresent(Bool.self, forKey: .visible) ?? true
+        }
     }
     
     var scroll: ScrollConfig = ScrollConfig()
@@ -114,6 +144,14 @@ struct UIConfig: Codable {
     struct ScrollConfig: Codable {
         var naturalScrolling: Bool = true
         var speed: Float = 1.0
+        
+        init() {}
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.naturalScrolling = try container.decodeIfPresent(Bool.self, forKey: .naturalScrolling) ?? true
+            self.speed = try container.decodeIfPresent(Float.self, forKey: .speed) ?? 1.0
+        }
     }
     
     struct TabsConfig: Codable {
@@ -121,6 +159,16 @@ struct UIConfig: Codable {
         var horizontalPadding: CGFloat = 10
         var cornerRadius: CGFloat = 6
         var titleStyle: TitleStyle = .smart
+        
+        init() {}
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.verticalPadding = try container.decodeIfPresent(CGFloat.self, forKey: .verticalPadding) ?? 2
+            self.horizontalPadding = try container.decodeIfPresent(CGFloat.self, forKey: .horizontalPadding) ?? 10
+            self.cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius) ?? 6
+            self.titleStyle = try container.decodeIfPresent(TitleStyle.self, forKey: .titleStyle) ?? .smart
+        }
     }
     
     enum TitleStyle: String, Codable {
@@ -128,8 +176,19 @@ struct UIConfig: Codable {
     }
     
     struct VerticalPadding: Codable {
-        var top: CGFloat
-        var bottom: CGFloat
+        var top: CGFloat = 4
+        var bottom: CGFloat = 4
+        
+        init(top: CGFloat = 4, bottom: CGFloat = 4) {
+            self.top = top
+            self.bottom = bottom
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.top = try container.decodeIfPresent(CGFloat.self, forKey: .top) ?? 4
+            self.bottom = try container.decodeIfPresent(CGFloat.self, forKey: .bottom) ?? 4
+        }
     }
 }
 
@@ -147,7 +206,18 @@ struct FontConfig: Codable {
     
     enum CodingKeys: String, CodingKey {
         case family, size, weight, ligatures
-        case lineHeight = "lineHeight"
+        case lineHeight
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.family = try container.decodeIfPresent(String.self, forKey: .family) ?? "JetBrains Mono"
+        self.size = try container.decodeIfPresent(Float.self, forKey: .size) ?? 14.0
+        self.lineHeight = try container.decodeIfPresent(Float.self, forKey: .lineHeight) ?? 1.2
+        self.weight = try container.decodeIfPresent(FontWeight.self, forKey: .weight) ?? .regular
+        self.ligatures = try container.decodeIfPresent(Bool.self, forKey: .ligatures) ?? true
     }
 }
 
@@ -166,6 +236,17 @@ struct CursorConfig: Codable {
     enum BlinkCurve: String, Codable {
         case ease, linear
     }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.style = try container.decodeIfPresent(CursorStyle.self, forKey: .style) ?? .block
+        self.blink = try container.decodeIfPresent(Bool.self, forKey: .blink) ?? true
+        self.smartBlink = try container.decodeIfPresent(Bool.self, forKey: .smartBlink) ?? true
+        self.blinkRate = try container.decodeIfPresent(Float.self, forKey: .blinkRate) ?? 0.8
+        self.blinkCurve = try container.decodeIfPresent(BlinkCurve.self, forKey: .blinkCurve) ?? .ease
+    }
 }
 
 // MARK: - Color Settings
@@ -175,6 +256,17 @@ struct ColorConfig: Codable {
     var foreground: String? = nil // Override
     var selection: String? = nil
     var palette: [String]? = nil // Custom palette override
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.scheme = try container.decodeIfPresent(String.self, forKey: .scheme) ?? "Dracula"
+        self.background = try container.decodeIfPresent(String.self, forKey: .background)
+        self.foreground = try container.decodeIfPresent(String.self, forKey: .foreground)
+        self.selection = try container.decodeIfPresent(String.self, forKey: .selection)
+        self.palette = try container.decodeIfPresent([String].self, forKey: .palette)
+    }
     
     // Helper to get effective theme
     func resolveTheme() -> Theme {
@@ -282,8 +374,26 @@ struct KeyBindingConfig: Codable {
         "down": "focus_down"
     ]
     
-    // Custom coding keys to allow arbitrary keys in JSON?
-    // Actually [String:String] dictionary handles this automatically in Codable.
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.bindings = try container.decodeIfPresent([String: String].self, forKey: .bindings) ?? [
+            "cmd+c": "copy",
+            "cmd+v": "paste",
+            "cmd+t": "new_tab",
+            "cmd+w": "close_tab",
+            "cmd+n": "new_window",
+            "cmd+d": "split_horizontal",
+            "cmd+shift+d": "split_vertical",
+            "cmd+shift+w": "close_pane",
+            "cmd+x": "enter_window_mode",
+            "left": "focus_left",
+            "right": "focus_right",
+            "up": "focus_up",
+            "down": "focus_down"
+        ]
+    }
 }
 
 // MARK: - Behavior Settings
@@ -349,6 +459,7 @@ class ConfigManager: ObservableObject {
     static let shared = ConfigManager()
     
     @Published var config: AetherConfig
+    @Published var configError: String? = nil
     
     private init() {
         self.config = AetherConfig.default
@@ -376,8 +487,10 @@ class ConfigManager: ObservableObject {
             configDir.appendingPathComponent("aether.toml")
         ]
         
+        var configExists = false
         for path in paths {
             if fileManager.fileExists(atPath: path.path) {
+                configExists = true
                 if path.pathExtension == "json" {
                     do {
                         let data = try Data(contentsOf: path)
@@ -387,6 +500,8 @@ class ConfigManager: ObservableObject {
                         return
                     } catch {
                         print("ConfigManager: Failed to parse JSON \(path.lastPathComponent): \(error)")
+                        DispatchQueue.main.async { self.configError = "Syntax Error in \(path.lastPathComponent). Using defaults." }
+                        return
                     }
                 } else if path.pathExtension == "toml" {
                      do {
@@ -399,6 +514,8 @@ class ConfigManager: ObservableObject {
                         }
                     } catch {
                         print("ConfigManager: Failed to parse TOML \(path.lastPathComponent): \(error)")
+                        DispatchQueue.main.async { self.configError = "Syntax Error in \(path.lastPathComponent). Using defaults." }
+                        return
                     }
                 }
             }
@@ -406,7 +523,9 @@ class ConfigManager: ObservableObject {
         
         // Fallback
         print("ConfigManager: No config found. Using defaults.")
-        saveConfig()
+        if !configExists {
+            saveConfig()
+        }
     }
     
     private func mapTomlToConfig(_ doc: [String: Any]) -> AetherConfig? {
