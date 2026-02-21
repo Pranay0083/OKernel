@@ -55,9 +55,20 @@ export const tick = (state: SimulationState): SimulationState => {
 
     // Check preemption for SRTF (Simulated by checking if selection changes)
     if (newState.algorithm === 'SRTF' && processToRunId !== null) {
-        const bestCandidate = selectProcess('SRTF', [...newState.readyQueue, processToRunId], newState.processes);
-        if (bestCandidate !== null && bestCandidate !== processToRunId) {
-            shouldPreempt = true;
+        const runningIdx = indexMap.get(processToRunId);
+        if(runningIdx !== undefined) {
+            const runningProc = newState.processes[runningIdx];
+
+            for (const id of newState.readyQueue) {
+                const idx = indexMap.get(id);
+                if (idx !== undefined) {
+                    const candidate = newState.processes[idx];
+                    if (candidate.remainingTime < runningProc.remainingTime) {
+                        shouldPreempt = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 
