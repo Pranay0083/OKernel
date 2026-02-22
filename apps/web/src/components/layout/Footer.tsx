@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Github, Heart, MessageSquare, Terminal } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,7 +7,7 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
         return (
             <footer className="w-full py-6 text-center border-t border-white/5 bg-[#050505]">
                 <div className="flex items-center justify-center gap-1 text-xs text-zinc-600 font-mono">
-                    <span>© 2026 OKernel.</span>
+                    <span>©️ 2026 OKernel.</span>
                     <span>MIT License.</span>
                 </div>
             </footer>
@@ -74,14 +73,15 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                 </div>
 
                 <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-                    <span className="text-xs text-zinc-500 font-mono">© 2026 OKernel. Released under MIT License.</span>
-                    <div className="flex items-center gap-1 text-xs text-zinc-500 font-mono">
+                    <span className="text-xs text-zinc-500 font-mono">©️ 2026 OKernel. Released under MIT License.</span>
+                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 text-xs text-zinc-500 font-mono">
                         <Link to="/docs" className="hover:text-green-500 transition-colors">Documentation</Link>
+                        <span>•</span>
                         <Link to="/blog" className="hover:text-green-500 transition-colors">Blog</Link>
-                        <Link to="/aether" className="hover:text-green-500 transition-colors">Aether Terminal <span className="text-purple-500 text-xs ml-1">New</span></Link>
-                        <span>Made with</span>
-                        <Heart size={12} className="text-red-500 fill-red-500 animate-pulse" />
-                        <span>by the OKernel Team</span>
+                        <span>•</span>
+                        <Link to="/aether" className="hover:text-green-500 transition-colors flex items-center gap-1">Aether Terminal <span className="text-purple-500 text-[10px] uppercase font-bold bg-purple-500/10 px-1.5 py-0.5 rounded ml-1">New</span></Link>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="flex items-center gap-1 w-full sm:w-auto justify-center mt-2 sm:mt-0">Made with <Heart size={12} className="text-red-500 fill-red-500 animate-pulse" /> by the OKernel Team</span>
                     </div>
                 </div>
             </div>
