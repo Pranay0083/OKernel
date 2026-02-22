@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Process } from '../../../core/types';
+import { Process, AlgorithmType } from '../../../core/types';
 
 interface ProcessListProps {
     processes: Process[];
-    addProcess: (process: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime'>) => void;
+    addProcess: (process: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => void;
     onClear: () => void;
     currentTime: number;
+    algorithm?: AlgorithmType;
 }
 
-export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess, onClear }) => {
+export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess, onClear, algorithm }) => {
     const [newProcess, setNewProcess] = useState({ name: '', arrivalTime: 0, burstTime: 1, priority: 1 });
+    const isMLFQ = algorithm === 'MLFQ';
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -95,6 +97,7 @@ export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess,
                             <th className="px-3 py-2 font-normal">AT</th>
                             <th className="px-3 py-2 font-normal">BT</th>
                             <th className="px-3 py-2 font-normal">PRI</th>
+                            {isMLFQ && <th className="px-3 py-2 font-normal text-amber-500">QL</th>}
                             <th className="px-3 py-2 font-normal text-right">STATUS</th>
                         </tr>
                     </thead>
@@ -107,6 +110,11 @@ export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess,
                                 <td className="px-3 py-2 text-zinc-400">{p.arrivalTime}</td>
                                 <td className="px-3 py-2 text-zinc-400">{p.burstTime}</td>
                                 <td className="px-3 py-2 text-zinc-400">{p.priority}</td>
+                                {isMLFQ && (
+                                    <td className="px-3 py-2">
+                                        <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>
+                                    </td>
+                                )}
                                 <td className="px-3 py-2 text-right">
                                     <span className={`px-1 rounded-sm ${p.state === 'RUNNING' ? 'text-black bg-green-500' :
                                         p.state === 'READY' ? 'text-yellow-500' :
@@ -119,7 +127,7 @@ export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess,
                         ))}
                         {processes.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-zinc-800">
+                                <td colSpan={isMLFQ ? 6 : 5} className="px-4 py-8 text-center text-zinc-800">
                                     // table_empty
                                 </td>
                             </tr>

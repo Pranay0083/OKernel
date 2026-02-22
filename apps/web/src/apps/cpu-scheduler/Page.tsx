@@ -12,8 +12,9 @@ import { LayoutGroup } from 'framer-motion';
 
 const BOOT_LOGS = [
     "> INITIALIZING_SCHEDULER_ENGINE...",
-    "> LOADING_ALGORITHMS [FCFS, SJF, RR]...",
+    "> LOADING_ALGORITHMS [FCFS, SJF, RR, MLFQ]...",
     "> CALIBRATING_QUANTUM_TICKS...",
+    "> DETECTING_CPU_CORES...",
     "> STARTING_VISUALIZER... OK"
 ];
 
@@ -26,9 +27,12 @@ export const CPUSchedulerPage = () => {
 
     const { state, setState, addProcess, reset, clear } = useScheduler();
 
-    const runningProcess = state.runningProcessId
-        ? state.processes.find(p => p.id === state.runningProcessId)
-        : undefined;
+    const isMLFQ = state.algorithm === 'MLFQ';
+    const isMultiCore = state.numCores > 1;
+
+    const runningProcesses = state.runningProcessIds.map(id =>
+        id !== null ? state.processes.find(p => p.id === id) : undefined
+    );
 
     const completed = state.processes.filter(p => p.state === 'COMPLETED');
     const avgTat = completed.length > 0
@@ -59,6 +63,12 @@ export const CPUSchedulerPage = () => {
 
                         {/* Retro Stat Displays */}
                         <div className="flex gap-2">
+                            {isMultiCore && (
+                                <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[70px] flex flex-col justify-center shadow-inner">
+                                    <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">CORES</span>
+                                    <span className="text-lg font-mono text-emerald-500 leading-none tracking-widest">{state.numCores}</span>
+                                </div>
+                            )}
                             <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[100px] flex flex-col justify-center shadow-inner">
                                 <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">AVG TAT</span>
                                 <span className="text-lg font-mono text-primary leading-none tracking-widest">{avgTat}</span>
@@ -80,6 +90,7 @@ export const CPUSchedulerPage = () => {
                                 addProcess={addProcess}
                                 onClear={clear}
                                 currentTime={state.currentTime}
+                                algorithm={state.algorithm}
                             />
                         </div>
 
@@ -87,16 +98,26 @@ export const CPUSchedulerPage = () => {
                         <div className="col-span-12 lg:col-span-9 grid grid-cols-1 grid-rows-2 gap-2 h-full min-h-0">
                             {/* CPU Panel (Top Half) */}
                             <div className="bg-card border border-border rounded-lg p-1 relative overflow-hidden flex flex-col shadow-sm h-full">
-                                <div className="absolute top-2 left-3 text-xs font-bold text-muted-foreground uppercase tracking-wider z-20">System Core</div>
+                                <div className="absolute top-2 left-3 text-xs font-bold text-muted-foreground uppercase tracking-wider z-20">
+                                    {isMultiCore ? `System Cores (${state.numCores}×)` : 'System Core'}
+                                </div>
                                 <div className="h-full w-full">
-                                    <Cpu runningProcess={runningProcess} />
+                                    <Cpu runningProcesses={runningProcesses} />
                                 </div>
                             </div>
                             {/* Ready Queue Panel (Bottom Half) */}
                             <div className="bg-card border border-border rounded-lg p-1 relative overflow-hidden flex flex-col shadow-sm h-full">
-                                <div className="absolute top-2 left-3 text-xs font-bold text-muted-foreground uppercase tracking-wider z-20">Memory Buffer</div>
+                                <div className="absolute top-2 left-3 text-xs font-bold text-muted-foreground uppercase tracking-wider z-20">
+                                    {isMLFQ ? 'Multi-Level Queue' : 'Memory Buffer'}
+                                </div>
                                 <div className="h-full w-full pt-6">
-                                    <ReadyQueue queue={state.readyQueue} processes={state.processes} />
+                                    <ReadyQueue
+                                        queue={state.readyQueue}
+                                        processes={state.processes}
+                                        algorithm={state.algorithm}
+                                        mlfqQueues={state.mlfqQueues}
+                                        mlfqQuantums={state.mlfqQuantums}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -115,6 +136,8 @@ export const CPUSchedulerPage = () => {
                                         <th className="px-4 py-2 border-b border-white/5">Process</th>
                                         <th className="px-4 py-2 border-b border-white/5">Arrival</th>
                                         <th className="px-4 py-2 border-b border-white/5">Burst</th>
+                                        {isMLFQ && <th className="px-4 py-2 border-b border-white/5 text-amber-400">Queue</th>}
+                                        {isMultiCore && <th className="px-4 py-2 border-b border-white/5 text-emerald-400">Core</th>}
                                         <th className="px-4 py-2 border-b border-white/5">Finish</th>
                                         <th className="px-4 py-2 text-blue-400 border-b border-white/5">TAT</th>
                                         <th className="px-4 py-2 text-purple-400 border-b border-white/5">WT</th>
@@ -130,6 +153,18 @@ export const CPUSchedulerPage = () => {
                                             </td>
                                             <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.arrivalTime}</td>
                                             <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.burstTime}</td>
+                                            {isMLFQ && (
+                                                <td className="px-4 py-1.5 font-mono">
+                                                    <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>
+                                                </td>
+                                            )}
+                                            {isMultiCore && (
+                                                <td className="px-4 py-1.5 font-mono">
+                                                    <span className="text-emerald-400 font-bold">
+                                                        {p.coreId !== null ? `C${p.coreId}` : '-'}
+                                                    </span>
+                                                </td>
+                                            )}
                                             <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.completionTime ?? '-'}</td>
                                             <td className="px-4 py-1.5 text-blue-500 font-mono font-bold">{p.turnaroundTime ?? '-'}</td>
                                             <td className="px-4 py-1.5 text-purple-500 font-mono font-bold">{p.waitingTime ?? '-'}</td>

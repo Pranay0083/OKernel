@@ -32,7 +32,7 @@ interface MockLayoutProps {
 // Mock child components to isolate integration test to Visualizer + useScheduler interaction
 // This avoids testing implementation details of child components again
 vi.mock('../components/Cpu', () => ({
-  Cpu: ({ runningProcess }: { runningProcess: MockRunningProcess | null }) => <div data-testid="cpu-mock">CPU: {runningProcess ? runningProcess.name : 'IDLE'}</div>
+  Cpu: ({ runningProcesses }: { runningProcesses: (MockRunningProcess | undefined)[] }) => <div data-testid="cpu-mock">CPU: {runningProcesses.filter(Boolean).length > 0 ? runningProcesses.filter(Boolean).map((p) => p!.name).join(', ') : 'IDLE'}</div>
 }));
 
 vi.mock('../components/ReadyQueue', () => ({
@@ -94,14 +94,19 @@ describe('Visualizer Integration', () => {
     currentTime: 0,
     processes: [],
     readyQueue: [],
-    runningProcessId: null,
+    runningProcessIds: [null],
     completedProcessIds: [],
     ganttChart: [],
     algorithm: 'FCFS',
     timeQuantum: 2,
-    quantumRemaining: 0,
+    quantumRemaining: [0],
     isPlaying: false,
     speed: 1000,
+    numCores: 1,
+    mlfqQueues: [[], [], []],
+    mlfqQuantums: [2, 4, 8],
+    mlfqNumQueues: 3,
+    mlfqCurrentLevel: [0],
   };
 
   const mockAddProcess = vi.fn();
@@ -138,12 +143,12 @@ describe('Visualizer Integration', () => {
         {
           id: 1, name: 'P1', state: 'COMPLETED',
           turnaroundTime: 10, waitingTime: 5,
-          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0
+          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0, queueLevel: 0, coreId: null
         },
         {
           id: 2, name: 'P2', state: 'COMPLETED',
           turnaroundTime: 20, waitingTime: 10,
-          arrivalTime: 0, burstTime: 10, priority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10
+          arrivalTime: 0, burstTime: 10, priority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10, queueLevel: 0, coreId: null
         }
       ]
     };
@@ -167,12 +172,12 @@ describe('Visualizer Integration', () => {
   it('passes running process to Cpu component', () => {
     const runningState: SimulationState = {
       ...mockState,
-      runningProcessId: 1,
+      runningProcessIds: [1],
       processes: [
         {
           id: 1, name: 'RunningProc', state: 'RUNNING',
           turnaroundTime: 0, waitingTime: 0,
-          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0
+          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0, queueLevel: 0, coreId: 0
         }
       ]
     };

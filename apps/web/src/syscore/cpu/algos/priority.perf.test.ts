@@ -14,7 +14,9 @@ const createMockProcess = (id: number, priority: number): Process => ({
     startTime: null,
     completionTime: null,
     waitingTime: 0,
-    turnaroundTime: 0
+    turnaroundTime: 0,
+    queueLevel: 0,
+    coreId: null
 });
 
 describe('Priority Algorithm', () => {
@@ -31,7 +33,9 @@ describe('Priority Algorithm', () => {
             startTime: null,
             completionTime: null,
             waitingTime: 0,
-            turnaroundTime: 0
+            turnaroundTime: 0,
+            queueLevel: 0,
+            coreId: null
         }));
     };
 
@@ -81,6 +85,6 @@ describe('Priority Algorithm', () => {
     });
 
     it('should handle null / empty readyQueue', () => {
-         expect(priority([], [])).toBe(null);
+        expect(priority([], [])).toBe(null);
     });
 });

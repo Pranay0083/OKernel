@@ -19,19 +19,15 @@ describe('ProcessList Component', () => {
 
     // Check Header
     expect(screen.getByText('PROCESS_TABLE')).toBeInTheDocument();
-    
     // Check Flush Button
     expect(screen.getByText('[ FLUSH ]')).toBeInTheDocument();
-    
     // Check Empty State
     expect(screen.getByText('// table_empty')).toBeInTheDocument();
-    
     // Check Inputs
     expect(screen.getByPlaceholderText('NAME')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('AT')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('BT')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('PRI')).toBeInTheDocument();
-    
     // Check Add Button
     expect(screen.getByText('ADD +')).toBeInTheDocument();
   });
@@ -51,6 +47,8 @@ describe('ProcessList Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
       {
         id: 2,
@@ -65,6 +63,8 @@ describe('ProcessList Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
     ];
 
@@ -79,7 +79,6 @@ describe('ProcessList Component', () => {
 
     expect(screen.getByText('P1')).toBeInTheDocument();
     expect(screen.getByText('P2')).toBeInTheDocument();
-    
     // Status is truncated to 4 chars
     // READY -> READ
     expect(screen.getByText('READ')).toBeInTheDocument();
@@ -133,7 +132,7 @@ describe('ProcessList Component', () => {
   });
 
   it('uses defaults when submitting empty form', () => {
-     render(
+    render(
       <ProcessList
         processes={[]}
         addProcess={mockAddProcess}
@@ -145,7 +144,6 @@ describe('ProcessList Component', () => {
     // Assuming we just click add with default (or empty) inputs
     // The component sets some defaults in useState
     // const [newProcess, setNewProcess] = useState({ name: '', arrivalTime: 0, burstTime: 1, priority: 1 });
-    
     fireEvent.click(screen.getByText('ADD +'));
 
     expect(mockAddProcess).toHaveBeenCalledWith({

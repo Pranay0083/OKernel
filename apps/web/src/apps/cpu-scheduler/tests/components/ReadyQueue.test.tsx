@@ -47,6 +47,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
       {
         id: 2,
@@ -61,6 +63,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
     ];
 
@@ -108,6 +112,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       }
     ];
 
@@ -136,6 +142,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
       {
         id: 2,
@@ -150,6 +158,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       },
       {
         id: 3,
@@ -164,6 +174,8 @@ describe('ReadyQueue Component', () => {
         turnaroundTime: 0,
         waitingTime: 0,
         startTime: null,
+        queueLevel: 0,
+        coreId: null,
       }
     ];
 

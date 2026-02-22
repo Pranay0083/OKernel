@@ -2,19 +2,30 @@ import { useState, useEffect } from 'react';
 import { SimulationState, Process } from '../core/types';
 import { tick } from '../syscore/cpu';
 
-const initialState: SimulationState = {
+const DEFAULT_MLFQ_QUANTUMS = [2, 4, 8];
+const DEFAULT_MLFQ_NUM_QUEUES = 3;
+
+const createInitialState = (numCores: number = 1): SimulationState => ({
     currentTime: 0,
     processes: [],
     readyQueue: [],
-    runningProcessId: null,
+    runningProcessIds: Array(numCores).fill(null),
     completedProcessIds: [],
     ganttChart: [],
     algorithm: 'FCFS',
     timeQuantum: 2,
-    quantumRemaining: 0,
+    quantumRemaining: Array(numCores).fill(0),
     isPlaying: false,
     speed: 1000,
-};
+    numCores,
+    // MLFQ
+    mlfqQueues: Array.from({ length: DEFAULT_MLFQ_NUM_QUEUES }, () => []),
+    mlfqQuantums: [...DEFAULT_MLFQ_QUANTUMS],
+    mlfqNumQueues: DEFAULT_MLFQ_NUM_QUEUES,
+    mlfqCurrentLevel: Array(numCores).fill(0),
+});
+
+const initialState = createInitialState(1);
 
 export const useScheduler = () => {
     const [state, setState] = useState<SimulationState>(initialState);
@@ -30,7 +41,6 @@ export const useScheduler = () => {
             }
 
             try {
-                // Use local simulation logic instead of backend
                 const nextState = tick(state);
                 setState(nextState);
             } catch (error) {
@@ -48,7 +58,7 @@ export const useScheduler = () => {
         };
     }, [state]);
 
-    const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime'>) => {
+    const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => {
         setState(prev => {
             const newId = prev.processes.length > 0 ? Math.max(...prev.processes.map(p => p.id)) + 1 : 1;
             const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1'];
@@ -57,29 +67,33 @@ export const useScheduler = () => {
             const newProcess: Process = {
                 id: newId,
                 ...processData,
-                state: 'WAITING', // Correct initial state. Scheduler promotes to READY at AT.
+                state: 'WAITING',
                 remainingTime: processData.burstTime,
                 color,
                 startTime: null,
                 completionTime: null,
                 waitingTime: 0,
-                turnaroundTime: 0
+                turnaroundTime: 0,
+                queueLevel: 0,
+                coreId: null,
             };
 
             return {
                 ...prev,
                 processes: [...prev.processes, newProcess],
-                readyQueue: prev.readyQueue // DO NOT add to queue here. Scheduler loop handles it.
+                readyQueue: prev.readyQueue
             };
         });
     };
 
     const reset = () => {
         setState(prev => ({
-            ...initialState,
+            ...createInitialState(prev.numCores),
             algorithm: prev.algorithm,
             timeQuantum: prev.timeQuantum,
             speed: prev.speed,
+            mlfqNumQueues: prev.mlfqNumQueues,
+            mlfqQuantums: [...prev.mlfqQuantums],
             processes: prev.processes.map(p => ({
                 ...p,
                 state: 'WAITING',
@@ -87,20 +101,22 @@ export const useScheduler = () => {
                 startTime: null,
                 completionTime: null,
                 waitingTime: 0,
-                turnaroundTime: 0
+                turnaroundTime: 0,
+                queueLevel: 0,
+                coreId: null,
             })),
-            currentTime: 0,
-            readyQueue: [],
-            runningProcessId: null,
-            completedProcessIds: [],
-            ganttChart: [],
-            quantumRemaining: 0,
-            isPlaying: false
         }));
     };
 
     const clear = () => {
-        setState(prev => ({ ...initialState, algorithm: prev.algorithm, speed: prev.speed, timeQuantum: prev.timeQuantum }));
+        setState(prev => ({
+            ...createInitialState(prev.numCores),
+            algorithm: prev.algorithm,
+            speed: prev.speed,
+            timeQuantum: prev.timeQuantum,
+            mlfqNumQueues: prev.mlfqNumQueues,
+            mlfqQuantums: [...prev.mlfqQuantums],
+        }));
     }
 
     return { state, setState, addProcess, reset, clear };
