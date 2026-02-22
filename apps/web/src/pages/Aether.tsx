@@ -41,12 +41,12 @@ export const Aether = () => {
     const glareOpacity = useTransform(scrollYProgress, [0.1, 0.5], [0.8, 0]);
 
     const galleryItems = [
-        { src: '/assets/Aether.png', label: 'Vanilla Alpha v0.3' },
-        { src: '/assets/Nvim.png', label: 'Neovim + LSP Integration' },
-        { src: '/assets/Multiple_Panes_Aether.png', label: 'Native Multiplexing Engine' },
-        { src: '/assets/gemini.png', label: 'Gemini Integration' },
-        { src: '/assets/Opencode.png', label: 'OpenCode Integration' },
-        { src: '/assets/focus_on_what_you_need.png', label: 'Focus on What You Need' },
+        { src: '/assets/Aether.png', label: 'Vanilla Alpha v0.3', gradient: '', title: 'Vanilla Alpha v0.3' },
+        { src: '/assets/Nvim.png', label: 'Neovim + LSP Integration', gradient: '', title: 'Neovim + LSP Integration' },
+        { src: '/assets/Multiple_Panes_Aether.png', label: 'Native Multiplexing Engine', gradient: '', title: 'Native Multiplexing Engine' },
+        { src: '/assets/gemini.png', label: 'Gemini Integration', gradient: '', title: 'Gemini Integration' },
+        { src: '/assets/Opencode.png', label: 'OpenCode Integration', gradient: '', title: 'OpenCode Integration' },
+        { src: '/assets/focus_on_what_you_need.png', label: 'Focus on What You Need', gradient: '', title: 'Focus on What You Need' },
 
     ];
 
