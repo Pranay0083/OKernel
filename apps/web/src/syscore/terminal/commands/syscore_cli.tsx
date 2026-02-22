@@ -37,13 +37,13 @@ export const syscore: TerminalCommand = {
                             </ul>
                         </div>
 
-                        <div className="space-y-1">
+                        {/* <div className="space-y-1">
                             <p className="font-bold text-white">Common Commands:</p>
                             <ul className="pl-4">
                                 <li><span className="text-green-400">syscore.ver</span> : Check implementation version</li>
                                 <li><span className="text-green-400">syscore.cpu.info</span> : Dump CPU state</li>
                             </ul>
-                        </div>
+                        </div> */}
                     </div>
                 )
             };
