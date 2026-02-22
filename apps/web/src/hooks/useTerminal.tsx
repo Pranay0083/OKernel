@@ -92,7 +92,7 @@ export const useTerminal = () => {
                                     <li><strong className="text-primary">init &lt;app_name&gt;</strong>: Launch an application (e.g. init shell)</li>
                                     <li><strong className="text-primary">about</strong>: System information</li>
                                     <li><strong className="text-primary">curr</strong>: Current roadmap status</li>
-                                    <li><strong className="text-primary">syscore.ver</strong>: Engine version</li>
+                                    {/* <li><strong className="text-primary">syscore.ver</strong>: Engine version</li> */}
                                     <li><strong className="text-primary">syscore</strong>: SysCore CLI Help</li>
                                     <li><strong className="text-primary">clear</strong>: Clear the terminal</li>
                                     <li><strong className="text-primary">exit</strong>: Shutdown and return Home</li>
