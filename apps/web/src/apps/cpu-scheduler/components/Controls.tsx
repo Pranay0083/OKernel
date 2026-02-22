@@ -11,7 +11,7 @@ interface Props {
 export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
 
     const handleNumQueuesChange = (value: number) => {
-        const numQueues = Math.max(2, Math.min(5, value));
+        const numQueues = Math.max(2, Math.min(3, value));
         setState(s => {
             const newQuantums = Array.from({ length: numQueues }, (_, i) =>
                 s.mlfqQuantums[i] ?? Math.pow(2, i + 1)
@@ -45,10 +45,10 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
     };
 
     return (
-        <div className="flex flex-wrap items-center gap-4 w-full font-mono text-xs">
+        <div className="flex overflow-x-auto whitespace-nowrap items-center gap-4 w-full font-mono text-xs pb-2 custom-scrollbar">
 
             {/* Playback Controls */}
-            <div className="flex items-center -space-x-px">
+            <div className="flex items-center -space-x-px shrink-0">
                 <button
                     onClick={() => setState(s => ({ ...s, isPlaying: !s.isPlaying }))}
                     className={`h-8 px-4 flex items-center justify-center border transition-colors ${state.isPlaying
@@ -71,10 +71,10 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
                 </button>
             </div>
 
-            <div className="w-px h-6 bg-zinc-800 mx-2 hidden sm:block"></div>
+            <div className="w-px h-6 bg-zinc-800 mx-2 hidden sm:block shrink-0"></div>
 
             {/* Algorithm Selector */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
                 <span className="text-zinc-500 select-none">ALGO:</span>
                 <div className="relative group">
                     <select
@@ -95,7 +95,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
             </div>
 
             {/* Cores Input */}
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200 shrink-0">
                 <span className="text-zinc-500 select-none">CORES:</span>
                 <input
                     type="number"
@@ -110,7 +110,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
 
             {/* Time Quantum (RR only) */}
             {state.algorithm === 'RR' && (
-                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200 shrink-0">
                     <span className="text-zinc-500 select-none">Q_TIME:</span>
                     <input
                         type="number"
@@ -125,7 +125,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
 
             {/* MLFQ Configuration */}
             {state.algorithm === 'MLFQ' && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-200">
+                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-200 shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="text-zinc-500 select-none">LEVELS:</span>
                         <input
@@ -134,7 +134,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
                             onChange={e => handleNumQueuesChange(Number(e.target.value))}
                             className="bg-black border border-zinc-700 text-white h-8 w-14 px-2 focus:outline-none focus:border-primary text-center"
                             min={2}
-                            max={5}
+                            max={3}
                             disabled={state.isPlaying}
                         />
                     </div>
@@ -161,7 +161,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
             <div className="flex-1"></div>
 
             {/* Speed Control */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 shrink-0">
                 <span className="text-zinc-500 select-none hidden sm:inline">CLOCK_RATE:</span>
                 <div className="flex items-center gap-2">
                     <span className="text-zinc-600">SLOW</span>
@@ -179,7 +179,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
             </div>
 
             {/* Time Display */}
-            <div className="flex items-center gap-2 border border-zinc-800 bg-black h-8 px-3 min-w-[100px] justify-between">
+            <div className="flex items-center gap-2 border border-zinc-800 bg-black h-8 px-3 min-w-[100px] justify-between shrink-0">
                 <span className="text-zinc-600">T=</span>
                 <span className="text-primary font-bold">{state.currentTime}ms</span>
             </div>

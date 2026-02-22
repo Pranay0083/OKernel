@@ -7,6 +7,7 @@ import { ProcessList } from './components/ProcessList';
 import { Controls } from './components/Controls';
 import { Layout } from '../../components/layout/Layout';
 import { Loader } from '../../components/ui/Loader';
+import { GanttChart } from './components/GanttChart';
 
 import { LayoutGroup } from 'framer-motion';
 
@@ -20,6 +21,7 @@ const BOOT_LOGS = [
 
 export const CPUSchedulerPage = () => {
     const [booting, setBooting] = useState(true);
+    const [activeTab, setActiveTab] = useState<'LOG' | 'GANTT'>('LOG');
 
     const handleBootComplete = React.useCallback(() => {
         setBooting(false);
@@ -57,7 +59,7 @@ export const CPUSchedulerPage = () => {
 
                     {/* Top Bar: Controls & Stats (Row 1) */}
                     <div className="lg:col-span-12 h-[60px] bg-card border border-border rounded-lg flex items-center px-4 justify-between gap-4 overflow-hidden shrink-0">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <Controls state={state} setState={setState} onReset={reset} />
                         </div>
 
@@ -126,58 +128,75 @@ export const CPUSchedulerPage = () => {
                     {/* Bottom Panel: Execution Log (Row 3, fixed 200px) */}
                     <div className="lg:col-span-12 bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm lg:h-[200px] h-[300px] shrink-0">
                         <div className="p-2 border-b border-border bg-muted/20 flex justify-between items-center">
-                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Kernel Log</span>
-                            <span className="text-[10px] text-zinc-600 font-mono">/var/log/scheduler.log</span>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setActiveTab('LOG')}
+                                    className={`text-[10px] px-3 py-1 rounded-sm uppercase tracking-wider font-bold transition-colors ${activeTab === 'LOG' ? 'bg-primary/20 text-primary' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >
+                                    Kernel Log
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('GANTT')}
+                                    className={`text-[10px] px-3 py-1 rounded-sm uppercase tracking-wider font-bold transition-colors ${activeTab === 'GANTT' ? 'bg-primary/20 text-primary' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                >
+                                    Gantt Chart
+                                </button>
+                            </div>
+                            <span className="text-[10px] text-zinc-600 font-mono">{activeTab === 'LOG' ? '/var/log/scheduler.log' : '/sys/kernel/debug/sched/gantt'}</span>
                         </div>
                         <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-black/20">
-                            <table className="w-full text-xs text-left border-collapse">
-                                <thead className="bg-muted/30 sticky top-0 text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
-                                    <tr>
-                                        <th className="px-4 py-2 border-b border-white/5">Process</th>
-                                        <th className="px-4 py-2 border-b border-white/5">Arrival</th>
-                                        <th className="px-4 py-2 border-b border-white/5">Burst</th>
-                                        {isMLFQ && <th className="px-4 py-2 border-b border-white/5 text-amber-400">Queue</th>}
-                                        {isMultiCore && <th className="px-4 py-2 border-b border-white/5 text-emerald-400">Core</th>}
-                                        <th className="px-4 py-2 border-b border-white/5">Finish</th>
-                                        <th className="px-4 py-2 text-blue-400 border-b border-white/5">TAT</th>
-                                        <th className="px-4 py-2 text-purple-400 border-b border-white/5">WT</th>
-                                        <th className="px-4 py-2 text-center border-b border-white/5">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {state.processes.map(p => (
-                                        <tr key={p.id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="px-4 py-1.5 font-bold flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: p.color }}></div>
-                                                <span className="group-hover:text-primary transition-colors">{p.name}</span>
-                                            </td>
-                                            <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.arrivalTime}</td>
-                                            <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.burstTime}</td>
-                                            {isMLFQ && (
-                                                <td className="px-4 py-1.5 font-mono">
-                                                    <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>
-                                                </td>
-                                            )}
-                                            {isMultiCore && (
-                                                <td className="px-4 py-1.5 font-mono">
-                                                    <span className="text-emerald-400 font-bold">
-                                                        {p.coreId !== null ? `C${p.coreId}` : '-'}
-                                                    </span>
-                                                </td>
-                                            )}
-                                            <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.completionTime ?? '-'}</td>
-                                            <td className="px-4 py-1.5 text-blue-500 font-mono font-bold">{p.turnaroundTime ?? '-'}</td>
-                                            <td className="px-4 py-1.5 text-purple-500 font-mono font-bold">{p.waitingTime ?? '-'}</td>
-                                            <td className="px-4 py-1.5 text-center">
-                                                <span className={`text-[9px] px-1.5 py-px rounded border ${p.state === 'COMPLETED' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                                                    p.state === 'RUNNING' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                                        'text-zinc-500 border-white/5'
-                                                    }`}>{p.state}</span>
-                                            </td>
+                            {activeTab === 'LOG' ? (
+                                <table className="w-full text-xs text-left border-collapse">
+                                    <thead className="bg-muted/30 sticky top-0 text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
+                                        <tr>
+                                            <th className="px-4 py-2 border-b border-white/5">Process</th>
+                                            <th className="px-4 py-2 border-b border-white/5">Arrival</th>
+                                            <th className="px-4 py-2 border-b border-white/5">Burst</th>
+                                            {isMLFQ && <th className="px-4 py-2 border-b border-white/5 text-amber-400">Queue</th>}
+                                            {isMultiCore && <th className="px-4 py-2 border-b border-white/5 text-emerald-400">Core</th>}
+                                            <th className="px-4 py-2 border-b border-white/5">Finish</th>
+                                            <th className="px-4 py-2 text-blue-400 border-b border-white/5">TAT</th>
+                                            <th className="px-4 py-2 text-purple-400 border-b border-white/5">WT</th>
+                                            <th className="px-4 py-2 text-center border-b border-white/5">Status</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {state.processes.map(p => (
+                                            <tr key={p.id} className="hover:bg-white/5 transition-colors group">
+                                                <td className="px-4 py-1.5 font-bold flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: p.color }}></div>
+                                                    <span className="group-hover:text-primary transition-colors">{p.name}</span>
+                                                </td>
+                                                <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.arrivalTime}</td>
+                                                <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.burstTime}</td>
+                                                {isMLFQ && (
+                                                    <td className="px-4 py-1.5 font-mono">
+                                                        <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>
+                                                    </td>
+                                                )}
+                                                {isMultiCore && (
+                                                    <td className="px-4 py-1.5 font-mono">
+                                                        <span className="text-emerald-400 font-bold">
+                                                            {p.coreId !== null ? `C${p.coreId}` : '-'}
+                                                        </span>
+                                                    </td>
+                                                )}
+                                                <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.completionTime ?? '-'}</td>
+                                                <td className="px-4 py-1.5 text-blue-500 font-mono font-bold">{p.turnaroundTime ?? '-'}</td>
+                                                <td className="px-4 py-1.5 text-purple-500 font-mono font-bold">{p.waitingTime ?? '-'}</td>
+                                                <td className="px-4 py-1.5 text-center">
+                                                    <span className={`text-[9px] px-1.5 py-px rounded border ${p.state === 'COMPLETED' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                                                        p.state === 'RUNNING' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                                            'text-zinc-500 border-white/5'
+                                                        }`}>{p.state}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <GanttChart ganttChart={state.ganttChart} processes={state.processes} numCores={state.numCores} />
+                            )}
                         </div>
                     </div>
                 </div>
