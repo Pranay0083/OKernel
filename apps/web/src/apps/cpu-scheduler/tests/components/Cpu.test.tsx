@@ -32,7 +32,7 @@ describe('Cpu Component', () => {
 
   it('renders process details when a process is running', () => {
     const mockProcess: Process = {
-      id: 1, name: 'TestProcess', arrivalTime: 0, burstTime: 10, priority: 2,
+      id: 1, name: 'TestProcess', arrivalTime: 0, burstTime: 10, priority: 2, effectivePriority: 2,
       color: '#ff0000', state: 'RUNNING', remainingTime: 4, completionTime: 0,
       turnaroundTime: 0, waitingTime: 0, startTime: 0, queueLevel: 0, coreId: 0,
     };
@@ -48,7 +48,7 @@ describe('Cpu Component', () => {
 
   it('renders high priority visual indicator correctly', () => {
     const highPriProcess: Process = {
-      id: 2, name: 'HighPri', arrivalTime: 0, burstTime: 5, priority: 1,
+      id: 2, name: 'HighPri', arrivalTime: 0, burstTime: 5, priority: 1, effectivePriority: 1,
       color: '#00ff00', state: 'RUNNING', remainingTime: 2, completionTime: 0,
       turnaroundTime: 0, waitingTime: 0, startTime: 0, queueLevel: 0, coreId: 0,
     };
@@ -60,7 +60,7 @@ describe('Cpu Component', () => {
 
   it('renders normal priority visual indicator correctly', () => {
     const normalPriProcess: Process = {
-      id: 3, name: 'NormalPri', arrivalTime: 0, burstTime: 5, priority: 5,
+      id: 3, name: 'NormalPri', arrivalTime: 0, burstTime: 5, priority: 5, effectivePriority: 5,
       color: '#00ff00', state: 'RUNNING', remainingTime: 2, completionTime: 0,
       turnaroundTime: 0, waitingTime: 0, startTime: 0, queueLevel: 0, coreId: 0,
     };

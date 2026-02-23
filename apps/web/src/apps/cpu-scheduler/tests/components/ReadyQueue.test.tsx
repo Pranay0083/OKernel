@@ -40,6 +40,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 0,
         burstTime: 10,
         priority: 1,
+        effectivePriority: 1,
         color: '#ff0000',
         state: 'READY',
         remainingTime: 10,
@@ -56,6 +57,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 5,
         burstTime: 8,
         priority: 4,
+        effectivePriority: 4,
         color: '#00ff00',
         state: 'READY',
         remainingTime: 8,
@@ -105,6 +107,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 0,
         burstTime: 10,
         priority: 1,
+        effectivePriority: 1,
         color: '#ff0000',
         state: 'READY',
         remainingTime: 10,
@@ -135,6 +138,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 0,
         burstTime: 10,
         priority: 1, // Red
+        effectivePriority: 1,
         color: '#ff0000',
         state: 'READY',
         remainingTime: 10,
@@ -151,6 +155,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 0,
         burstTime: 10,
         priority: 3, // Orange
+        effectivePriority: 3,
         color: '#ff0000',
         state: 'READY',
         remainingTime: 10,
@@ -167,6 +172,7 @@ describe('ReadyQueue Component', () => {
         arrivalTime: 0,
         burstTime: 10,
         priority: 5, // Blue
+        effectivePriority: 5,
         color: '#ff0000',
         state: 'READY',
         remainingTime: 10,

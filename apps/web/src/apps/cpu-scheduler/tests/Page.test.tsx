@@ -102,6 +102,12 @@ describe('Visualizer Integration', () => {
     quantumRemaining: [0],
     isPlaying: false,
     speed: 1000,
+    contextSwitchCost: 1,
+    contextSwitchCount: 0,
+    contextSwitchTimeWasted: 0,
+    contextSwitchCooldown: [0],
+    priorityAgingEnabled: false,
+    priorityAgingInterval: 5,
     numCores: 1,
     mlfqQueues: [[], [], []],
     mlfqQuantums: [2, 4, 8],
@@ -143,12 +149,12 @@ describe('Visualizer Integration', () => {
         {
           id: 1, name: 'P1', state: 'COMPLETED',
           turnaroundTime: 10, waitingTime: 5,
-          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0, queueLevel: 0, coreId: null
+          arrivalTime: 0, burstTime: 5, priority: 1, effectivePriority: 1, color: '#fff', remainingTime: 0, completionTime: 10, startTime: 0, queueLevel: 0, coreId: null
         },
         {
           id: 2, name: 'P2', state: 'COMPLETED',
           turnaroundTime: 20, waitingTime: 10,
-          arrivalTime: 0, burstTime: 10, priority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10, queueLevel: 0, coreId: null
+          arrivalTime: 0, burstTime: 10, priority: 1, effectivePriority: 1, color: '#fff', remainingTime: 0, completionTime: 20, startTime: 10, queueLevel: 0, coreId: null
         }
       ]
     };
@@ -177,7 +183,7 @@ describe('Visualizer Integration', () => {
         {
           id: 1, name: 'RunningProc', state: 'RUNNING',
           turnaroundTime: 0, waitingTime: 0,
-          arrivalTime: 0, burstTime: 5, priority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0, queueLevel: 0, coreId: 0
+          arrivalTime: 0, burstTime: 5, priority: 1, effectivePriority: 1, color: '#fff', remainingTime: 5, completionTime: 0, startTime: 0, queueLevel: 0, coreId: 0
         }
       ]
     };
