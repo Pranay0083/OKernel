@@ -6,6 +6,7 @@ export interface Process {
     burstTime: number;
     arrivalTime: number;
     priority: number;
+    effectivePriority: number;
     remainingTime: number;
     color: string;
     state: ProcessState;
@@ -19,7 +20,7 @@ export interface Process {
     turnaroundTime: number;
 }
 
-export type AlgorithmType = 'FCFS' | 'SJF' | 'SRTF' | 'RR' | 'PRIORITY' | 'MLFQ';
+export type AlgorithmType = 'FCFS' | 'SJF' | 'SRTF' | 'RR' | 'PRIORITY' | 'PRIORITY_P' | 'MLFQ';
 
 export interface GanttBlock {
     processId: number | null;
@@ -42,6 +43,16 @@ export interface SimulationState {
     quantumRemaining: number[]; // Per-core quantum tracking
     isPlaying: boolean;
     speed: number;
+
+    // Context Switch
+    contextSwitchCost: number;
+    contextSwitchCount: number;
+    contextSwitchTimeWasted: number;
+    contextSwitchCooldown: number[];  // Per-core countdown
+
+    // Priority Aging
+    priorityAgingEnabled: boolean;
+    priorityAgingInterval: number;
     numCores: number;
 
     // MLFQ State

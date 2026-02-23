@@ -44,6 +44,15 @@ export const CPUSchedulerPage = () => {
         ? (completed.reduce((acc, p) => acc + (p.waitingTime || 0), 0) / completed.length).toFixed(2)
         : 0;
 
+    // CPU Utilization: busy ticks / total ticks across all cores
+    const totalTicks = state.currentTime * state.numCores;
+    const busyTicks = state.ganttChart
+        .filter(b => b.processId !== null && b.processId !== -1)
+        .reduce((acc, b) => acc + (b.endTime - b.startTime), 0);
+    const cpuUtil = totalTicks > 0 ? ((busyTicks / totalTicks) * 100).toFixed(1) : '0.0';
+
+    const isPriority = state.algorithm === 'PRIORITY' || state.algorithm === 'PRIORITY_P';
+
 
     if (booting) {
         return <Loader logs={BOOT_LOGS} onComplete={handleBootComplete} />;
@@ -71,6 +80,10 @@ export const CPUSchedulerPage = () => {
                                     <span className="text-lg font-mono text-emerald-500 leading-none tracking-widest">{state.numCores}</span>
                                 </div>
                             )}
+                            <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[80px] flex flex-col justify-center shadow-inner">
+                                <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">CPU %</span>
+                                <span className="text-lg font-mono text-cyan-400 leading-none tracking-widest">{cpuUtil}</span>
+                            </div>
                             <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[100px] flex flex-col justify-center shadow-inner">
                                 <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">AVG TAT</span>
                                 <span className="text-lg font-mono text-primary leading-none tracking-widest">{avgTat}</span>
@@ -78,6 +91,10 @@ export const CPUSchedulerPage = () => {
                             <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[100px] flex flex-col justify-center shadow-inner">
                                 <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">AVG WAIT</span>
                                 <span className="text-lg font-mono text-blue-500 leading-none tracking-widest">{avgWt}</span>
+                            </div>
+                            <div className="bg-black border border-zinc-800 px-3 py-1 min-w-[80px] flex flex-col justify-center shadow-inner">
+                                <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-widest">CS TIME</span>
+                                <span className="text-lg font-mono text-red-400 leading-none tracking-widest">{state.contextSwitchTimeWasted}</span>
                             </div>
                         </div>
                     </div>
@@ -152,6 +169,7 @@ export const CPUSchedulerPage = () => {
                                             <th className="px-4 py-2 border-b border-white/5">Process</th>
                                             <th className="px-4 py-2 border-b border-white/5">Arrival</th>
                                             <th className="px-4 py-2 border-b border-white/5">Burst</th>
+                                            {isPriority && <th className="px-4 py-2 border-b border-white/5 text-cyan-400">Eff.Pri</th>}
                                             {isMLFQ && <th className="px-4 py-2 border-b border-white/5 text-amber-400">Queue</th>}
                                             {isMultiCore && <th className="px-4 py-2 border-b border-white/5 text-emerald-400">Core</th>}
                                             <th className="px-4 py-2 border-b border-white/5">Finish</th>
@@ -169,6 +187,15 @@ export const CPUSchedulerPage = () => {
                                                 </td>
                                                 <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.arrivalTime}</td>
                                                 <td className="px-4 py-1.5 text-muted-foreground font-mono">{p.burstTime}</td>
+                                                {isPriority && (
+                                                    <td className="px-4 py-1.5 font-mono">
+                                                        <span className="text-cyan-400 font-bold">
+                                                            {p.effectivePriority !== p.priority ? (
+                                                                <>{p.priority} <span className="text-[9px] text-zinc-500">→</span> {p.effectivePriority}</>
+                                                            ) : p.priority}
+                                                        </span>
+                                                    </td>
+                                                )}
                                                 {isMLFQ && (
                                                     <td className="px-4 py-1.5 font-mono">
                                                         <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>

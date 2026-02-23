@@ -17,6 +17,12 @@ const createInitialState = (numCores: number = 1): SimulationState => ({
     quantumRemaining: Array(numCores).fill(0),
     isPlaying: false,
     speed: 1000,
+    contextSwitchCost: 1,
+    contextSwitchCount: 0,
+    contextSwitchTimeWasted: 0,
+    contextSwitchCooldown: Array(numCores).fill(0),
+    priorityAgingEnabled: false,
+    priorityAgingInterval: 5,
     numCores,
     // MLFQ
     mlfqQueues: Array.from({ length: DEFAULT_MLFQ_NUM_QUEUES }, () => []),
@@ -58,7 +64,7 @@ export const useScheduler = () => {
         };
     }, [state]);
 
-    const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => {
+    const addProcess = (processData: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'effectivePriority' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => {
         setState(prev => {
             const newId = prev.processes.length > 0 ? Math.max(...prev.processes.map(p => p.id)) + 1 : 1;
             const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1'];
@@ -69,6 +75,7 @@ export const useScheduler = () => {
                 ...processData,
                 state: 'WAITING',
                 remainingTime: processData.burstTime,
+                effectivePriority: processData.priority,
                 color,
                 startTime: null,
                 completionTime: null,
@@ -92,12 +99,16 @@ export const useScheduler = () => {
             algorithm: prev.algorithm,
             timeQuantum: prev.timeQuantum,
             speed: prev.speed,
+            contextSwitchCost: prev.contextSwitchCost,
+            priorityAgingEnabled: prev.priorityAgingEnabled,
+            priorityAgingInterval: prev.priorityAgingInterval,
             mlfqNumQueues: prev.mlfqNumQueues,
             mlfqQuantums: [...prev.mlfqQuantums],
             processes: prev.processes.map(p => ({
                 ...p,
                 state: 'WAITING',
                 remainingTime: p.burstTime,
+                effectivePriority: p.priority,
                 startTime: null,
                 completionTime: null,
                 waitingTime: 0,
@@ -114,6 +125,9 @@ export const useScheduler = () => {
             algorithm: prev.algorithm,
             speed: prev.speed,
             timeQuantum: prev.timeQuantum,
+            contextSwitchCost: prev.contextSwitchCost,
+            priorityAgingEnabled: prev.priorityAgingEnabled,
+            priorityAgingInterval: prev.priorityAgingInterval,
             mlfqNumQueues: prev.mlfqNumQueues,
             mlfqQuantums: [...prev.mlfqQuantums],
         }));

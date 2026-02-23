@@ -51,7 +51,8 @@ export const GanttChart: React.FC<Props> = ({ ganttChart, processes, numCores })
                     {blocks[0]?.startTime || 0}
                   </span>
                   {blocks.map((block, idx) => {
-                    const process = block.processId !== null ? processes.find(p => p.id === block.processId) : undefined;
+                    const isContextSwitch = block.processId === -1;
+                    const process = (block.processId !== null && block.processId !== -1) ? processes.find(p => p.id === block.processId) : undefined;
                     const duration = block.endTime - block.startTime;
                     const width = Math.min(Math.max(40, duration * 4), 180);
 
@@ -63,11 +64,13 @@ export const GanttChart: React.FC<Props> = ({ ganttChart, processes, numCores })
                           className="h-10 rounded flex flex-col items-center justify-center border border-white/10 shrink-0 relative group shadow-sm transition-colors"
                           style={{
                             width: `${width}px`,
-                            backgroundColor: process ? `${process.color}20` : '#3f3f4620',
-                            borderColor: process ? `${process.color}50` : '#52525b80'
+                            backgroundColor: isContextSwitch ? '#ef444420' : (process ? `${process.color}20` : '#3f3f4620'),
+                            borderColor: isContextSwitch ? '#ef444450' : (process ? `${process.color}50` : '#52525b80')
                           }}
                         >
-                          {process ? (
+                          {isContextSwitch ? (
+                            <span className="text-red-400 text-[10px] font-bold">CS</span>
+                          ) : process ? (
                             <span className="font-bold text-xs" style={{ color: process.color }}>
                               {process.name}
                             </span>
@@ -75,7 +78,7 @@ export const GanttChart: React.FC<Props> = ({ ganttChart, processes, numCores })
                             <span className="text-zinc-500 text-[10px]">IDLE</span>
                           )}
                           <div className="absolute -top-8 bg-zinc-800 border border-zinc-700 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl font-mono">
-                            {process ? `${process.name}` : 'Idle'} [{block.startTime}ms - {block.endTime}ms]
+                            {isContextSwitch ? 'Context Switch' : (process ? `${process.name}` : 'Idle')} [{block.startTime}ms - {block.endTime}ms]
                           </div>
                         </motion.div>
                         <div className="flex flex-col items-center justify-center z-10 mx-1">

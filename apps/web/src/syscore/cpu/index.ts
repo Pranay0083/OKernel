@@ -4,6 +4,7 @@ import { sjf } from './algos/sjf';
 import { srtf } from './algos/srtf';
 import { round_robin, rr_should_preempt } from './algos/round_robin';
 import { priority } from './algos/priority';
+import { priority_preemptive, priority_p_should_preempt } from './algos/priority_preemptive';
 
 import { mlfq_select, mlfq_should_preempt, mlfq_higher_queue_preempt } from './algos/mlfq';
 
@@ -15,6 +16,7 @@ const selectProcess = (algo: AlgorithmType, queue: number[], procs: Process[]): 
         case 'SRTF': return srtf(queue, procs);
         case 'RR': return round_robin(queue, procs);
         case 'PRIORITY': return priority(queue, procs);
+        case 'PRIORITY_P': return priority_preemptive(queue, procs);
         default: return fcfs(queue, procs);
     }
 };
@@ -30,6 +32,7 @@ export const tick = (state: SimulationState): SimulationState => {
         completedProcessIds: [...state.completedProcessIds],
         runningProcessIds: [...state.runningProcessIds],
         quantumRemaining: [...state.quantumRemaining],
+        contextSwitchCooldown: [...state.contextSwitchCooldown],
         mlfqQueues: state.mlfqQueues.map(q => [...q]),
         mlfqCurrentLevel: [...state.mlfqCurrentLevel],
     };
@@ -38,7 +41,29 @@ export const tick = (state: SimulationState): SimulationState => {
     const indexMap = new Map<number, number>();
     newState.processes.forEach((p, i) => indexMap.set(p.id, i));
 
-    // 2. Handle Arrivals
+    // 2. Priority Aging — age waiting processes before arrivals
+    if (newState.priorityAgingEnabled && (newState.algorithm === 'PRIORITY' || newState.algorithm === 'PRIORITY_P')) {
+        for (const pid of newState.readyQueue) {
+            const idx = indexMap.get(pid);
+            if (idx !== undefined) {
+                const proc = newState.processes[idx];
+                if (proc.state === 'READY') {
+                    const ticksWaiting = newState.currentTime - (proc.arrivalTime);
+                    if (ticksWaiting > 0 && ticksWaiting % newState.priorityAgingInterval === 0) {
+                        const newEffPri = Math.max(0, proc.effectivePriority - 1);
+                        if (newEffPri !== proc.effectivePriority) {
+                            newState.processes[idx] = {
+                                ...proc,
+                                effectivePriority: newEffPri,
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Handle Arrivals
     newState.processes.forEach((p, index) => {
         if (p.state === 'WAITING' && p.arrivalTime <= newState.currentTime) {
             newState.processes[index] = {
@@ -63,6 +88,34 @@ export const tick = (state: SimulationState): SimulationState => {
 
     // 5. Execution Step — execute on ALL cores simultaneously
     for (let core = 0; core < newState.numCores; core++) {
+        // Context Switch Cooldown: core is busy switching, skip execution
+        if (newState.contextSwitchCooldown[core] > 0) {
+            newState.contextSwitchCooldown[core]--;
+            newState.contextSwitchTimeWasted++;
+
+            // Record switch block in Gantt chart (processId = -1 for context switch)
+            const lastBlock = newState.ganttChart[newState.ganttChart.length - 1];
+            if (
+                lastBlock &&
+                lastBlock.processId === -1 &&
+                lastBlock.coreId === core &&
+                lastBlock.endTime === newState.currentTime
+            ) {
+                newState.ganttChart[newState.ganttChart.length - 1] = {
+                    ...lastBlock,
+                    endTime: lastBlock.endTime + 1,
+                };
+            } else {
+                newState.ganttChart.push({
+                    processId: -1,
+                    startTime: newState.currentTime,
+                    endTime: newState.currentTime + 1,
+                    coreId: core,
+                });
+            }
+            continue;
+        }
+
         const runningId = newState.runningProcessIds[core];
         if (runningId !== null) {
             const idx = indexMap.get(runningId);
@@ -152,6 +205,9 @@ export const tick = (state: SimulationState): SimulationState => {
 // ── Standard Scheduling (per-core) ──────────────────────────────────
 const scheduleStandard = (newState: SimulationState, indexMap: Map<number, number>): void => {
     for (let core = 0; core < newState.numCores; core++) {
+        // Skip scheduling if core is in context-switch cooldown
+        if (newState.contextSwitchCooldown[core] > 0) continue;
+
         let processToRunId = newState.runningProcessIds[core];
         let shouldPreempt = false;
 
@@ -180,11 +236,25 @@ const scheduleStandard = (newState: SimulationState, indexMap: Map<number, numbe
             }
         }
 
+        // Check preemption for Preemptive Priority
+        if (newState.algorithm === 'PRIORITY_P' && processToRunId !== null) {
+            const runningIdx = indexMap.get(processToRunId);
+            if (runningIdx !== undefined) {
+                const runningProc = newState.processes[runningIdx];
+                if (priority_p_should_preempt(runningProc, newState.readyQueue, newState.processes, indexMap)) {
+                    shouldPreempt = true;
+                }
+            }
+        }
+
         // If no running process or preempted, select next
         if (processToRunId === null || shouldPreempt) {
+            const previousRunningId = processToRunId;
+
             if (processToRunId !== null) {
                 const idx = indexMap.get(processToRunId);
                 if (idx !== undefined && newState.processes[idx].state === 'RUNNING') {
+                    // Reset effectivePriority when preempted back to ready
                     newState.processes[idx] = {
                         ...newState.processes[idx],
                         state: 'READY',
@@ -201,11 +271,20 @@ const scheduleStandard = (newState: SimulationState, indexMap: Map<number, numbe
             if (nextId !== null) {
                 const idx = indexMap.get(nextId);
                 if (idx !== undefined) {
+                    // Track context switch: switching from one process to a different process
+                    const isContextSwitch = previousRunningId !== null && previousRunningId !== nextId;
+                    if (isContextSwitch && newState.contextSwitchCost > 0) {
+                        newState.contextSwitchCount++;
+                        newState.contextSwitchCooldown[core] = newState.contextSwitchCost;
+                    }
+
+                    // Reset effectivePriority to original priority when process starts running
                     newState.processes[idx] = {
                         ...newState.processes[idx],
                         state: 'RUNNING',
                         startTime: newState.processes[idx].startTime ?? newState.currentTime,
                         coreId: core,
+                        effectivePriority: newState.processes[idx].priority,
                     };
 
                     if (newState.algorithm === 'RR') {

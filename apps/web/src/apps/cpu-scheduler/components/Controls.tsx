@@ -40,6 +40,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
             numCores,
             runningProcessIds: Array(numCores).fill(null),
             quantumRemaining: Array(numCores).fill(0),
+            contextSwitchCooldown: Array(numCores).fill(0),
             mlfqCurrentLevel: Array(numCores).fill(0),
         }));
     };
@@ -88,6 +89,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
                         <option value="SRTF">Shortest Remaining Time</option>
                         <option value="RR">Round Robin</option>
                         <option value="PRIORITY">Priority</option>
+                        <option value="PRIORITY_P">Preemptive Priority</option>
                         <option value="MLFQ">Multi-Level Feedback Queue</option>
                     </select>
                     <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-hover:text-white transition-colors" />
@@ -157,6 +159,49 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset }) => {
                     </div>
                 </div>
             )}
+
+            {/* Priority Aging (PRIORITY / PRIORITY_P only) */}
+            {(state.algorithm === 'PRIORITY' || state.algorithm === 'PRIORITY_P') && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200 shrink-0">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <span className="text-zinc-500">AGING:</span>
+                        <div
+                            onClick={() => setState(s => ({ ...s, priorityAgingEnabled: !s.priorityAgingEnabled }))}
+                            className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${state.priorityAgingEnabled ? 'bg-primary' : 'bg-zinc-700'
+                                }`}
+                        >
+                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${state.priorityAgingEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                                }`} />
+                        </div>
+                    </label>
+                    {state.priorityAgingEnabled && (
+                        <div className="flex items-center gap-1 animate-in fade-in duration-150">
+                            <span className="text-zinc-600 text-[9px]">INT</span>
+                            <input
+                                type="number"
+                                value={state.priorityAgingInterval}
+                                onChange={e => setState(s => ({ ...s, priorityAgingInterval: Math.max(1, Number(e.target.value)) }))}
+                                className="bg-black border border-zinc-700 text-white h-7 w-10 px-1 focus:outline-none focus:border-primary text-center text-[10px]"
+                                min={1}
+                                disabled={state.isPlaying}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Context Switch Cost (all algorithms) */}
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200 shrink-0">
+                <span className="text-zinc-500 select-none">CS_COST:</span>
+                <input
+                    type="number"
+                    value={state.contextSwitchCost}
+                    onChange={e => setState(s => ({ ...s, contextSwitchCost: Math.max(0, Number(e.target.value)) }))}
+                    className="bg-black border border-zinc-700 text-white h-8 w-14 px-2 focus:outline-none focus:border-primary text-center"
+                    min={0}
+                    disabled={state.isPlaying}
+                />
+            </div>
 
             <div className="flex-1"></div>
 

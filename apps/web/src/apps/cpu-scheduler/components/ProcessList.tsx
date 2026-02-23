@@ -3,7 +3,7 @@ import { Process, AlgorithmType } from '../../../core/types';
 
 interface ProcessListProps {
     processes: Process[];
-    addProcess: (process: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => void;
+    addProcess: (process: Omit<Process, 'id' | 'state' | 'color' | 'remainingTime' | 'effectivePriority' | 'startTime' | 'completionTime' | 'waitingTime' | 'turnaroundTime' | 'queueLevel' | 'coreId'>) => void;
     onClear: () => void;
     currentTime: number;
     algorithm?: AlgorithmType;
@@ -12,6 +12,7 @@ interface ProcessListProps {
 export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess, onClear, algorithm }) => {
     const [newProcess, setNewProcess] = useState({ name: '', arrivalTime: 0, burstTime: 1, priority: 1 });
     const isMLFQ = algorithm === 'MLFQ';
+    const isPriority = algorithm === 'PRIORITY' || algorithm === 'PRIORITY_P';
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +110,13 @@ export const ProcessList: React.FC<ProcessListProps> = ({ processes, addProcess,
                                 </td>
                                 <td className="px-3 py-2 text-zinc-400">{p.arrivalTime}</td>
                                 <td className="px-3 py-2 text-zinc-400">{p.burstTime}</td>
-                                <td className="px-3 py-2 text-zinc-400">{p.priority}</td>
+                                <td className="px-3 py-2 text-zinc-400">
+                                    {isPriority && p.effectivePriority !== p.priority ? (
+                                        <span className="text-cyan-400">{p.effectivePriority} <span className="text-[8px] text-zinc-600">({p.priority})</span></span>
+                                    ) : (
+                                        p.priority
+                                    )}
+                                </td>
                                 {isMLFQ && (
                                     <td className="px-3 py-2">
                                         <span className="text-amber-400 font-bold">Q{p.queueLevel}</span>
