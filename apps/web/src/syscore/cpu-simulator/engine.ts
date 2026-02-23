@@ -389,7 +389,6 @@ export class SimulatorEngine {
     }
 
     private updateStats() {
-        const totalTime = this.state.time;
         // basic tracking: calculate utilization as cores * time where cores were active
         // we'd need historical tracking for full accuracy but this is a placeholder
     }
