@@ -1,4 +1,4 @@
-import { MutexSimState, MutexThread, EventEntry } from './types';
+import { MutexSimState, MutexThread } from './types';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -23,40 +23,40 @@ const cloneThread = (t: MutexThread): MutexThread => ({ ...t });
 
 // ── Peterson's Algorithm (2 threads) ────────────────────────────────
 
-const tickPeterson = (state: MutexSimState): void => {
+const tickPeterson = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length && i < 2; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
         const other = 1 - i;
 
         switch (t.state) {
             case 'IDLE': {
-                // Random chance to want CS
-                if (Math.random() < 0.3) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.3 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread wants to enter critical section`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING': {
-                // Entry protocol: set flag, set turn
                 state.shared.flags[i] = true;
                 state.shared.turn = other;
-                state.threads[i] = { ...t, state: 'ENTERING' };
+                state.threads[i] = { ...t, state: 'ENTERING', currentLine: 3 };
                 addEvent(state, t.id, 'SET_FLAG', `flag[${i}]=true, turn=${other}`);
                 break;
             }
             case 'ENTERING': {
-                // Spin-wait: while (flag[other] && turn == other)
                 if (state.shared.flags[other] && state.shared.turn === other) {
-                    state.threads[i] = { ...t, waitTicks: t.waitTicks + 1 };
+                    state.threads[i] = { ...t, waitTicks: t.waitTicks + 1, currentLine: 4 };
                     addEvent(state, t.id, 'SPIN', `Waiting... flag[${other}]=${state.shared.flags[other]}, turn=${state.shared.turn}`);
                 } else {
-                    // Enter CS
                     state.threads[i] = {
                         ...t, state: 'IN_CS',
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 6
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'ENTER_CS', `Entered critical section (waited ${t.waitTicks} ticks)`);
@@ -65,15 +65,15 @@ const tickPeterson = (state: MutexSimState): void => {
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 7 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 6 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.flags[i] = false;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'EXIT_CS', `flag[${i}]=false — Released`);
                 break;
@@ -84,38 +84,39 @@ const tickPeterson = (state: MutexSimState): void => {
 
 // ── Dekker's Algorithm (2 threads) ──────────────────────────────────
 
-const tickDekker = (state: MutexSimState): void => {
+const tickDekker = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length && i < 2; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
         const other = 1 - i;
 
         switch (t.state) {
             case 'IDLE': {
-                if (Math.random() < 0.3) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.3 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread wants to enter critical section`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING': {
                 state.shared.flags[i] = true;
-                state.threads[i] = { ...t, state: 'ENTERING' };
+                state.threads[i] = { ...t, state: 'ENTERING', currentLine: 2 };
                 addEvent(state, t.id, 'SET_FLAG', `flag[${i}]=true`);
                 break;
             }
             case 'ENTERING': {
                 if (state.shared.flags[other]) {
                     if (state.shared.turn !== i) {
-                        // Back off: reset flag, wait for turn
                         state.shared.flags[i] = false;
-                        state.threads[i] = { ...t, waitTicks: t.waitTicks + 1 };
-                        // Re-set flag next tick (simplified)
+                        state.threads[i] = { ...t, waitTicks: t.waitTicks + 1, currentLine: 5 };
                         if (state.shared.turn === i) {
                             state.shared.flags[i] = true;
                         }
                         addEvent(state, t.id, 'BACKOFF', `Not my turn, backing off (turn=${state.shared.turn})`);
                     } else {
-                        state.threads[i] = { ...t, waitTicks: t.waitTicks + 1 };
+                        state.threads[i] = { ...t, waitTicks: t.waitTicks + 1, currentLine: 2 };
                         addEvent(state, t.id, 'SPIN', `flag[${other}]=true but my turn, waiting...`);
                     }
                 } else {
@@ -124,6 +125,7 @@ const tickDekker = (state: MutexSimState): void => {
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 9
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'ENTER_CS', `Entered critical section`);
@@ -132,16 +134,16 @@ const tickDekker = (state: MutexSimState): void => {
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 10 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 9 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.turn = other;
                 state.shared.flags[i] = false;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'EXIT_CS', `turn=${other}, flag[${i}]=false — Released`);
                 break;
@@ -152,30 +154,31 @@ const tickDekker = (state: MutexSimState): void => {
 
 // ── Bakery Algorithm (N threads) ────────────────────────────────────
 
-const tickBakery = (state: MutexSimState): void => {
+const tickBakery = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
 
         switch (t.state) {
             case 'IDLE': {
-                if (Math.random() < 0.25) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.25 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread wants to enter critical section`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING': {
-                // Choosing phase: take a ticket
                 state.shared.choosing[i] = true;
                 const maxTicket = Math.max(0, ...state.shared.tickets);
                 state.shared.tickets[i] = maxTicket + 1;
                 state.shared.choosing[i] = false;
-                state.threads[i] = { ...t, state: 'ENTERING' };
+                state.threads[i] = { ...t, state: 'ENTERING', currentLine: 6 };
                 addEvent(state, t.id, 'TAKE_TICKET', `ticket[${i}]=${maxTicket + 1}`);
                 break;
             }
             case 'ENTERING': {
-                // Check all other threads
                 let canEnter = true;
                 for (let j = 0; j < state.threads.length; j++) {
                     if (j === i) continue;
@@ -197,26 +200,27 @@ const tickBakery = (state: MutexSimState): void => {
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 12
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'ENTER_CS', `Ticket #${state.shared.tickets[i]} — Entered CS`);
                 } else {
-                    state.threads[i] = { ...t, waitTicks: t.waitTicks + 1 };
+                    state.threads[i] = { ...t, waitTicks: t.waitTicks + 1, currentLine: 9 };
                     addEvent(state, t.id, 'SPIN', `Waiting for lower ticket holders`);
                 }
                 break;
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 13 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 12 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.tickets[i] = 0;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'EXIT_CS', `ticket[${i}]=0 — Released`);
                 break;
@@ -227,21 +231,23 @@ const tickBakery = (state: MutexSimState): void => {
 
 // ── Test-And-Set (TAS) ──────────────────────────────────────────────
 
-const tickTAS = (state: MutexSimState): void => {
+const tickTAS = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
 
         switch (t.state) {
             case 'IDLE': {
-                if (Math.random() < 0.3) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.3 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread wants to enter critical section`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING':
             case 'ENTERING': {
-                // Atomic: old = lock; lock = true; if (!old) enter
                 const oldLock = state.shared.lock;
                 state.shared.lock = true;
                 if (!oldLock) {
@@ -250,26 +256,27 @@ const tickTAS = (state: MutexSimState): void => {
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 4
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'TAS_SUCCESS', `testAndSet() returned false → Entered CS`);
                 } else {
-                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1 };
+                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1, currentLine: 2 };
                     addEvent(state, t.id, 'TAS_FAIL', `testAndSet() returned true → Spinning`);
                 }
                 break;
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 5 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 4 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.lock = false;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'RELEASE', `lock=false — Released`);
                 break;
@@ -280,21 +287,23 @@ const tickTAS = (state: MutexSimState): void => {
 
 // ── Compare-And-Swap (CAS) ──────────────────────────────────────────
 
-const tickCAS = (state: MutexSimState): void => {
+const tickCAS = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
 
         switch (t.state) {
             case 'IDLE': {
-                if (Math.random() < 0.3) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.3 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread wants to enter critical section`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING':
             case 'ENTERING': {
-                // Atomic: if (lock == false) { lock = true; return true } else return false
                 if (!state.shared.lock) {
                     state.shared.lock = true;
                     state.threads[i] = {
@@ -302,26 +311,27 @@ const tickCAS = (state: MutexSimState): void => {
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 4
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'CAS_SUCCESS', `CAS(lock, false, true) → Success`);
                 } else {
-                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1 };
+                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1, currentLine: 2 };
                     addEvent(state, t.id, 'CAS_FAIL', `CAS(lock, false, true) → Failed, lock=true`);
                 }
                 break;
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 5 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 4 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.lock = false;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'RELEASE', `lock=false — Released`);
                 break;
@@ -332,21 +342,23 @@ const tickCAS = (state: MutexSimState): void => {
 
 // ── Semaphore ───────────────────────────────────────────────────────
 
-const tickSemaphore = (state: MutexSimState): void => {
+const tickSemaphore = (state: MutexSimState, targetThreadId?: number): void => {
     for (let i = 0; i < state.threads.length; i++) {
         const t = state.threads[i];
+        if (targetThreadId !== undefined && t.id !== targetThreadId) continue;
 
         switch (t.state) {
             case 'IDLE': {
-                if (Math.random() < 0.3) {
-                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0 };
+                if (Math.random() < 0.3 || targetThreadId !== undefined) {
+                    state.threads[i] = { ...t, state: 'WANTING', waitTicks: 0, currentLine: 1 };
                     addEvent(state, t.id, 'WANT_CS', `Thread calls wait(S)`);
+                } else {
+                    state.threads[i] = { ...t, currentLine: undefined };
                 }
                 break;
             }
             case 'WANTING':
             case 'ENTERING': {
-                // wait(S): if S > 0, decrement and enter
                 if (state.shared.semaphore > 0) {
                     state.shared.semaphore--;
                     state.threads[i] = {
@@ -354,26 +366,27 @@ const tickSemaphore = (state: MutexSimState): void => {
                         csRemaining: t.csExecutionTime,
                         csCount: t.csCount + 1,
                         totalWaitTicks: t.totalWaitTicks + t.waitTicks,
+                        currentLine: 5
                     };
                     state.activeThreadIds.push(t.id);
                     addEvent(state, t.id, 'WAIT_OK', `wait(S): S=${state.shared.semaphore} → Entered CS`);
                 } else {
-                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1 };
+                    state.threads[i] = { ...t, state: 'ENTERING', waitTicks: t.waitTicks + 1, currentLine: 2 };
                     addEvent(state, t.id, 'WAIT_BLOCK', `wait(S): S=0 → Blocked`);
                 }
                 break;
             }
             case 'IN_CS': {
                 if (t.csRemaining <= 1) {
-                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0 };
+                    state.threads[i] = { ...t, state: 'EXITING', csRemaining: 0, currentLine: 7 };
                 } else {
-                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1 };
+                    state.threads[i] = { ...t, csRemaining: t.csRemaining - 1, currentLine: 5 };
                 }
                 break;
             }
             case 'EXITING': {
                 state.shared.semaphore++;
-                state.threads[i] = { ...t, state: 'IDLE' };
+                state.threads[i] = { ...t, state: 'IDLE', currentLine: undefined };
                 state.activeThreadIds = state.activeThreadIds.filter(id => id !== t.id);
                 addEvent(state, t.id, 'SIGNAL', `signal(S): S=${state.shared.semaphore} — Released`);
                 break;
@@ -382,9 +395,9 @@ const tickSemaphore = (state: MutexSimState): void => {
     }
 };
 
-// ── Main Tick Dispatcher ────────────────────────────────────────────
+// ── Main Tick Dispatchers ───────────────────────────────────────────
 
-export const mutexTick = (state: MutexSimState): MutexSimState => {
+const runTickCycle = (state: MutexSimState, targetThreadId?: number): MutexSimState => {
     const newState: MutexSimState = {
         ...state,
         threads: state.threads.map(cloneThread),
@@ -399,14 +412,24 @@ export const mutexTick = (state: MutexSimState): MutexSimState => {
     };
 
     switch (newState.algorithm) {
-        case 'PETERSON': tickPeterson(newState); break;
-        case 'DEKKER': tickDekker(newState); break;
-        case 'BAKERY': tickBakery(newState); break;
-        case 'TAS': tickTAS(newState); break;
-        case 'CAS': tickCAS(newState); break;
-        case 'SEMAPHORE': tickSemaphore(newState); break;
+        case 'PETERSON': tickPeterson(newState, targetThreadId); break;
+        case 'DEKKER': tickDekker(newState, targetThreadId); break;
+        case 'BAKERY': tickBakery(newState, targetThreadId); break;
+        case 'TAS': tickTAS(newState, targetThreadId); break;
+        case 'CAS': tickCAS(newState, targetThreadId); break;
+        case 'SEMAPHORE': tickSemaphore(newState, targetThreadId); break;
     }
 
-    newState.currentStep++;
+    if (targetThreadId === undefined) {
+        newState.currentStep++;
+    }
     return newState;
+};
+
+export const mutexTick = (state: MutexSimState): MutexSimState => {
+    return runTickCycle(state, undefined);
+};
+
+export const mutexTickThread = (state: MutexSimState, targetThreadId: number): MutexSimState => {
+    return runTickCycle(state, targetThreadId);
 };

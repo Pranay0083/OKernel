@@ -6,6 +6,8 @@ import { ReadyQueue } from './components/ReadyQueue';
 import { ProcessList } from './components/ProcessList';
 import { Controls } from './components/Controls';
 import { Layout } from '../../components/layout/Layout';
+import { useLocation } from 'react-router-dom';
+import { CPUPresetConfig } from '../../pages/library/presetsData';
 import { Loader } from '../../components/ui/Loader';
 import { GanttChart } from './components/GanttChart';
 
@@ -28,6 +30,30 @@ export const CPUSchedulerPage = () => {
     }, []);
 
     const { state, setState, addProcess, reset, clear } = useScheduler();
+    const location = useLocation();
+
+    React.useEffect(() => {
+        const presetConfig = location.state?.presetConfig as CPUPresetConfig | undefined;
+        if (presetConfig && state.currentTime === 0 && state.processes.length === 0) {
+            setState(prev => ({
+                ...prev,
+                algorithm: presetConfig.algorithm,
+                numCores: presetConfig.numCores,
+                timeQuantum: presetConfig.timeQuantum ?? prev.timeQuantum,
+                mlfqNumQueues: presetConfig.mlfqNumQueues ?? prev.mlfqNumQueues,
+                mlfqQuantums: presetConfig.mlfqQuantums ?? prev.mlfqQuantums,
+            }));
+
+            // Clear existing and add preset processes
+            clear();
+            setTimeout(() => {
+                presetConfig.processes.forEach(p => addProcess(p));
+            }, 50);
+
+            // Clear the state so going back doesn't keep initializing
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     const isMLFQ = state.algorithm === 'MLFQ';
     const isMultiCore = state.numCores > 1;

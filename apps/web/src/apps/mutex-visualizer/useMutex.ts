@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MutexSimState, MutexThread, MutexAlgorithm } from '../../syscore/mutex/types';
-import { mutexTick } from '../../syscore/mutex/engine';
+import { mutexTick, mutexTickThread } from '../../syscore/mutex/engine';
 
 const THREAD_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1', '#ef4444', '#06b6d4'];
 
@@ -115,5 +115,25 @@ export const useMutex = () => {
         }));
     };
 
-    return { state, setState, reset, setAlgorithm, setNumThreads, setSemaphoreValue };
+    const initFromPreset = (config: import('../../pages/library/presetsData').MutexPresetConfig) => {
+        setState(prev => ({
+            ...createInitialState(config.numThreads, config.algorithm),
+            speed: prev.speed,
+            shared: {
+                ...createDefaultShared(config.numThreads),
+                semaphore: config.semaphoreMax ?? 1,
+                semaphoreMax: config.semaphoreMax ?? 1,
+            },
+        }));
+    };
+
+    const stepGlobal = () => {
+        setState(prev => mutexTick(prev));
+    };
+
+    const stepThread = (threadId: number) => {
+        setState(prev => mutexTickThread(prev, threadId));
+    };
+
+    return { state, setState, reset, setAlgorithm, setNumThreads, setSemaphoreValue, initFromPreset, stepGlobal, stepThread };
 };

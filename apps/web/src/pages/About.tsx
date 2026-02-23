@@ -85,7 +85,12 @@ export const About = () => {
                             <div className="font-mono text-[10px] space-y-6 pl-4 border-l border-zinc-800 relative">
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-green-500 border border-black shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                                <div className="text-white font-bold mb-1">v{APP_VERSION} - {RELEASE_NAME}</div>
+                                    <div className="text-white font-bold mb-1">v{APP_VERSION} - {RELEASE_NAME}</div>
+                                    <p className="text-zinc-500 text-xs">Feb 22 — Mutex Educational Enhancements (Wait Graph & Tracing). Scenarios Library.</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-zinc-800 border border-zinc-600"></div>
+                                    <div className="text-zinc-400 font-bold mb-1">v1.1.0 - Hard Tech</div>
                                     <p className="text-zinc-500 text-xs">Code Tracer Landing Page. C++ Support. UI Overhaul.</p>
                                 </div>
                                 <div className="relative">

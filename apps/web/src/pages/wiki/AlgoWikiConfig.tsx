@@ -4,7 +4,6 @@ import { WikiProcesses } from './content/WikiProcesses';
 import { WikiScheduler } from './content/WikiScheduler';
 import { WikiConcurrency } from './content/WikiConcurrency';
 import { WikiSemaphores } from './content/WikiSemaphores';
-import { WikiClassicSync } from './content/WikiClassicSync';
 import { WikiMonitors } from './content/WikiMonitors';
 import { WikiDeadlocks } from './content/WikiDeadlocks';
 import { WikiMainMemory } from './content/WikiMainMemory';
@@ -15,7 +14,6 @@ import { WikiSecurity } from './content/WikiSecurity';
 import { WikiDistributed } from './content/WikiDistributed';
 // We'll keep these imports if they still exist, but we will focus the nav on what we just built
 import { WikiVirtualMemory } from './content/WikiMemory';
-import { WikiSysCalls } from './content/WikiSysCalls';
 import { WikiThreads } from './content/WikiThreads';
 
 export const WIKI_NAVIGATION = [

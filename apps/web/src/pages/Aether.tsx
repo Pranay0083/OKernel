@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
-    Zap, Cpu, Download, ArrowRight, Settings,
+    Download, ArrowRight, Settings,
     Heart, GitMerge, Feather, Gauge, Sliders, Fingerprint,
     Sparkles, Shield, MonitorPlay, TerminalSquare, Combine, Code2
 } from 'lucide-react';
@@ -34,7 +34,7 @@ export const Aether = () => {
     const overallScale = useTransform(scrollYProgress, [0, 0.1, 0.4, 0.6, 0.9, 1], [0.85, 0.85, 0.85, 0.85, 1.6, 1.6]);
 
     // UI elements fade in at the end
-    const uiOpacity = useTransform(scrollYProgress, [0.8, 0.9], [0, 1]);
+    // const uiOpacity = useTransform(scrollYProgress, [0.8, 0.9], [0, 1]); // Removed unused
     // Initial hero title fades out
     const titleOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
     // Glare sweep effect as it opens
@@ -71,7 +71,7 @@ export const Aether = () => {
                         }
                     }
                 }
-            } catch (e) {
+            } catch {
                 console.warn("API offline, using fallback Aether version data.");
                 setLatestVersion('v0.3.0 ALPHA');
                 setDownloadUrl('/aether/download');

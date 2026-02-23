@@ -6,19 +6,11 @@ interface Props {
     state: MutexSimState;
     setState: React.Dispatch<React.SetStateAction<MutexSimState>>;
     onReset: () => void;
+    onStep: () => void;
     onAlgorithmChange: (algo: MutexAlgorithm) => void;
     onThreadCountChange: (n: number) => void;
     onSemaphoreChange: (v: number) => void;
 }
-
-const ALGO_LABELS: Record<MutexAlgorithm, string> = {
-    PETERSON: "Peterson's Algorithm",
-    DEKKER: "Dekker's Algorithm",
-    BAKERY: "Bakery (Lamport)",
-    TAS: "Test-And-Set",
-    CAS: "Compare-And-Swap",
-    SEMAPHORE: "Semaphore",
-};
 
 const ALGO_CATEGORIES: Record<MutexAlgorithm, 'SOFTWARE' | 'HARDWARE'> = {
     PETERSON: 'SOFTWARE',
@@ -29,7 +21,7 @@ const ALGO_CATEGORIES: Record<MutexAlgorithm, 'SOFTWARE' | 'HARDWARE'> = {
     SEMAPHORE: 'HARDWARE',
 };
 
-export const Controls: React.FC<Props> = ({ state, setState, onReset, onAlgorithmChange, onThreadCountChange, onSemaphoreChange }) => {
+export const Controls: React.FC<Props> = ({ state, setState, onReset, onStep, onAlgorithmChange, onThreadCountChange, onSemaphoreChange }) => {
     const isTwoThreadOnly = state.algorithm === 'PETERSON' || state.algorithm === 'DEKKER';
     const maxThreads = isTwoThreadOnly ? 2 : 8;
 
@@ -52,6 +44,14 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset, onAlgorith
                     title="Reset Simulation"
                 >
                     <RotateCcw size={14} />
+                </button>
+                <button
+                    onClick={onStep}
+                    disabled={state.isPlaying}
+                    className="h-8 px-4 flex items-center justify-center border border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Step Forward (1 Tick)"
+                >
+                    [ + STEP ]
                 </button>
             </div>
 

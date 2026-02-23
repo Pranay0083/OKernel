@@ -1,10 +1,13 @@
 import React from 'react';
 import { MutexThread, ThreadState } from '../../../syscore/mutex/types';
 import { motion } from 'framer-motion';
+import { Play } from 'lucide-react';
 
 interface Props {
     threads: MutexThread[];
     activeThreadIds: number[];
+    isPlaying: boolean;
+    onStepThread: (id: number) => void;
 }
 
 const STATE_CONFIG: Record<ThreadState, { label: string; color: string; bgClass: string; borderClass: string; icon: string }> = {
@@ -15,7 +18,7 @@ const STATE_CONFIG: Record<ThreadState, { label: string; color: string; bgClass:
     EXITING: { label: 'EXIT', color: '#a78bfa', bgClass: 'bg-purple-900/10', borderClass: 'border-purple-800/50', icon: '◇' },
 };
 
-const ThreadCard: React.FC<{ thread: MutexThread; isActive: boolean }> = ({ thread, isActive }) => {
+const ThreadCard: React.FC<{ thread: MutexThread; isActive: boolean; isPlaying: boolean; onStepThread: (id: number) => void }> = ({ thread, isActive, isPlaying, onStepThread }) => {
     const config = STATE_CONFIG[thread.state];
     const csProgress = thread.csExecutionTime > 0
         ? ((thread.csExecutionTime - thread.csRemaining) / thread.csExecutionTime) * 100
@@ -87,10 +90,13 @@ const ThreadCard: React.FC<{ thread: MutexThread; isActive: boolean }> = ({ thre
                     <div className="text-[7px] text-zinc-600 font-bold uppercase">Wait Ticks</div>
                     <div className="text-xs font-mono font-bold text-zinc-300">{thread.totalWaitTicks}</div>
                 </div>
-                <div className="bg-black/40 rounded px-2 py-1 text-center">
-                    <div className="text-[7px] text-zinc-600 font-bold uppercase">Spinning</div>
-                    <div className={`text-xs font-mono font-bold ${thread.state === 'ENTERING' ? 'text-orange-400' : 'text-zinc-600'}`}>
-                        {thread.state === 'ENTERING' ? `${thread.waitTicks}t` : '—'}
+                <div className="bg-black/40 rounded px-2 py-1 text-center flex flex-col items-center justify-center cursor-pointer group hover:bg-zinc-800 transition-colors"
+                    onClick={() => !isPlaying && onStepThread(thread.id)}
+                    title={isPlaying ? "Pause simulation to step manually" : "Step this thread specifically"}>
+                    <div className="text-[7px] text-zinc-600 font-bold uppercase transition-colors">Action</div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                        <Play size={10} className={isPlaying ? "text-zinc-700" : "text-green-500 group-hover:text-green-400"} />
+                        <span className={`text-[10px] font-bold ${isPlaying ? "text-zinc-700" : "text-green-500 group-hover:text-white"}`}>Step</span>
                     </div>
                 </div>
             </div>
@@ -98,7 +104,7 @@ const ThreadCard: React.FC<{ thread: MutexThread; isActive: boolean }> = ({ thre
     );
 };
 
-export const ThreadPanel: React.FC<Props> = ({ threads, activeThreadIds }) => {
+export const ThreadPanel: React.FC<Props> = ({ threads, activeThreadIds, isPlaying, onStepThread }) => {
     const cols = threads.length <= 2 ? 'grid-cols-2'
         : threads.length <= 4 ? 'grid-cols-2 lg:grid-cols-4'
             : 'grid-cols-2 lg:grid-cols-4';
@@ -122,7 +128,7 @@ export const ThreadPanel: React.FC<Props> = ({ threads, activeThreadIds }) => {
             </div>
             <div className={`flex-1 grid ${cols} gap-2 p-3 content-start overflow-y-auto custom-scrollbar`}>
                 {threads.map(t => (
-                    <ThreadCard key={t.id} thread={t} isActive={activeThreadIds.includes(t.id)} />
+                    <ThreadCard key={t.id} thread={t} isActive={activeThreadIds.includes(t.id)} isPlaying={isPlaying} onStepThread={onStepThread} />
                 ))}
             </div>
         </div>

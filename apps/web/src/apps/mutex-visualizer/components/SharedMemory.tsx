@@ -1,7 +1,7 @@
 import React from 'react';
 import { MutexSimState, MutexAlgorithm } from '../../../syscore/mutex/types';
 import { motion } from 'framer-motion';
-import { Lock, Unlock, Check, X, Clock } from 'lucide-react';
+import { Lock, Unlock, Check, X } from 'lucide-react';
 
 interface Props {
     state: MutexSimState;

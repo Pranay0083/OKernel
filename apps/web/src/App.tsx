@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { CPUSchedulerPage } from './apps/cpu-scheduler/Page';
 import { MutexVisualizerPage } from './apps/mutex-visualizer/Page';
+import { CPUSimulatorPage } from './apps/cpu-simulator/Page';
 import { About } from './pages/About';
 import { Architecture } from './pages/Architecture';
 import { Console } from './pages/Console';
@@ -28,6 +29,7 @@ import { Aether } from './pages/Aether';
 import { AetherDownload } from './pages/AetherDownload';
 import { AetherChangelog } from './pages/AetherChangelog';
 import { AetherDocs } from './pages/Docs/AetherDocs';
+import { PresetsPage } from './pages/library/PresetsPage';
 
 import { supabase } from './lib/supabase';
 import { SponsorManager } from './pages/admin/SponsorManager';
@@ -93,6 +95,7 @@ function App() {
         <Route path="/" element={<Home />} /> {/* Landing Page */}
         <Route path="/cpu-scheduler" element={<CPUSchedulerPage />} />
         <Route path="/mutex-visualizer" element={<MutexVisualizerPage />} />
+        <Route path="/feat/cpu" element={<CPUSimulatorPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/architecture" element={<Architecture />} />
         <Route path="/console" element={<Console />} />
@@ -113,6 +116,7 @@ function App() {
         <Route path="/shell-maker" element={<ShellMakerPage />} />
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/packages" element={<Packages />} />
+        <Route path="/library/presets" element={<PresetsPage />} />
 
         {/* Aether Pages */}
         <Route path="/aether" element={<Aether />} />
