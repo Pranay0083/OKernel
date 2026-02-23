@@ -4,6 +4,7 @@ import { CPUSchedulerPage as Visualizer } from '../Page';
 import { useScheduler } from '../../../hooks/useScheduler';
 import { SimulationState } from '../../../core/types';
 import { ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 
 interface MockRunningProcess {
   name: string;
@@ -132,7 +133,11 @@ describe('Visualizer Integration', () => {
   });
 
   it('renders all major sub-components', () => {
-    render(<Visualizer />);
+    render(
+      <MemoryRouter>
+        <Visualizer />
+      </MemoryRouter>
+    );
 
     expect(screen.getByTestId('cpu-mock')).toBeInTheDocument();
     expect(screen.getByTestId('ready-queue-mock')).toBeInTheDocument();
@@ -167,7 +172,11 @@ describe('Visualizer Integration', () => {
       clear: mockClear,
     });
 
-    render(<Visualizer />);
+    render(
+      <MemoryRouter>
+        <Visualizer />
+      </MemoryRouter>
+    );
 
     // Avg TAT = (10 + 20) / 2 = 15.00
     expect(screen.getByText('15.00')).toBeInTheDocument();
@@ -196,7 +205,11 @@ describe('Visualizer Integration', () => {
       clear: mockClear,
     });
 
-    render(<Visualizer />);
+    render(
+      <MemoryRouter>
+        <Visualizer />
+      </MemoryRouter>
+    );
     expect(screen.getByText('CPU: RunningProc')).toBeInTheDocument();
   });
 
@@ -214,12 +227,20 @@ describe('Visualizer Integration', () => {
       clear: mockClear,
     });
 
-    render(<Visualizer />);
+    render(
+      <MemoryRouter>
+        <Visualizer />
+      </MemoryRouter>
+    );
     expect(screen.getByText('Queue Length: 3')).toBeInTheDocument();
   });
 
   it('wires up action buttons from sub-components', () => {
-    render(<Visualizer />);
+    render(
+      <MemoryRouter>
+        <Visualizer />
+      </MemoryRouter>
+    );
 
     // Test Add Process
     fireEvent.click(screen.getByText('Add Process'));

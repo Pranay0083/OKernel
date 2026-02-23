@@ -12,15 +12,6 @@ interface Props {
     onSemaphoreChange: (v: number) => void;
 }
 
-const ALGO_LABELS: Record<MutexAlgorithm, string> = {
-    PETERSON: "Peterson's Algorithm",
-    DEKKER: "Dekker's Algorithm",
-    BAKERY: "Bakery (Lamport)",
-    TAS: "Test-And-Set",
-    CAS: "Compare-And-Swap",
-    SEMAPHORE: "Semaphore",
-};
-
 const ALGO_CATEGORIES: Record<MutexAlgorithm, 'SOFTWARE' | 'HARDWARE'> = {
     PETERSON: 'SOFTWARE',
     DEKKER: 'SOFTWARE',

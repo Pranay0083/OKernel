@@ -20,14 +20,7 @@ const BOOT_LOGS = [
     "> STARTING_VISUALIZER... OK"
 ];
 
-const ALGO_INFO: Record<string, { name: string; desc: string }> = {
-    PETERSON: { name: "Peterson's", desc: "Two-process software mutex using flag[] + turn" },
-    DEKKER: { name: "Dekker's", desc: "First known correct solution with backoff" },
-    BAKERY: { name: "Bakery (Lamport)", desc: "N-process ticket-based mutual exclusion" },
-    TAS: { name: "Test-And-Set", desc: "Atomic hardware instruction — spin lock" },
-    CAS: { name: "Compare-And-Swap", desc: "Atomic CAS(lock, expected, desired)" },
-    SEMAPHORE: { name: "Semaphore", desc: "Counter-based wait(S) / signal(S)" },
-};
+// Removed ALGO_INFO
 
 export const MutexVisualizerPage = () => {
     const [booting, setBooting] = useState(true);
@@ -46,9 +39,9 @@ export const MutexVisualizerPage = () => {
             // Also need to clear the state so going back doesn't keep initializing
             window.history.replaceState({}, document.title);
         }
-    }, [location.state]);
+    }, [location.state, initFromPreset, state.currentStep]);
 
-    const info = ALGO_INFO[state.algorithm] || ALGO_INFO['PETERSON'];
+    // const info = ... // Removed
 
     // Stats
     const totalCSEntries = state.threads.reduce((sum, t) => sum + t.csCount, 0);

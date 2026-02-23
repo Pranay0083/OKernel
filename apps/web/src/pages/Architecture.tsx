@@ -1,10 +1,7 @@
-
 import { Layout } from '../components/layout/Layout';
 import { Cpu, Database, Layout as LayoutIcon, ArrowRight, Box, HardDrive, Cpu as Zap, ShieldCheck, Microscope } from 'lucide-react';
-import { useSystemConfig } from '../hooks/useSystemConfig';
 
 export const Architecture = () => {
-    const { config } = useSystemConfig();
 
     return (
         <Layout>

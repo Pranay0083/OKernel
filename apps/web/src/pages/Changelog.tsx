@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { Layout } from '../components/layout/Layout';
-import { GitCommit, Calendar, ArrowRight, Cpu, Shield, Terminal } from 'lucide-react';
+import { GitCommit, Calendar, ArrowRight, Cpu, Shield } from 'lucide-react';
 
 export const Changelog = () => {
-    // const config = { version: '1.2.0' }; // Removed unused variable, kept as comment if needed latereSystemConfig();
 
     return (
         <Layout>

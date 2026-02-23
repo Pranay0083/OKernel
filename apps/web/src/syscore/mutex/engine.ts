@@ -1,4 +1,4 @@
-import { MutexSimState, MutexThread, EventEntry } from './types';
+import { MutexSimState, MutexThread } from './types';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

@@ -3,9 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Button } from '../components/ui/Button';
-import { Zap, Layers, Clock, Terminal, ArrowRight, Cpu, Lock, Heart, BarChart3 } from 'lucide-react';
-
-import { useSystemConfig } from '../hooks/useSystemConfig';
+import { Zap, Layers, Cpu, Lock, Terminal, Heart, BarChart3, ArrowRight, Clock } from 'lucide-react';
 
 interface PollVotes {
     javascript: number;
@@ -16,7 +14,6 @@ interface PollVotes {
 }
 
 export const Home = () => {
-    const { config } = useSystemConfig();
     const navigate = useNavigate();
     const [feedback, setFeedback] = useState('');
     const [name, setName] = useState('');
@@ -359,7 +356,7 @@ export const Home = () => {
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_70%)]"></div>
                                 <div className="grid grid-cols-12 gap-1 h-full w-full opacity-50 group-hover:opacity-80 transition-opacity">
                                     {Array.from({ length: 144 }).map((_, i) => (
-                                        <div key={i} className={`rounded-[2px] ${Math.random() > 0.9 ? 'bg-blue-500 animate-pulse' : 'bg-zinc-800'}`}></div>
+                                        <div key={i} className={`rounded - [2px] ${Math.random() > 0.9 ? 'bg-blue-500 animate-pulse' : 'bg-zinc-800'} `}></div>
                                     ))}
                                 </div>
                                 {/* Floating Label */}
@@ -400,15 +397,15 @@ export const Home = () => {
 
 int main() {
     print("Initializing Kernel...\\n");
-    
+
     // Allocate Stack for Process 1
-    int* p1_stack = stack_alloc(1024);
-    
+    int * p1_stack = stack_alloc(1024);
+
     // Fork Process
     if (fork() == 0) {
         exec("user_program");
     }
-}`}
+} `}
                             </pre>
                         </div>
                     </div>
@@ -659,7 +656,7 @@ int main() {
                         /* Dynamic Rendering logic */
                         testimonials.length <= 3 ? (
                             /* 1-3 Items: Centered Grid */
-                            <div className={`grid grid-cols-1 md:grid-cols-${testimonials.length} gap-8 max-w-${testimonials.length === 1 ? '2xl' : '6xl'} mx-auto`}>
+                            <div className={`grid grid - cols - 1 md: grid - cols - ${testimonials.length} gap - 8 max - w - ${testimonials.length === 1 ? '2xl' : '6xl'} mx - auto`}>
                                 {testimonials.map((t, i) => (
                                     <Testimonial key={i} quote={t.message} author={t.name} role={t.role || 'Verified User'} />
                                 ))}
@@ -765,10 +762,10 @@ int main() {
                         <Button
                             disabled={status === 'loading'}
                             size="sm"
-                            className={`w-full rounded font-mono h-10 border transition-all ${status === 'success' ? 'bg-green-500/20 border-green-500 text-green-500 hover:bg-green-500/30' :
+                            className={`w - full rounded font - mono h - 10 border transition - all ${status === 'success' ? 'bg-green-500/20 border-green-500 text-green-500 hover:bg-green-500/30' :
                                 status === 'error' ? 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30' :
                                     'bg-zinc-800 text-white hover:bg-zinc-700 border-zinc-700'
-                                }`}
+                                } `}
                         >
                             {status === 'loading' ? 'Sending...' :
                                 status === 'success' ? 'Feedback Sent [OK]' :
@@ -930,7 +927,7 @@ int main() {
                                     >
                                         <div
                                             className="absolute bottom-0 left-0 right-0 bg-zinc-800/50 transition-all"
-                                            style={{ height: `${percentage}%` }}
+                                            style={{ height: `${percentage}% ` }}
                                         />
                                         <div className="relative z-10">
                                             <div className="text-white font-bold mb-1">{lang.name}</div>

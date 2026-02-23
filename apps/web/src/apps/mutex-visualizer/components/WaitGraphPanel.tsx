@@ -86,7 +86,7 @@ export const WaitGraphPanel: React.FC<Props> = ({ state }) => {
                         </defs>
 
                         {/* Dynamic Edges */}
-                        {edges.map((edge, i) => {
+                        {edges.map((edge, _i) => {
                             const p1 = getPos(edge.from, state.numThreads);
                             const p2 = getPos(edge.to, state.numThreads);
 

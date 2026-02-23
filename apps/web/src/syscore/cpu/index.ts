@@ -208,7 +208,7 @@ const scheduleStandard = (newState: SimulationState, indexMap: Map<number, numbe
         // Skip scheduling if core is in context-switch cooldown
         if (newState.contextSwitchCooldown[core] > 0) continue;
 
-        let processToRunId = newState.runningProcessIds[core];
+        const processToRunId = newState.runningProcessIds[core];
         let shouldPreempt = false;
 
         // Check preemption for RR
@@ -306,7 +306,7 @@ const scheduleStandard = (newState: SimulationState, indexMap: Map<number, numbe
 // ── MLFQ Scheduling (per-core) ──────────────────────────────────────
 const scheduleMLFQ = (newState: SimulationState, indexMap: Map<number, number>): void => {
     for (let core = 0; core < newState.numCores; core++) {
-        let processToRunId = newState.runningProcessIds[core];
+        const processToRunId = newState.runningProcessIds[core];
         let shouldPreempt = false;
 
         if (processToRunId !== null) {

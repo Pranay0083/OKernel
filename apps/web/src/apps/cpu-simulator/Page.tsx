@@ -5,7 +5,7 @@ import { SimulatorControls } from './components/SimulatorControls';
 import { Cpu, Server, ServerCrash, CpuIcon, Activity, Key, Lock } from 'lucide-react';
 import { Navbar } from '../../components/layout/Navbar';
 import { SimMutex } from '../../syscore/cpu-simulator/types';
-import { PREDEFINED_SCENARIOS } from '../../syscore/cpu-simulator/engine';
+// Removed unused PREDEFINED_SCENARIOS import
 
 export const CPUSimulatorPage: React.FC = () => {
     const { engine, state, logs, loadScenario } = useSimulator();

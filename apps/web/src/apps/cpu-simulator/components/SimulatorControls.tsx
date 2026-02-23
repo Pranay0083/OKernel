@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { SimState, SimMutex, Scenario } from '../../../syscore/cpu-simulator/types';
-import { Play, Square, FastForward, Plus, Lock, Settings, Cpu, Layers, Trash2 } from 'lucide-react';
+import { SimState } from '../../../syscore/cpu-simulator/types';
+import { Play, Square, FastForward, Plus, Lock, Settings, Layers } from 'lucide-react';
 import { PREDEFINED_SCENARIOS } from '../../../syscore/cpu-simulator/engine';
 
 interface SimulatorControlsProps {
