@@ -113,11 +113,6 @@ const CoreChip: React.FC<{ process: Process | undefined; coreIndex: number; comp
                                     <div className={`font-black text-white tracking-tighter truncate max-w-full ${compact ? 'text-sm' : 'text-2xl md:text-4xl'}`}>
                                         {process.name}
                                     </div>
-                                    {!compact && (
-                                        <div className="text-[8px] md:text-[9px] text-zinc-600 mt-1 font-mono bg-black/40 px-2 py-0.5 rounded border border-white/5 hidden sm:block">
-                                            THREAD: 0x{(process.id * 1024).toString(16).toUpperCase().padStart(4, '0')}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Stats Grid */}
@@ -165,9 +160,9 @@ const CoreChip: React.FC<{ process: Process | undefined; coreIndex: number; comp
                                 exit={{ opacity: 0 }}
                                 className={`w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-lg bg-zinc-900/20`}
                             >
-                                <div className={`text-zinc-800 font-black tracking-tighter opacity-30 select-none ${compact ? 'text-xl' : 'text-5xl'}`}>IDLE</div>
+                                <div className={`text-zinc-400 font-black tracking-tighter opacity-30 select-none ${compact ? 'text-xl' : 'text-5xl'}`}>IDLE</div>
                                 {!compact && (
-                                    <div className="text-zinc-800 text-[10px] font-mono mt-2 tracking-widest opacity-40">WAITING FOR INTERRUPT</div>
+                                    <div className="text-zinc-500 text-[10px] font-mono mt-2 tracking-widest opacity-40">WAITING FOR INTERRUPT</div>
                                 )}
                             </motion.div>
                         )}
