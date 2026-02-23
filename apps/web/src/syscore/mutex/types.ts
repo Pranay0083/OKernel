@@ -14,6 +14,7 @@ export interface MutexThread {
     csCount: number;           // Times entered CS
     waitTicks: number;         // Ticks spent waiting (contention)
     totalWaitTicks: number;    // Total wait ticks across all CS entries
+    currentLine?: number;      // Current instruction pointer in pseudo-code
 }
 
 export interface MutexSharedState {

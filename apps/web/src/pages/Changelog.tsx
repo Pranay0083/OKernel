@@ -16,8 +16,65 @@ export const Changelog = () => {
 
                 <div className="space-y-16">
 
-                    {/* v1.1.0 */}
+                    {/* v1.2.0 */}
                     <div className="relative pl-8 border-l border-zinc-800">
+                        <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <h2 className="text-2xl font-bold text-zinc-400">v1.2.0</h2>
+                            <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-mono border border-green-500/20">MAJOR</span>
+                        </div>
+                        <div className="text-sm text-zinc-500 font-mono mb-6 flex items-center gap-2">
+                            <Calendar size={12} /> 2026-02-22
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                                    <GitCommit size={16} className="text-green-500" />
+                                    Mutex Educational Tools & Libraries
+                                </h3>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    Introduced advanced visual learning features into the Mutex simulation, alongside a brand new central library system that enables one-click context provisioning across the OS simulators.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                    <h4 className="text-white text-sm font-bold mb-3">Mutex Enhancements</h4>
+                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Cycle RAG Graph</strong>: Directed edge SVG Wait-For graphs dynamically rendered during thread contention.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Code Tracer</strong>: Explicit algorithm pseudocode displays mapping `currentLine` to animate state machines.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Manual Execution</strong>: Precise arbitrary tick stepping for specific threads to invoke and analyze race conditions.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div className="p-4 bg-zinc-900/50 rounded border border-zinc-800">
+                                    <h4 className="text-white text-sm font-bold mb-3">Library & Scenarios</h4>
+                                    <ul className="space-y-2 text-xs text-zinc-400 font-mono">
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Scenario Central</strong>: New Library view featuring over a dozen classic edge-cases mapped directly into environments.</span>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <ArrowRight size={12} className="text-green-500 mt-0.5" />
+                                            <span><strong>Preset Injection</strong>: Click 'Run Simulation' from a Library card to immediately initialize and jump to the exact target software state.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* v1.1.0 */}
+                    <div className="relative pl-8 border-l border-zinc-800 opacity-75">
                         <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-zinc-700"></div>
                         <div className="flex items-center gap-4 mb-4">
                             <h2 className="text-2xl font-bold text-zinc-400">v1.1.0</h2>

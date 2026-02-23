@@ -4,9 +4,13 @@ import { Controls } from './components/Controls';
 import { SharedMemory } from './components/SharedMemory';
 import { ThreadPanel } from './components/ThreadPanel';
 import { EventLog } from './components/EventLog';
+import { CodeTracePanel } from './components/CodeTracePanel';
+import { WaitGraphPanel } from './components/WaitGraphPanel';
 import { Layout } from '../../components/layout/Layout';
 import { Loader } from '../../components/ui/Loader';
 import { LayoutGroup } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+import { MutexPresetConfig } from '../../pages/library/presetsData';
 
 const BOOT_LOGS = [
     "> INITIALIZING_MUTEX_ENGINE...",
@@ -32,9 +36,19 @@ export const MutexVisualizerPage = () => {
         setBooting(false);
     }, []);
 
-    const { state, setState, reset, setAlgorithm, setNumThreads, setSemaphoreValue } = useMutex();
+    const { state, setState, reset, setAlgorithm, setNumThreads, setSemaphoreValue, initFromPreset, stepGlobal, stepThread } = useMutex();
+    const location = useLocation();
 
-    const info = ALGO_INFO[state.algorithm];
+    React.useEffect(() => {
+        const presetConfig = location.state?.presetConfig as MutexPresetConfig | undefined;
+        if (presetConfig && state.currentStep === 0) {
+            initFromPreset(presetConfig);
+            // Also need to clear the state so going back doesn't keep initializing
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    const info = ALGO_INFO[state.algorithm] || ALGO_INFO['PETERSON'];
 
     // Stats
     const totalCSEntries = state.threads.reduce((sum, t) => sum + t.csCount, 0);
@@ -47,7 +61,7 @@ export const MutexVisualizerPage = () => {
     return (
         <Layout showFooter={false} isApp={true}>
             <LayoutGroup>
-                <div className="h-auto lg:h-[calc(100vh-64px)] p-2 bg-background font-mono text-sm flex flex-col gap-2 lg:grid lg:grid-cols-12 lg:grid-rows-[60px_minmax(0,1fr)_220px] overflow-y-auto lg:overflow-hidden">
+                <div className="h-auto lg:h-[calc(100vh-64px)] p-2 bg-background font-mono text-sm flex flex-col gap-2 lg:grid lg:grid-cols-12 lg:grid-rows-[60px_minmax(0,1fr)_260px] overflow-y-auto lg:overflow-hidden">
 
                     {/* ── Row 1: Controls & Stats ── */}
                     <div className="lg:col-span-12 h-[60px] bg-card border border-border rounded-lg flex items-center px-4 justify-between gap-4 overflow-hidden shrink-0">
@@ -56,6 +70,7 @@ export const MutexVisualizerPage = () => {
                                 state={state}
                                 setState={setState}
                                 onReset={reset}
+                                onStep={stepGlobal}
                                 onAlgorithmChange={setAlgorithm}
                                 onThreadCountChange={setNumThreads}
                                 onSemaphoreChange={setSemaphoreValue}
@@ -76,32 +91,33 @@ export const MutexVisualizerPage = () => {
                     {/* ── Row 2: Main Visualization ── */}
                     <div className="lg:col-span-12 grid grid-cols-12 gap-2 min-h-0 lg:h-full h-[700px] shrink-0">
 
-                        {/* Left: Info + Shared Memory */}
-                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-2 h-full">
-                            {/* Algorithm Info Card */}
-                            <div className="bg-card border border-border rounded-lg p-4 shrink-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                                    <span className="text-sm font-black text-white tracking-tight">{info.name}</span>
-                                </div>
-                                <p className="text-[10px] text-zinc-500 leading-relaxed">{info.desc}</p>
-                            </div>
-
+                        {/* Left: Shared Memory + RAG */}
+                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-2 h-full min-h-0">
                             {/* Shared Memory Panel */}
                             <div className="bg-card border border-border rounded-lg flex-1 overflow-hidden flex flex-col shadow-sm">
                                 <SharedMemory state={state} />
+                            </div>
+
+                            {/* RAG Panel */}
+                            <div className="bg-card border border-border rounded-lg flex-1 overflow-hidden flex flex-col shadow-sm">
+                                <WaitGraphPanel state={state} />
                             </div>
                         </div>
 
                         {/* Right: Thread Pool */}
                         <div className="col-span-12 lg:col-span-8 bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm h-full">
-                            <ThreadPanel threads={state.threads} activeThreadIds={state.activeThreadIds} />
+                            <ThreadPanel threads={state.threads} activeThreadIds={state.activeThreadIds} isPlaying={state.isPlaying} onStepThread={stepThread} />
                         </div>
                     </div>
 
-                    {/* ── Row 3: Event Log ── */}
-                    <div className="lg:col-span-12 bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm lg:h-[220px] h-[300px] shrink-0">
-                        <EventLog events={state.events} currentStep={state.currentStep} />
+                    {/* ── Row 3: Code Trace & Event Log ── */}
+                    <div className="lg:col-span-12 grid grid-cols-12 gap-2 lg:h-[260px] h-[500px] shrink-0">
+                        <div className="col-span-12 lg:col-span-6 bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm h-full max-h-full">
+                            <CodeTracePanel state={state} />
+                        </div>
+                        <div className="col-span-12 lg:col-span-6 bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm h-full max-h-full">
+                            <EventLog events={state.events} currentStep={state.currentStep} />
+                        </div>
                     </div>
                 </div>
             </LayoutGroup>

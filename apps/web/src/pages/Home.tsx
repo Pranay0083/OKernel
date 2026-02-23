@@ -423,8 +423,41 @@ int main() {
                 </div>
             </section>
 
+            {/* Pre-made Presets Highlights */}
+            <section className="py-24 border-y border-white/5 bg-zinc-950/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(168,85,247,0.05),transparent_50%)]"></div>
+                <div className="container mx-auto px-4 text-center max-w-4xl relative z-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-900/10 border border-purple-500/20 text-purple-400 text-xs font-mono rounded-full mb-6">
+                        <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                        INTERACTIVE STUDY GUIDES
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
+                        Don't know where to start? <br />
+                        <span className="text-purple-500">Load a Preset.</span>
+                    </h2>
+                    <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
+                        Explore our extensive library of predefined educational scenarios. Simulate the exact edge-cases that crash production systems, from the <strong className="text-white">Convoy Effect</strong> to <strong className="text-white">Deadlock Contention</strong> in spinlocks.
+                    </p>
+
+                    <div className="flex flex-wrap justify-center gap-4 mb-12">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-black border border-zinc-800 rounded-lg text-sm text-zinc-300 shadow-inner">
+                            <span className="text-green-500">✔</span> 9 CPU Scheduler Scenarios
+                        </div>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-black border border-zinc-800 rounded-lg text-sm text-zinc-300 shadow-inner">
+                            <span className="text-green-500">✔</span> 8 Mutex Validations
+                        </div>
+                    </div>
+
+                    <Link to="/library/presets">
+                        <Button size="lg" className="rounded-full px-10 h-14 bg-purple-600 hover:bg-purple-500 !text-white font-bold transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_40px_rgba(168,85,247,0.6)]">
+                            <Layers className="mr-2 h-5 w-5" /> Browse Educational Scenarios
+                        </Button>
+                    </Link>
+                </div>
+            </section>
+
             {/* Education First Section */}
-            <section className="py-24 bg-zinc-950 border-y border-zinc-800 relative">
+            <section className="py-24 bg-zinc-950 border-b border-zinc-800 relative">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.1),transparent_70%)]"></div>
 
                 <div className="container mx-auto px-4 relative z-10">
