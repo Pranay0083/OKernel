@@ -95,7 +95,7 @@ export const Controls: React.FC<Props> = ({ state, setState, onReset, onAlgorith
                 <span className="text-zinc-500 select-none">THREADS:</span>
                 <input
                     type="number"
-                    value={state.numThreads}
+                    value={state.algorithm === 'PETERSON' || state.algorithm === 'DEKKER' ? 2 : state.numThreads}
                     onChange={e => onThreadCountChange(Number(e.target.value))}
                     className="bg-black border border-zinc-700 text-white h-8 w-14 px-2 focus:outline-none focus:border-primary text-center"
                     min={2}
