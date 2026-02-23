@@ -147,7 +147,7 @@ export const ReadyQueue: React.FC<Props> = ({ queue, processes, algorithm, mlfqQ
                     <div className="content-start grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                         <AnimatePresence mode="popLayout">
                             {queue.length === 0 && (
-                                <div className="col-span-full h-24 flex flex-col items-center justify-center text-zinc-800 border-2 border-dashed border-zinc-900 rounded-lg">
+                                <div className="col-span-full h-24 flex flex-col items-center justify-center text-zinc-500 border-2 border-dashed border-zinc-900 rounded-lg">
                                     <span className="font-bold text-lg opacity-50">NULL POINTER</span>
                                     <span className="text-[10px]">BUFFER IS EMPTY</span>
                                 </div>
