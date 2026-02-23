@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { CPUSchedulerPage } from './apps/cpu-scheduler/Page';
+import { MutexVisualizerPage } from './apps/mutex-visualizer/Page';
 import { About } from './pages/About';
 import { Architecture } from './pages/Architecture';
 import { Console } from './pages/Console';
@@ -91,6 +92,7 @@ function App() {
 
         <Route path="/" element={<Home />} /> {/* Landing Page */}
         <Route path="/cpu-scheduler" element={<CPUSchedulerPage />} />
+        <Route path="/mutex-visualizer" element={<MutexVisualizerPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/architecture" element={<Architecture />} />
         <Route path="/console" element={<Console />} />
