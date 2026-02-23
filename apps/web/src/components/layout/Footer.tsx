@@ -41,6 +41,7 @@ export const Footer = ({ minimal }: { minimal?: boolean }) => {
                             <li><a href="/" className="hover:text-green-500 transition-colors">Home</a></li>
                             <li><a href="/console" className="hover:text-green-500 transition-colors">Console [BASH]</a></li>
                             <li><a href="/cpu-scheduler" className="hover:text-green-500 transition-colors">CPU Scheduler</a></li>
+                            <li><a href="/mutex-visualizer" className="hover:text-green-500 transition-colors">Mutex Visualizer</a></li>
                             <li><a href="/roadmap" className="hover:text-green-500 transition-colors">Roadmap</a></li>
                             <li><a href="/changelog" className="hover:text-green-500 transition-colors">System Log</a></li>
                         </ul>

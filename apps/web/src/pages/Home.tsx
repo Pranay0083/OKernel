@@ -151,7 +151,7 @@ export const Home = () => {
                                     UNDERSTAND OPERATING SYSTEMS
                                 </div>
                             </Link>
-                            
+
                             <Link to="/sponsor" className="inline-flex items-center gap-2 px-3 py-1 bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-mono rounded-md hover:bg-pink-500/20 transition-colors animate-in">
                                 <Heart size={10} className="fill-current" />
                                 <span>SPONSOR</span>
@@ -452,13 +452,13 @@ int main() {
                             <p className="text-xs text-zinc-500">fork(), exec(), wait(). Process lifecycle management.</p>
                         </Link>
 
-                        <div className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-yellow-500/50 transition-colors opacity-75">
+                        <Link to="/mutex-visualizer" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-yellow-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-yellow-500/10">
                                 <Lock className="text-zinc-400 group-hover:text-yellow-500" size={20} />
                             </div>
                             <h3 className="font-bold text-white mb-2">Concurrency</h3>
                             <p className="text-xs text-zinc-500">Mutex Visualization. Deadlock detection algorithms.</p>
-                        </div>
+                        </Link>
 
                         <Link to="/algo-wiki" className="group p-6 rounded-xl border border-zinc-800 bg-black hover:border-purple-500/50 transition-colors">
                             <div className="w-10 h-10 rounded bg-zinc-900 flex items-center justify-center mb-4 group-hover:bg-purple-500/10">
@@ -583,25 +583,27 @@ int main() {
                     </Link>
 
                     {/* Deadlock Unit */}
-                    <div className="group relative bg-zinc-950 border border-zinc-800 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col opacity-75 hover:opacity-100">
+                    <Link to="/mutex-visualizer" className="group relative bg-zinc-950 border border-zinc-800 hover:border-yellow-500/50 transition-colors rounded-xl overflow-hidden min-h-[320px] flex flex-col">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
                         <div className="p-8 flex-1">
-                            <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6">
-                                <Lock size={24} className="text-zinc-400 group-hover:text-red-500 transition-colors" />
+                            <div className="w-12 h-12 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center mb-6 group-hover:shadow-[0_0_20px_rgba(234,179,8,0.1)] transition-shadow">
+                                <Lock size={24} className="text-zinc-400 group-hover:text-yellow-500 transition-colors" />
                             </div>
-                            <h3 className="text-xl font-bold font-mono text-white mb-2">/dev/mutex</h3>
+                            <h3 className="text-xl font-bold font-mono text-white mb-2">/mutex-visualizer</h3>
                             <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-                                Concurrency control subsystem. Models semaphores, mutex locks, and the Banker's Algorithm.
+                                Concurrency control subsystem. Models semaphores, mutex locks, hardware and software algorithms.
                             </p>
                             <div className="flex flex-wrap gap-2 mb-4">
-                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Semaphores</div>
-                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Banker's</div>
+                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Software Mutex</div>
+                                <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400">Hardware Locks</div>
                             </div>
                         </div>
                         <div className="p-4 border-t border-zinc-900 bg-zinc-900/30 flex justify-between items-center">
-                            <span className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest">● In Development</span>
+                            <span className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest">● Online</span>
+                            <ArrowRight size={14} className="text-zinc-600 group-hover:text-white transition-colors" />
                         </div>
-                    </div>
+                    </Link>
                 </div>
             </section >
 
