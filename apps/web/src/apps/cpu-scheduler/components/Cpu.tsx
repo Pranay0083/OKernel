@@ -75,7 +75,7 @@ const CoreChip: React.FC<{ process: Process | undefined; coreIndex: number; comp
 
                 {/* The CHIP */}
                 <div className={`${compact ? 'w-[85%] h-[85%]' : 'w-[90%] h-[90%]'} relative z-10`}>
-                    <AnimatePresence mode='wait'>
+                    <AnimatePresence>
                         {process ? (
                             <motion.div
                                 layoutId={`process-${process.id}`}
@@ -83,7 +83,7 @@ const CoreChip: React.FC<{ process: Process | undefined; coreIndex: number; comp
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className={`w-full h-full bg-zinc-900 border-2 rounded-lg shadow-2xl overflow-hidden flex flex-col justify-between ${compact ? 'p-2' : 'p-5'}`}
+                                className={`w-full h-full bg-zinc-900 border-2 rounded-lg shadow-2xl overflow-hidden flex flex-col justify-between ${compact ? 'p-1' : 'p-5'}`}
                                 style={{
                                     borderColor: process.color,
                                     boxShadow: `0 0 50px -10px ${process.color}30`
@@ -121,16 +121,20 @@ const CoreChip: React.FC<{ process: Process | undefined; coreIndex: number; comp
                                 </div>
 
                                 {/* Stats Grid */}
-                                <div className={`grid grid-cols-3 gap-px bg-white/5 border border-white/5 rounded overflow-hidden ${compact ? 'mb-1' : 'mb-2 md:mb-3'}`}>
-                                    <div className={`bg-zinc-900/80 text-center ${compact ? 'p-0.5' : 'p-1 md:p-2'}`}>
-                                        <div className={`text-zinc-500 font-bold uppercase ${compact ? 'text-[5px]' : 'text-[7px] md:text-[8px]'}`}>AT</div>
-                                        <div className={`font-mono text-zinc-300 ${compact ? 'text-[8px]' : 'text-[10px] md:text-xs'}`}>{process.arrivalTime}</div>
-                                    </div>
-                                    <div className={`bg-zinc-900/80 text-center ${compact ? 'p-0.5' : 'p-1 md:p-2'}`}>
-                                        <div className={`text-zinc-500 font-bold uppercase ${compact ? 'text-[5px]' : 'text-[7px] md:text-[8px]'}`}>BT</div>
-                                        <div className={`font-mono text-zinc-300 ${compact ? 'text-[8px]' : 'text-[10px] md:text-xs'}`}>{process.burstTime}</div>
-                                    </div>
-                                    <div className={`bg-zinc-900/80 text-center ${compact ? 'p-0.5' : 'p-1 md:p-2'}`}>
+                                <div className={`grid gap-px bg-white/5 border border-white/5 rounded overflow-hidden ${compact ? 'grid-cols-1 mb-0.5' : 'grid-cols-3 mb-2 md:mb-3'}`}>
+                                    {!compact && (
+                                        <>
+                                            <div className="bg-zinc-900/80 text-center p-1 md:p-2">
+                                                <div className="text-zinc-500 font-bold uppercase text-[7px] md:text-[8px]">AT</div>
+                                                <div className="font-mono text-zinc-300 text-[10px] md:text-xs">{process.arrivalTime}</div>
+                                            </div>
+                                            <div className="bg-zinc-900/80 text-center p-1 md:p-2">
+                                                <div className="text-zinc-500 font-bold uppercase text-[7px] md:text-[8px]">BT</div>
+                                                <div className="font-mono text-zinc-300 text-[10px] md:text-xs">{process.burstTime}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                    <div className={`bg-zinc-900/80 text-center ${compact ? 'p-0.5 flex justify-center items-baseline gap-1' : 'p-1 md:p-2'}`}>
                                         <div className={`text-zinc-500 font-bold uppercase ${compact ? 'text-[5px]' : 'text-[7px] md:text-[8px]'}`}>REM</div>
                                         <div className={`font-mono text-white font-bold ${compact ? 'text-[8px]' : 'text-xs md:text-sm'}`}>{process.remainingTime}</div>
                                     </div>
