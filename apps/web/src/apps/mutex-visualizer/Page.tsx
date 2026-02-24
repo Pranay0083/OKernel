@@ -32,14 +32,17 @@ export const MutexVisualizerPage = () => {
     const { state, setState, reset, setAlgorithm, setNumThreads, setSemaphoreValue, initFromPreset, stepGlobal, stepThread } = useMutex();
     const location = useLocation();
 
+    const initializedRef = React.useRef(false);
+
     React.useEffect(() => {
         const presetConfig = location.state?.presetConfig as MutexPresetConfig | undefined;
-        if (presetConfig && state.currentStep === 0) {
+        if (presetConfig && !initializedRef.current) {
             initFromPreset(presetConfig);
+            initializedRef.current = true;
             // Also need to clear the state so going back doesn't keep initializing
             window.history.replaceState({}, document.title);
         }
-    }, [location.state, initFromPreset, state.currentStep]);
+    }, [location.state, initFromPreset]);
 
     // const info = ... // Removed
 

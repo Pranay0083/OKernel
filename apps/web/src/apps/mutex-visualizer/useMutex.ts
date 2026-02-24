@@ -45,21 +45,28 @@ export const useMutex = () => {
     useEffect(() => {
         let timeout: ReturnType<typeof setTimeout> | undefined;
 
-        if (state.isPlaying) {
-            timeout = setTimeout(() => {
-                if (state.currentStep > 500) {
-                    setState(prev => ({ ...prev, isPlaying: false }));
-                    return;
+        const tick = () => {
+            setState(prev => {
+                if (!prev.isPlaying) return prev;
+                if (prev.currentStep > 500) {
+                    return { ...prev, isPlaying: false };
                 }
-                const nextState = mutexTick(state);
-                setState(nextState);
-            }, state.speed);
+                return mutexTick(prev);
+            });
+
+            if (state.isPlaying) {
+                timeout = setTimeout(tick, state.speed);
+            }
+        };
+
+        if (state.isPlaying) {
+            timeout = setTimeout(tick, state.speed);
         }
 
         return () => {
             if (timeout) clearTimeout(timeout);
         };
-    }, [state]);
+    }, [state.isPlaying, state.speed]);
 
     const reset = () => {
         setState(prev => ({
